@@ -1,0 +1,1 @@
+Weak enemies. Grants "ExtendRange1" ability to towers.
