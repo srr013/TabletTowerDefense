@@ -466,9 +466,9 @@ class Timer():
         self.wave_length = 11
         self.curr_wave_length= int(self.wave_length)
 
-    def updateTimer(self, wavestart):
-        if wavestart == 999:
-            self.timer = wavestart
+    def updateTimer(self):
+        if player.wavestart == 999:
+            self.timer = player.wavestart
             return False
 
         else:
@@ -476,10 +476,10 @@ class Timer():
                 self.curr_wave_length += player.pausetime
                 return False
             else:
-                self.timer = (wavestart + self.curr_wave_length) - time.time()
+                self.timer = (player.wavestart + self.curr_wave_length) - time.time()
 
         if self.timer <= 0:
-            self.timer = (wavestart + self.wave_length) - time.time()
+            self.timer = (player.wavestart + self.wave_length) - time.time()
             self.curr_wave_length = int(self.wave_length)
             return True
 

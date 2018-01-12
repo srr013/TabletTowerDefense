@@ -94,7 +94,7 @@ def mouseButtonUp(event,selected):
 
 #called fromMainFunctions.WorkEvents when user presses "n"
 def nextWave(Sender,curtime):
-    wavestart = curtime
+    localdefs.player.wavestart = curtime
     localdefs.player.wavenum+=1
     localdefs.mapvar.wavesSinceLoss+=1
     ##creates a Sender() and adds it to senderlist
@@ -114,6 +114,5 @@ def nextWave(Sender,curtime):
             sys.exit()
         else:
             localdefs.player.wavenum-=1
-            wavestart = 0
-    return wavestart
+            localdefs.player.wavestart = 0
 

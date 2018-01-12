@@ -20,6 +20,8 @@ squwid = scrwid/squsize + mapoffset[0] #playable field is 33 squ wide (including
 squhei = scrhei/squsize + mapoffset[1] #playable field is 24 squ high
 border = 30
 squborder = border/squsize
+playerhealth = 20
+playermoney = 50
 
 wallrectlist = list()
 def gen_border_walls():
@@ -82,6 +84,8 @@ class Map():
         self.total_waves = 0
         self.movelists = list()
         self.movelistnum = -1
+        self.updatePath = True
+        self.openPath = True
 
     def genmovelists(self):
         ##zero out the lists to start fresh. Otherwise the append allows multiple lists.
@@ -187,14 +191,13 @@ newPath = pathfinding.GridWithWeights(squwid, squhei, squborder)
 class Player():
     def __init__(self):
         self.name = "player"
-
-        self.health = 20
-        self.money = 50
-        self.num_fighters = 5
+        self.health = playerhealth
+        self.money = playermoney
         self.abilities = list()
         self.wavenum = 0
         self.gameover = False
         self.towerSelected = None
+        self.wavestart = 999
         self.next_wave = False
         self.game_speed = 3
         self.screen = None
@@ -221,11 +224,6 @@ class Player():
         self.modDict['archerRangeMod'] = 0
         self.modDict['archerDamageMod'] = 0
         self.modDict['archerSpeedMod'] = 0
-
-        self.modDict['mageCostMod'] = 0
-        self.modDict['mageRangeMod'] = 0
-        self.modDict['mageDamageMod'] = 0
-        self.modDict['mageSpeedMod'] = 0
 
         self.modDict['mineCostMod'] = 0
         self.modDict['mineRangeMod'] = 0
@@ -322,33 +320,34 @@ class SlowTimer():
         self.percent = percent
         self.time = time
 
-class PoisonTimer(threading.Thread):
-    def __init__(self,enemy,damage,seconds):
-        threading.Thread.__init__(self)
-        self.runtime = seconds
-        self.dam = damage
-        self.target = enemy
-        enemy.poisontimer=self
-        self.kill = False
-    def run(self):
-        sec = self.runtime*1.0
-        while(sec>0):
-            sec-=0.1
-            time.sleep(0.1)
-            if self.target.poisontimer == self or self.kill == True:
-                if self.target.health>0:
-                    self.target.health-=self.dam
-                    if self.target.health<=0:
-                        self.target.die()
-                        return
-                else:
-                    return
-            else:
-                return
-        if self.target.poisontimer == self:
-            self.target.poisontimer = None
 
 #code not currently in use. Keeping as a source for enemy overhaul
+#class PoisonTimer(threading.Thread):
+#    def __init__(self,enemy,damage,seconds):
+#        threading.Thread.__init__(self)
+#        self.runtime = seconds
+#        self.dam = damage
+#        self.target = enemy
+#        enemy.poisontimer=self
+#        self.kill = False
+#    def run(self):
+#        sec = self.runtime*1.0
+#        while(sec>0):
+#            sec-=0.1
+#            time.sleep(0.1)
+#            if self.target.poisontimer == self or self.kill == True:
+#                if self.target.health>0:
+#                    self.target.health-=self.dam
+#                    if self.target.health<=0:
+#                        self.target.die()
+#                        return
+#                else:
+#                    return
+#            else:
+#                return
+#        if self.target.poisontimer == self:
+#            self.target.poisontimer = None
+
 #EnemyImageArray = list()
 #def genEnemyImageArray():
 #    for type in ["none","enemy","Speedy","Healthy","Armor"]:

@@ -47,27 +47,24 @@ def gameloop():
     player.screen = screen
     clock = pygame.time.Clock()
     run=True #Run loop
-    wavestart = 999
     selected = None #Nothing is selected
-    mapvar.getPathProperties()
+
 
     ##create a list of available towers to add to the bottom right tower selection window
     MainFunctions.makeIcons()
 
     ##initialize Thorpy
-    if player.gameover != True:
-        guiMenus = MainFunctions.getGUI(0)
+    guiMenus = MainFunctions.getGUI(0)
 
     frametime = player.game_speed/60.0
     timer = Timer()
-    player.gameover = False
 
     while run:
         starttime = time.time()
         if player.gameover == True:
             #need some sort of gameover screen. Wait on user to start new game.
             MainFunctions.resetGame()
-            gameloop()
+            player.gameover = False
         ##update path when appropriate
         if mapvar.updatePath == True:
             background = MainFunctions.updatePath(mapvar.openPath)
@@ -90,16 +87,16 @@ def gameloop():
         ##check for keyboard/Mouse input and take action based on those inputs
         MainFunctions.workShots()
         ##work events from user input
-        selected,wavestart=MainFunctions.workEvents(selected, wavestart, menu)
+        selected=MainFunctions.workEvents(selected, menu)
         if player.paused == True:
             localdefs.pauseGame()
         if player.next_wave == True:
             player.bonus_score += timer.timer * player.wavenum
-            wavestart = EventFunctions.nextWave(Sender, starttime)
+            EventFunctions.nextWave(Sender, starttime)
             player.next_wave = False
         ##update the wave timer
-        if timer.updateTimer(wavestart):
-            wavestart = EventFunctions.nextWave(Sender, starttime)
+        if timer.updateTimer():
+            EventFunctions.nextWave(Sender, starttime)
         ##Blit alerts to the screen
         MainFunctions.dispText()
 

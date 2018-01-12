@@ -144,7 +144,7 @@ def roundRect(rect):
     return new
 
 #Called from towerdefense.py. Handles user input.
-def workEvents(selected, wavestart, menu):
+def workEvents(selected, menu):
     for event in pygame.event.get():
         # Thorpy integration
         menu.react(event)
@@ -178,7 +178,7 @@ def workEvents(selected, wavestart, menu):
             elif event.type==KEYDOWN and event.dict['key']==K_SPACE:
                 player.paused = True
 
-    return selected,wavestart
+    return selected
 
 def resetGame():
     AllLists = [localdefs.towerlist,localdefs.enemylist, localdefs.bulletlist,localdefs.iconlist,localdefs.menulist, localdefs.explosions, localdefs.senderlist, localdefs.timerlist, localdefs.shotlist, localdefs.alertQueue]
@@ -189,6 +189,12 @@ def resetGame():
             list.pop()
 
     player.wavenum = 0
+    mapvar.getPathProperties()
+    player.wavestart = 999
+    player.money = localdefs.playermoney
+    player.health = localdefs.playerhealth
+    player.kill_score = 0
+    player.bonus_score = 0
 
 #instantiate the GUI
 gui = GUI(player)

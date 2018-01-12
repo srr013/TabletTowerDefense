@@ -205,7 +205,7 @@ class GUI:
             self.topPanel_towerDamage.set_text(text="Damage: {}".format(self.player.towerSelected.basedamage))#update with appropriate variable that stores current DPS
             self.topPanel_towerReload.set_text(text="Speed: {}".format(self.player.towerSelected.basetime))
             #\n doesnt work with .set_text. Need a different way to display description
-            self.topPanel_towerAbilityDesc.set_text(text="placeholder that is very\n long and longer and\n longer")
+            self.topPanel_towerAbilityDesc.set_text(text="placeholder")
             self.topPanel_towerAbilityStats.set_text(text="placeholder")
             self.topPanel_separator.set_text(text="________________________")
 
