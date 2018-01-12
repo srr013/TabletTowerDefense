@@ -6,14 +6,20 @@ import threading
 import pygame
 
 
-##check to see if mouse position is over an object in tower and icon list. returns object selected and True if something was clicked
+
 def leftCheckSelect(event,selected):
+    '''Check to see if mouse position is over an object in tower and icon list. Returns object selected and a boolean indicating a if something was clicked.
+    Event: Dict of user actions from keyboard/mouse
+    Selected: tower or icon selected'''
     for object in (localdefs.towerlist+localdefs.iconlist):
         if object.rect.collidepoint(event.dict['pos']):
             return object,True
     return selected,False
 
 def leftSelectedTower(event,selected):
+    '''Displays the tower menu if a tower was clicked.
+    Event: Dict of user actions from keyboard/mouse
+    Selected: tower or icon selected'''
     for text,rect,info,infopos,cb in selected.buttonlist:
         if rect.collidepoint(event.dict['pos']):
             cb(selected)
@@ -23,9 +29,10 @@ def leftSelectedTower(event,selected):
 ##if a tower isn't already there, and the selected spot isn't on the path, return true.
 ##called by leftSelectedIcon below
 
-#works on first placement but doesn't work after first tower is placed
-
 def placeTower(event,selected):
+    '''Places a tower at location of event (mouseclick)
+    Event: Dict of user actions from keyboard/mouse
+    Selected: tower or icon selected'''
     #currently assume that all towers are 60x60. Need to add something to the Icon class to accomodate other sizes if that changes
     roundpoint = (MainFunctions.roundPoint(event.dict['pos']))
     newTowerRect = pygame.Rect(roundpoint, (60,60))
@@ -53,6 +60,9 @@ def placeTower(event,selected):
 ##Checks to see if player has enough money to purchase the tower
 ##called by leftAlreadySelected below. Calls PlaceTower
 def leftSelectedIcon(event,selected):
+    '''If an Icon was previously selected check for available money then call PlaceTower
+    Event: Dict of user actions from keyboard/mouse
+    Selected: tower or icon selected'''
     if event.dict['pos'][1]< localdefs.scrhei+localdefs.mapoffset[1]*localdefs.squsize and event.dict['pos'][1] > localdefs.mapoffset[1]*localdefs.squsize:
         if event.dict['pos'][0]< localdefs.scrwid+localdefs.mapoffset[0]*localdefs.squsize and event.dict['pos'][1] > localdefs.mapoffset[0]*localdefs.squsize:
             if localdefs.player.money>=eval("localclasses."+selected.type+"Tower").basecost*(1-localdefs.player.modDict[selected.type.lower()+"CostMod"])*(1-localdefs.player.modDict["towerCostMod"]):
@@ -74,6 +84,9 @@ def leftSelectedIcon(event,selected):
 ##Checks to see if something was selected with a previous action. If it's been selected is it an icon from tower menu or a tower already on the screen?
 ##Called by mouseButtonUp if something hasn't been selected yet, which is checked via leftCheckSelect
 def leftAlreadySelected(event,selected):
+    '''Determine if a tower or icon is selected currently
+    Event: Dict of user actions from keyboard/mouse
+    Selected: tower or icon selected'''
     if selected.__class__ == localclasses.Icon:
         return leftSelectedIcon(event, selected)
     elif localclasses.Tower in selected.__class__.__bases__:
@@ -84,6 +97,9 @@ def leftAlreadySelected(event,selected):
 
 #called in MainFunctions when user releases mouse button. Calls above functions to determine appropriate action
 def mouseButtonUp(event,selected):
+    '''If mousebuttonUp event is detected determine next steps and call appropriate function
+    Event: Dict of user actions from keyboard/mouse
+    Selected: tower or icon selected'''
     if event.dict['button']==1:
         selected,lCSb = leftCheckSelect(event, selected)
         if not lCSb and selected:
@@ -94,6 +110,9 @@ def mouseButtonUp(event,selected):
 
 #called fromMainFunctions.WorkEvents when user presses "n"
 def nextWave(Sender,curtime):
+    '''Send the next enemy wave
+    Sender: the sender class for creating new enemies
+    curtime: the current time. Sets wavestart time for timer.'''
     localdefs.player.wavestart = curtime
     localdefs.player.wavenum+=1
     localdefs.mapvar.wavesSinceLoss+=1

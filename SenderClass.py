@@ -2,7 +2,7 @@ from localdefs import senderlist,mapvar
 from localclasses import Enemy
 
 class Sender():
-    ##called from EventFunctions, which currently always calls wave#a. Data from the mapdict comes from mapproperties.txt
+    '''called from EventFunctions, which currently always calls wave#a. Data from the mapdict comes from mapproperties.txt'''
     def __init__(self,wave,letter):
         self.wavenum = wave
         ##This is setting self.enemycounter to the Time value from mapproperties.txt
@@ -13,6 +13,7 @@ class Sender():
         self.enemiesgone = 0
         senderlist.append(self)
     def tick(self,frametime):
+        '''Sends an enemy each frame and maintains Senderlist'''
         self.enemycounter -= frametime
         if self.enemycounter<=0:
             if self.enemiesgone<mapvar.mapdict['wave'+str(self.wavenum)+self.letter][0]:

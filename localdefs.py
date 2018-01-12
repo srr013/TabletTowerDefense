@@ -25,6 +25,7 @@ playermoney = 50
 
 wallrectlist = list()
 def gen_border_walls():
+    '''generates a list of walls around the border of the map'''
     walls = []
     x = mapoffset[0]-1
     while x < squwid:
@@ -54,6 +55,7 @@ class Path():
         self.wall_list = list(self.border_walls)
 
     def get_wall_list(self):
+        '''Combines border walls and walls from towers placed on the map'''
         self.wall_list = list(self.border_walls)
         for tower in towerlist:
             for wall in tower.towerwalls:
@@ -61,7 +63,7 @@ class Path():
         return self.wall_list
 
     def is_open_path(self):
-        global openPath
+        '''Determines if path is set or fluid'''
         f = open(os.path.join('mapfiles', str(mapvar.current), 'movefile.txt'))
         lines = f.readlines()
         if lines[2] != "IGNORE":
@@ -88,6 +90,7 @@ class Map():
         self.openPath = True
 
     def genmovelists(self):
+        '''Generate the movement list for enemys and path blitting'''
         ##zero out the lists to start fresh. Otherwise the append allows multiple lists.
         self.pointmovelists = []
         self.pathrectlists = []
@@ -103,6 +106,7 @@ class Map():
             print "Move List Generated"
 
     def getmovelist(self):
+        '''Get the mvoe list from file if it is a pre-set path'''
         ##pulls data from movefile.txt for the appropriate level to create the map.
         f = open(os.path.join('mapfiles',str(self.current),'movefile.txt'))
         line = f.readline().strip().split(',')
@@ -130,6 +134,7 @@ class Map():
 
 
     def getmapproperties(self):
+        '''Open file and create dict of wave data'''
         def mapPropertiesGen(self):
             self.total_waves = 0
             ##hardcoded to use on Pathfinding map for the time being
@@ -145,6 +150,7 @@ class Map():
         print "Map Properties Created"
 
     def backgroundGen(self):
+        '''Generate the background, path and base and blit them'''
         dp = imgLoad(os.path.join('backgroundimgs','roadsquare.png'))
         ##blit background to screen then each path rect
         self.backgroundimg = imgLoad(os.path.join('backgroundimgs','backgroundgrid1024x768.jpeg'))
@@ -169,6 +175,9 @@ class Map():
         return self.background
 
     def loadMap(self,mapname):
+        '''Load a particular map
+        mapname: the name of the map selected
+        This is a legacy function and not fully utilized'''
         #called by main. Uses functions to load the map and map properties
         self.current = mapname
         if os.path.exists(os.path.join('mapfiles',str(self.current))):
@@ -250,8 +259,8 @@ class Player():
         self.modDict['towerAbilities'].add("ExtraDamage1")
         self.modDict['towerAbilities'].add("ExtendRange1")
 
-    #Saves the game when the player dies. Should update.
     def die(self):
+        '''Set gameover to True to reset the game'''
         self.gameover = True
 
 
@@ -270,6 +279,7 @@ shotlist = list()
 alertQueue = list()
 
 def pauseGame():
+    '''Pauses the gameloop and counts the time paused.'''
     timepaused = time.time()
     totaltimepaused = 0
 
@@ -289,6 +299,9 @@ def pauseGame():
     player.pausetime =  totaltimepaused
 
 def imgLoad(img):
+    '''Load an image using pygame.image.load
+    img = filepath to image
+    Returns: pygame.image'''
     file = os.path.join(img)
     image = pygame.image.load(file)
     return image
@@ -297,12 +310,10 @@ def imgLoad(img):
 
 ##Use this if the sprite comes in a single PNG
 def split_sheet(sheet, size, columns, rows):
-    """
-    Divide a loaded sprite sheet into subsurfaces.
+    '''Divide a loaded sprite sheet into subsurfaces.
     Sheet = the sheet to load
     Size = (w,h) of each frame
-    Columns and rows are the number of cells horizontally and vertically.
-    """
+    Columns and rows are the number of cells horizontally and vertically.'''
     subsurfaces = []
     for y in range(rows):
         row = []
@@ -311,15 +322,6 @@ def split_sheet(sheet, size, columns, rows):
             row.append(sheet.subsurface(rect))
         subsurfaces.append(row)
     return subsurfaces
-
-def distance(first,second):
-    return (math.sqrt((second.centerx-first.centerx)**2+(second.centery-first.centery)**2))
-
-class SlowTimer():
-    def __init__(self,percent,time):
-        self.percent = percent
-        self.time = time
-
 
 #code not currently in use. Keeping as a source for enemy overhaul
 #class PoisonTimer(threading.Thread):

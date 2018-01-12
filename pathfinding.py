@@ -2,11 +2,17 @@ import Queue
 
 
 def heuristic(a, b):
+    '''Returns the absolute value difference between 2 points a and b'''
     (x1, y1) = a
     (x2, y2) = b
     return abs(x1 - x2) + abs(y1 - y2)
 
 def a_star_search(graph, start, goal):
+    '''Implements the A* search algorithm
+    Returns: came_from dict, cost_so_far
+    Graph: the available space to move. Usually from GridWithWeights
+    Start: the starting point of the unit (x,y)
+    Goal: Unit's end point (x,y)'''
     frontier = Queue.PriorityQueue()
     frontier.put(start, 0)
     came_from = {}
@@ -31,13 +37,14 @@ def a_star_search(graph, start, goal):
     return came_from, cost_so_far
 
 def get_path(map, start, goal):
+    '''This is the main function call in Pathfinding.py. See a_star_search for info.'''
     came_from, cost_so_far = a_star_search(map, start, goal)
-    goal = goal
     #draw_grid(map, width=3, point_to=came_from, start=start, goal=goal)
     #draw_grid(map, width=1, number=cost_so_far, start=start, goal=goal)
     return came_from, cost_so_far
 
 def reconstruct_path(came_from, start, goal):
+    '''Takes the variables output by a_star_search and produces a movelist. See a_star_search for variable info'''
     current = goal
     path = []
     while current != start:
@@ -53,18 +60,25 @@ def reconstruct_path(came_from, start, goal):
 
 class MapGrid():
     def __init__(self, width, height, border):
+        '''Creates a basic grid for use in pathfinding algorithms.
+        Width: the width of the available space to move
+        Height: the height of the available spave to move
+        border: a list of points that are impassable'''
         self.width = width - (border*2)
         self.height = height - (border*2)
         self.walls = []
 
     def in_bounds(self, id):
+        '''Used to ensure a unit doesn't move outside the boundaries'''
         (x, y) = id
         return 0 <= x < self.width and 0 <= y < self.height
 
     def passable(self, id):
+        '''Used to ensure a unit doesn't move through a wall'''
         return id not in self.walls
 
     def neighbors(self, id):
+        '''Find neighboring spaces that the unit can move to'''
         (x, y) = id
         results = [(x + 1, y), (x, y - 1), (x - 1, y), (x, y + 1)] #, (x + 1,y + 1), (x + 1, y - 1), (x - 1,y - 1), (x - 1, y + 1)
         if (x + y) % 2 == 0: results.reverse()  # aesthetics
@@ -73,11 +87,13 @@ class MapGrid():
         return results
 
 class GridWithWeights(MapGrid):
+    '''Creates a MapGrid then adds weight to each square to indicate the best route'''
     def __init__(self, width, height, border):
         MapGrid.__init__(self,width, height, border)
         self.weights = {}
 
     def cost(self, from_node, to_node):
+        '''Determines the best route based on grid weighting'''
         return self.weights.get(to_node, 1)
 
 # utility functions for dealing with square grids

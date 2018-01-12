@@ -25,6 +25,7 @@ class Animate():
 
 
     def make_dict(self):
+        '''Make a dict of frames to be used for animation'''
         if self.spritesheet == None:
             for dirpath, dirnames, files in os.walk(self.folder, topdown=True):
                 i=0
@@ -54,9 +55,9 @@ class Animate():
 
 
     def adjust_images(self,direction):
-        """
+        '''
         Update the sprite's walkframes as the sprite's direction changes.
-        """
+        '''
         if direction == "right" and self.old_direction != "right":
             self.moveframes = self.frame_dict["right"]
             self.redraw = True
@@ -76,9 +77,9 @@ class Animate():
 
 
     def make_image(self):
-        """
+        '''
         Update the sprite's animation as needed.
-        """
+        '''
         elapsed = time.time() - self.animate_timer > 1.0 / self.animate_fps
         if self.redraw or elapsed:
             #print(self.redraw, elapsed)

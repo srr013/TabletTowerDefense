@@ -56,19 +56,26 @@ class Enemy(Path):
         self.distBase = self.distToBase()
 
     def takeTurn(self,frametime):
+        '''Moves the enemy and adjusts any slow applied to it
+        Frametime: the amount of time elapsed per frame'''
         self.workSlowTimers(frametime)
         self.move(frametime)
     def workSlowTimers(self,frametime):
+        '''Adjust slow already applied to enemy
+        Frametime: the amount of time elapsed per frame'''
         for st in self.slowtimers:
             st.slowtime -= frametime
             if st.slowtime<=0:
                 self.slowtimers.remove(st)
     def distToBase(self):
+        '''Determine distance to the end point using hypotenuse of xs and ys. Returns the distance.'''
         return math.sqrt(math.pow(mapvar.basepoint[0]*30-self.rect.x,2)+math.pow(mapvar.basepoint[1]*30-self.rect.y,2))
 
 
     def move(self,frametime):
-        ##right now just using a for ground troops, b for flying. Update movelist for ground each move to ensure the latest movelist is used.
+        '''Moves the enemy down the generated move list
+        Frametime: the amount of time elapsed per frame'''
+        ##right now just using a for ground troops, b for flying.
         if self.letter=='a':
             self.movelist = mapvar.pointmovelists[0]
         if self.slowtime > 0:
@@ -105,11 +112,13 @@ class Enemy(Path):
                 self.image = self.animation.adjust_images("up")
                 self.rect.centery = int(self.holdcenty)
     def checkHealth(self):
+        '''Checks enemy health and kills the enemy if health <=0'''
         if self.health<=0:
             player.kill_score += self.points
             self.die()
-    ##If enemy runs out of health add them to explosions list, remove from enemy list, and add money to player's account
+
     def die(self):
+        '''If enemy runs out of health add them to explosions list, remove from enemy list, and add money to player's account'''
         explosions.append(self.rect)
         if self in enemylist:
             enemylist.remove(self)
@@ -139,6 +148,7 @@ class Tower():
 
 
     def genWalls(self):
+        '''Generating the rects for the tower used in collision and path generation'''
         walls = []
         h = self.squareheight - 1
         while h >= 0:
@@ -150,8 +160,8 @@ class Tower():
             h -= 1
         return walls
 
-    ##called when a tower is selected via mouse
-    def genButtons(self,screen):
+    def genButtons(self):
+        '''Called when a tower is selected via mouse. Places the buttons around the tower.'''
         font = pygame.font.Font(None,20)
         ##generate a list of abilities from the currently hardcoded list in TowerAbilities.py
         ##doesFit() returns true if the tower is not in tower.upgrades list, which keeps track of whether the tower has been upgraded yet
@@ -180,17 +190,17 @@ class Tower():
                 infopos.bottom=min(scrhei,infopos.bottom)
                 self.buttonlist.append((taimg,tarect,info,infopos,ta.apply))
 
-    ##Handles tower shooting
-    def takeTurn(self,frametime,screen):
+    def takeTurn(self,frametime):
+        '''Maintain reload wait period and call target() once period is over
+        Frametime: the amount of time elapsed per frame'''
         self.targetTimer -= frametime
         ##if the rest period is up then shoot again
         if self.targetTimer<=0:
             self.targetTimer = self.startTargetTimer
             self.target()
 
-    ##Create a sorted list of enemies based on distance from the tower. If enemy is within tower range then hit enemy
-    ##check health (to see if it died), then return enemy.rect.center. Return 0 if no enemy in range.
     def target(self):
+        '''Create a sorted list of enemies based on distance from the tower. If enemy is within tower range then hit enemy'''
         tower=self
         sortedlist = sorted(enemylist, key=operator.attrgetter("distBase"))
 
@@ -376,6 +386,7 @@ baseTowerList = [(tower.type,tower.basecost, tower.basedamage, tower.baserange, 
 
 class Icon():
     def __init__(self,tower):
+        '''Instantiate an Icon with the tower information it represents'''
         self.type = tower[0]
         self.base = "Tower"
         self.basecost = tower[1]
@@ -406,11 +417,12 @@ class Shot():
         self.last_rect_y = self.rect.y
 
     ##called from towedefense.py
-    def takeTurn(self,screen):
+    def takeTurn(self):
+        '''Move the shot toward the enemy'''
         self.move()
 
-    ##Checks distance between shot and enemy and updates distance as needed
     def check_distance(self):
+        '''Check the distance between the shot and the enemy and update trajectory'''
         x_dist = abs(self.enemy.rect.x - self.rect.x)
         y_dist = abs(self.enemy.rect.y - self.rect.y)
         if x_dist < self.shot_speed_x:
@@ -418,9 +430,8 @@ class Shot():
         if y_dist < self.shot_speed_y:
             self.shot_speed_y = y_dist
 
-    ##moved from Tower
-    # Reduces enemy health by damage - armor
     def hitEnemy(self):
+        '''Reduces enemy health by damage - armor'''
         if self.attacktype == "slow":
             self.enemy.slowtimers.append(self.enemy)
             self.enemy.slowtime = 60
@@ -428,8 +439,8 @@ class Shot():
         shotlist.remove(self)
         self.enemy.checkHealth()
 
-    ##Move the shot towards the enemy. Check for collision. Rotate the shot so it's facing the enemy (upon first flight)
     def move(self):
+        '''Move the shot towards the enemy. Check for collision. Rotate the shot so it's facing the enemy (first frame only)'''
         self.shot_frame_count+=1
         self.check_distance()
         if self.rect.x > scrwid or self.rect.x < 0 or self.rect.y > scrhei or self.rect.y < 0:
@@ -453,20 +464,20 @@ class Shot():
             self.hitEnemy()
 
     def rotate_image(self):
+        '''Rotates the shot image'''
         orig_rect = self.rect
         rotation = math.atan2(self.rect.y - self.last_rect_y, self.rect.x - self.last_rect_x)*-57.3
         new_image = pygame.transform.rotate(self.image, rotation)
-        #new_rect = orig_rect.copy()
-        #new_rect.center = new_image.get_rect().center
-        #new_image = new_image.subsurface(new_rect).copy()
         return new_image
 class Timer():
     def __init__(self):
+        '''Instantiate a timer class for wave length and sending new waves'''
         self.timer = 0
         self.wave_length = 11
         self.curr_wave_length= int(self.wave_length)
 
     def updateTimer(self):
+        '''Updates the timer based on pause events and time'''
         if player.wavestart == 999:
             self.timer = player.wavestart
             return False

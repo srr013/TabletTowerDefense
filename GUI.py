@@ -19,21 +19,26 @@ class GUI:
         self.last_selected = None
 
     def gameOver(self):
+        '''set player.gameover to True'''
         self.player.gameover = True
 
     def towerSelected(self,**kwargs):
-        localdefs.player.towerSelected = kwargs['tower']
-
+        '''Set player.towerselected to icon or tower object'''
+        self.player.towerSelected = kwargs['tower']
 
     def nextWave(self):
-        localdefs.player.next_wave = True
+        '''Set player.next_wave to True'''
+        self.player.next_wave = True
 
     #currently game cannot be unpaused by a button because the menus are not updated during pause while loop.
     def pauseGame(self):
+        '''Set player.paused to True/False'''
         self.player.paused = False if self.player.paused==True else True
 
 
     def createTopBar(self,timer):
+        '''Creates the top menu bar
+        Timer: timer object used in gameloop'''
         self.home_button = thorpy.make_button("Quit (esc)",func = os.sys.exit)
         self.pause_button = thorpy.make_button("Pause (space)", func = self.pauseGame)
         self.restart_button = thorpy.make_button("Restart", func = self.gameOver)
@@ -75,6 +80,8 @@ class GUI:
             self.boxes.append(self.topBar)
 
     def updateGui(self,timer):
+        '''Updates thorpy topbar elements each frame
+        Timer: timer object used in gameloop'''
         self.wavenum.set_text(text="Wave: %d" %(self.player.wavenum))
         self.money.set_text(text="Money: %d" % self.player.money)
         self.timer.set_text(text="Next Wave: %d  " % timer)
@@ -82,6 +89,7 @@ class GUI:
         self.total_score.set_text(text="Score: %d + %d" % (self.player.kill_score, self.player.bonus_score))
 
     def createBottomBar(self):
+        '''Creates the bottom menu bar'''
         tower_list = list()
         for tower in localdefs.iconlist:
             button = thorpy.make_button("%s \n$%d" %(tower.type,tower.basecost), func= self.towerSelected, params={'tower':tower})
@@ -105,6 +113,8 @@ class GUI:
             self.boxes.append(self.bottomBar)
 
     def createTowerButtons(self,tower):
+        '''Creates the buttons available when a tower is selected. Called at tower instantiation
+        Tower: tower object'''
         abilitylist = [i for i in TowerAbilities.TowerAbilityList if
                        (i.doesFit(tower) and (i.shortname in localdefs.player.modDict['towerAbilities']))]
         buttonlist = thorpy.make_group([])
@@ -129,6 +139,8 @@ class GUI:
         return buttonlist
 
     def showTowerButtons(self, tower):
+        '''Displays the buttons for the indicated tower
+        Tower: tower object to display buttons'''
         if self.popUp_displayed == None:
             self.popUp_displayed = tower
             self.boxes.append(tower.buttons)
@@ -138,12 +150,15 @@ class GUI:
             self.boxes.append(tower.buttons)
 
     def hidePopUp(self, tower):
+        '''Hides the tower buttons when tower is deselected
+        Tower: tower object displaying buttons'''
         if self.popUp_displayed != tower and self.popUp_displayed != None:
             self.popUp_displayed = None
             self.boxes.pop()
 
 
     def createRightPanel(self):
+        '''Creates the right panel elements'''
 
         panelwid = 230
         topbarhei = self.topBar.get_rect()[3]
@@ -196,7 +211,7 @@ class GUI:
         self.boxes.append(self.rightBotPanel)
 
     def updatePanel(self):
-
+        '''updates panel elements based on user actions'''
         #update the top panel if what's selected has changed
         if self.player.towerSelected != None and self.last_selected != self.player.towerSelected:
             self.topPanel_titleText.set_text(text="{}".format(self.player.towerSelected.type))

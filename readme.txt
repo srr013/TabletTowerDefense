@@ -8,7 +8,7 @@ This version is intended as a proof of work to date. Version .2 will include a f
 ----------------
 In Order To Run:
 ----------------
-Install Python: Written and tested with 2.7
+Install Python: Written and tested with version 2.7
 Install PyGame: http://www.pygame.org
 Install Thorpy (for buttons and menus): http://www.thorpy.org/index.html
 
