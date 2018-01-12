@@ -2,6 +2,8 @@
 Scott's Tower Defence Game ReadMe:
 ========================================
 Version .1
+Note: This game is playable without issue or error, but it's not very fun yet. This version is intended as a proof of work
+to date. Version .2 will include a fully balanced game.
 
 ----------------
 In Order To Run:

@@ -51,7 +51,6 @@ def gameloop():
     selected = None #Nothing is selected
     mapvar.getPathProperties()
 
-
     ##create a list of available towers to add to the bottom right tower selection window
     MainFunctions.makeIcons()
 
@@ -59,7 +58,6 @@ def gameloop():
     if player.gameover != True:
         guiMenus = MainFunctions.getGUI(0)
 
-    font = pygame.font.Font(None,20)
     frametime = player.game_speed/60.0
     timer = Timer()
     player.gameover = False
