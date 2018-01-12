@@ -111,8 +111,6 @@ def nextWave(Sender,curtime):
     if all([('wave'+str(localdefs.player.wavenum)+letter) not in localdefs.mapvar.mapdict for letter in ['a','b','c','d']]):
         if len(localdefs.enemylist) == 0:
             MainFunctions.addAlert("You Win!", 48, "center", (255,215, 0))
-            localdefs.player.completedMaps.add(localdefs.mapvar.current)
-            localdefs.player.save()
             sys.exit()
         else:
             localdefs.player.wavenum-=1

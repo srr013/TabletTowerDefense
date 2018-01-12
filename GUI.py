@@ -18,7 +18,7 @@ class GUI:
         self.rightPanel = None
         self.last_selected = None
 
-    def mainMenu(self):
+    def gameOver(self):
         self.player.gameover = True
 
     def towerSelected(self,**kwargs):
@@ -32,21 +32,18 @@ class GUI:
     def pauseGame(self):
         self.player.paused = False if self.player.paused==True else True
 
-    def restartGame(self):
-        self.player.restart = True
-
-
 
     def createTopBar(self,timer):
-        self.home_button = thorpy.make_button("Quit (esc)",func = self.mainMenu)
+        self.home_button = thorpy.make_button("Quit (esc)",func = os.sys.exit)
         self.pause_button = thorpy.make_button("Pause (space)", func = self.pauseGame)
-        self.restart_button = thorpy.make_button("Restart", func = self.restartGame)#not yet working. Sets player.restart to True
+        self.restart_button = thorpy.make_button("Restart", func = self.gameOver)
         self.button_group = thorpy.make_group([self.home_button, self.pause_button, self.restart_button])
 
-        pause_reaction = thorpy.Reaction(reacts_to=thorpy.constants.EVENT_UNPRESS,
-                                          reac_func=self.pauseGame,
-                                          reac_name="unpause")
-        self.pause_button.add_reaction(pause_reaction)
+        #implement GUI loop over pause screen for buttons to work
+        #pause_reaction = thorpy.Reaction(reacts_to=thorpy.constants.EVENT_UNPRESS,
+        #                                  reac_func=self.pauseGame,
+        #                                  reac_name="unpause")
+        #self.pause_button.add_reaction(pause_reaction)
 
         self.wavenum = thorpy.make_text(text="Wave: %d" %(self.player.wavenum),font_size = thorpy.style.FONT_SIZE+3, font_color=thorpy.style.FONT_COLOR)
         self.timer = thorpy.make_text(text="Next Wave: %d  " % (timer), font_size = thorpy.style.FONT_SIZE+3, font_color=thorpy.style.FONT_COLOR)
@@ -54,7 +51,7 @@ class GUI:
 
         self.health_image = thorpy.Image.make(os.path.join("backgroundimgs","heart24x24.png"), colorkey=(0,0,0,0))
         self.health = thorpy.make_text(text="Health: %d" % (self.player.health),font_size = thorpy.style.FONT_SIZE+3, font_color=thorpy.style.FONT_COLOR)
-        ##standard pygame heart image
+        ##standard pygame heart image for reference when fixing heart image
         #heartimg = localdefs.imgLoad("backgroundimgs/heart24x24.png")
         #heartrect = heartimg.get_rect(center=(200, 200))
         self.health_group = thorpy.make_group([self.health_image, self.health])

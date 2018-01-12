@@ -1,37 +1,27 @@
-#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/
-#
-# Original Coder: Austin Morgan (codenameduckfin@gmail.com)
-# Version: 0.8
-#
-# If altering the code, please keep this comment box at least. Also, please
-# comment all changes or additions with two pound signs (##), so I can tell what's
-# been changed and what hasn't. Adding another comment box below this one with your
-# name will insure any additions or changes you made that make it into the next version
-# will be credited to you. Preferably, you'd leave your email and a little description
-# of your changes, but that's not absolutely needed.
+##########################################################################
+# This code is the work of Scott Rossignol (srr0132@gmail.com)
+# It was adapted from an open source Tower Defense game, info below.
+# Additional credits for artwork and algorithms are in the Content Sources document
 #
 # License:
 # All code and work contained within this file and folder and package is open for
 # use, however please include at least a credit to me and any other coders working
 # on this project.
+
+#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/
+#Original source credit:
+# Base Coder: Austin Morgan (codenameduckfin@gmail.com)
+# Version: 0.8
+# Legacy code: https://sourceforge.net/projects/ppgtd/
 #
 #/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/
 
-##/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#
-##
-## Gabriel Lazarini Baptistussi (gabrielbap1@gmail.com)
-##
-## I just made a small change in localclasses.Enemy.move(), now the enemies
-## have a different picture for each direction they are moving.
-##
-##/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#
 
 import sys, os
 import pygame
 from pygame.locals import *
 from localdefs import *
 from localclasses import *
-from mapmenu import pickMap
 from SenderClass import Sender
 import MainFunctions
 import EventFunctions
@@ -45,62 +35,41 @@ x = 300
 y = 0
 os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (x,y)
 
-def mainmenu():
-    application = thorpy.Application(size=(winwid, winhei), caption="Scott's Tower Defense")
-
-    select_map = thorpy.make_button("Select Map", func=gameloop)  # launch the main function when you click this button
-
-    # a button for leaving the application:
-    quit_button = thorpy.make_button("Quit", func=pygame.quit)
-
-    # a background which contains quit_button and useless_button
-    menubackground = thorpy.Background.make(image = imgLoad(os.path.join('backgroundimgs','background1230x930.jpg')),
-                                        elements=[select_map, quit_button], mode="")
-
-    # automatic storage of the elements
-    thorpy.store(menubackground)
-    menu = thorpy.Menu(menubackground)  # create a menu on top of the background
-    menu.play()  # launch the menu
-
+#the game's main loop
 def gameloop():
+    #instantiate required classes and variables
+    application = thorpy.Application(size=(winwid, winhei), caption="Scott's Tower Defense")
+    thorpy.set_theme('human')
     pygame.init()
     pygame.mouse.set_visible(1)
-    if player.restart == False or player.gameover == True:
-        background = mapvar.loadMap(pickMap())
-    else:
-        background = mapvar.backgroundimg
+    background = mapvar.loadMap("Pathfinding")
     screen = pygame.display.set_mode((winwid,winhei))
     player.screen = screen
     clock = pygame.time.Clock()
-    genEnemyImageArray()
     run=True #Run loop
     wavestart = 999
     selected = None #Nothing is selected
     mapvar.getPathProperties()
-    thorpy.set_theme('human')
+
 
     ##create a list of available towers to add to the bottom right tower selection window
     MainFunctions.makeIcons()
 
     ##initialize Thorpy
-    if player.restart != True and player.gameover != True:
+    if player.gameover != True:
         guiMenus = MainFunctions.getGUI(0)
 
     font = pygame.font.Font(None,20)
     frametime = player.game_speed/60.0
     timer = Timer()
-    player.restart = False
     player.gameover = False
 
     while run:
         starttime = time.time()
-        if player.restart ==True:
-            MainFunctions.resetGame()
-            gameloop()
         if player.gameover == True:
             #need some sort of gameover screen. Wait on user to start new game.
             MainFunctions.resetGame()
-            mainmenu()
+            gameloop()
         ##update path when appropriate
         if mapvar.updatePath == True:
             background = MainFunctions.updatePath(mapvar.openPath)
@@ -132,7 +101,7 @@ def gameloop():
             player.next_wave = False
         ##update the wave timer
         if timer.updateTimer(wavestart):
-            player.wavenum, wavestart = EventFunctions.nextWave(player.wavenum, Sender, starttime)
+            wavestart = EventFunctions.nextWave(Sender, starttime)
         ##Blit alerts to the screen
         MainFunctions.dispText()
 
@@ -151,11 +120,4 @@ def gameloop():
         frametime = (time.time() - starttime - player.pausetime) * player.game_speed
         player.pausetime = 0
 
-mainmenu()
-
-#Thanks to everyone who looks over this code, or tests this thing out. Feel free
-#to contact me at the email address listed above with any questions, comments, or
-#your own set of changes. I've wanted to do a game like this for a while, so I'll
-#stay committed as long as it has some interest in the community.
-
-#Have a nice day :)
+gameloop()

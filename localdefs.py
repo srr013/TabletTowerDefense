@@ -5,7 +5,6 @@ import sys
 import pygame
 import threading
 import time
-import Rewards
 from sys import exit as sysexit
 from pygame.locals import *
 import pathfinding
@@ -72,7 +71,7 @@ class Path():
 
 class Map():
     def __init__(self):
-        self.current = 1
+        self.current = "Pathfinding"
         self.pathrectlist = None
         self.pointmovelist = None
         self.endrect = None
@@ -91,8 +90,6 @@ class Map():
         for movelist in self.movelists:
             ##translate tiles to pixels. SQU represents a tile width or height
             pointmovelist = list([(point[0]*squsize+int(squsize/2.0),point[1]*squsize+int(squsize/2.0)) for point in movelist])
-            #Don't think this is needed. Testing without
-            # pointmovelist.append((scrwid+squsize,scrhei+squsize))
             ##create a rect for each set of points to connect the path from one point to another
             pathrectlist = list([pygame.Rect(pointmovelist[ind],(pointmovelist[ind+1][0]-pointmovelist[ind][0],pointmovelist[ind+1][1]-pointmovelist[ind][1])) for ind in range(len(pointmovelist)-2)])
             for rec in pathrectlist:
@@ -131,8 +128,9 @@ class Map():
     def getmapproperties(self):
         def mapPropertiesGen(self):
             self.total_waves = 0
+            ##hardcoded to use on Pathfinding map for the time being
             ##Using the wave# as dict keys, create a dict for the level indicating what troops to send
-            f = open(os.path.join('mapfiles',str(self.current),'mapproperties.txt'))
+            f = open(os.path.join('mapfiles',self.current,'mapproperties.txt'))
             for line in f.readlines():
                 if line[0]!='*':
                     self.total_waves += 1
@@ -175,6 +173,7 @@ class Map():
             return self.backgroundGen()
         else:
             print "You Won!!!"
+            pygame.quit()
             sysexit(1)
 
     def getPathProperties(self):
@@ -188,12 +187,6 @@ newPath = pathfinding.GridWithWeights(squwid, squhei, squborder)
 class Player():
     def __init__(self):
         self.name = "player"
-        try:self.load()
-        except:pass
-        try:
-            self.completedMaps = self.loadarray['completedMaps']
-        except:
-            self.completedMaps = ""
 
         self.health = 20
         self.money = 50
@@ -211,6 +204,8 @@ class Player():
         self.kill_score = 0
         self.bonus_score = 0
 
+
+        #Legacy code handling player access to towers and attributes.
         self.modDict = dict()
         self.modDict['towerCostMod'] = 0
         self.modDict['towerRangeMod'] = 0
@@ -251,31 +246,15 @@ class Player():
         self.modDict['towerSellMod'] = 0
         self.modDict['towerAccess'] = list(('Fighter','Archer','Mine','Slow',"AntiAir"))
 
-        ##Calls the Rewards.py file functions to give Player ability for extra range,damagecost upgrades based on levels
-        ##player has completed.
-        if self.loadarray:
-            for map in self.loadarray['completedMaps']:
-                if len(map)>0:
-                    eval("Rewards."+map+"(self)")
-    def load(self):
-        self.loadarray = dict()
-        with open(self.name+".txt","r") as playerfile:
-            for line in playerfile.readlines():
-                var,val = line.split("=")
-                if var=="currentHighScore":
-                    self.loadarray[var]=float(val.strip())
-                elif var=="completedMaps":
-                    valarray = val.strip().split(",")
-                    self.loadarray[var]=set(valarray)
-    def save(self):
-        with open(self.name+".txt","w") as playerfile:
-            playerfile.write("completedMaps="+",".join(self.completedMaps)+"\n")
-            print "Saved!"
+        self.modDict['towerAbilities'].add("Sell")
+        self.modDict['towerAbilities'].add("AddFighter")
+        self.modDict['towerAbilities'].add("RemoveFighter")
+        self.modDict['towerAbilities'].add("ExtraDamage1")
+        self.modDict['towerAbilities'].add("ExtendRange1")
 
     #Saves the game when the player dies. Should update.
     def die(self):
         self.gameover = True
-        self.save()
 
 
 
@@ -289,7 +268,6 @@ menulist = list()
 explosions = list()
 senderlist = list()
 timerlist = list()
-##my addition
 shotlist = list()
 alertQueue = list()
 
@@ -315,7 +293,6 @@ def pauseGame():
 def imgLoad(img):
     file = os.path.join(img)
     image = pygame.image.load(file)
-    #image.convert_alpha()
     return image
 
 
@@ -324,10 +301,9 @@ def imgLoad(img):
 def split_sheet(sheet, size, columns, rows):
     """
     Divide a loaded sprite sheet into subsurfaces.
-
-    The argument size is the width and height of each frame (w,h)
-    columns and rows are the integer number of cells horizontally and
-    vertically.
+    Sheet = the sheet to load
+    Size = (w,h) of each frame
+    Columns and rows are the number of cells horizontally and vertically.
     """
     subsurfaces = []
     for y in range(rows):
@@ -372,14 +348,15 @@ class PoisonTimer(threading.Thread):
         if self.target.poisontimer == self:
             self.target.poisontimer = None
 
-EnemyImageArray = list()
-def genEnemyImageArray():
-    for type in ["none","enemy","Speedy","Healthy","Armor"]:
-        ia = list()
-        try:enemyimage = imgLoad(os.path.join('enemyimgs',type+'.png'))
-        except:enemyimage = imgLoad(os.path.join('enemyimgs','enemy.png'))
-        ia.append(enemyimage)
-        ia.append(pygame.transform.rotate(enemyimage,90))
-        ia.append(pygame.transform.flip(enemyimage,True,False))
-        ia.append(pygame.transform.rotate(enemyimage,-90))
-        EnemyImageArray.append(ia)
+#code not currently in use. Keeping as a source for enemy overhaul
+#EnemyImageArray = list()
+#def genEnemyImageArray():
+#    for type in ["none","enemy","Speedy","Healthy","Armor"]:
+#        ia = list()
+#        try:enemyimage = imgLoad(os.path.join('enemyimgs',type+'.png'))
+#        except:print "enemy image failed to load"
+#        ia.append(enemyimage)
+#        ia.append(pygame.transform.rotate(enemyimage,90))
+#        ia.append(pygame.transform.flip(enemyimage,True,False))
+#        ia.append(pygame.transform.rotate(enemyimage,-90))
+#        EnemyImageArray.append(ia)

@@ -1,25 +1,44 @@
 ========================================
-Python PyGame Tower Defence Game ReadMe:
+Scott's Tower Defence Game ReadMe:
 ========================================
-Version ??
+Version .1
 
 ----------------
 In Order To Run:
 ----------------
 Install Python: Written and tested with 2.7
-Install PyGame. http://www.pygame.org
-Install Thorpy
+Install PyGame: http://www.pygame.org
+Install Thorpy (for buttons and menus): http://www.thorpy.org/index.html
 
-Then, just run towerdefense.py
+Run towerdefense.py
 
 ---------------
 Files Included:
 ---------------
 Text files:
-    changelog.txt - Log of changes.
+    readme.txt - This file
+    ContentSources.txt - Includes sources for various content used in this game. All content used is available
+    under an open source license
 
-    options.txt - Is read to determine the values of various options.
 
-    readme.txt - This.
+Game files(.py):
+    These files are new or have been heavily modified from the legacy code:
+    towerdefense - contains the game's main loop and instantiates basic classes and variables
+    MainFunctions - contains most of the basic functions required by the main loop
+    localclasses - contains the Tower, Enemy, Timer, and Shot classes used in the game
+    localdefs - contains the Path, Map, and Player classes. Also contains many "global" variables and lists, and functions used for
+    animation, enemy movement, and pausing the game.
+    EventFunctions - handles keyboard and mouse input
+    pathfinding - implements the a* pathfinding algorithm. Functions return a list of movement for enemies.
+    Animation - contains the Animation class for generating a dict of images associated with movement directions
+    GUI - handles the creation and updates of top and bottom bars and the rightside panels
+    wavegen - not fully implemented. Will generate a dict of enemy waves for the Sender class
 
-Game files:
+    Legacy files:
+    TowerAbilities - manages tower upgrades and selling. Upcoming revamp of the Tower class will merge this into a new file with Tower.
+    SenderClass - manages creation of enemies
+
+Artwork:
+    All artwork is my own unless specified in the ContentSources.txt file
+
+

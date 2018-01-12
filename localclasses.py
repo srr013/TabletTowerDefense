@@ -26,12 +26,7 @@ class Enemy(Path):
             self.animation = Animation.Animate(spritesheet = sprite_sheet, startframe=0, endframe=2, defaultrotation=90)
             self.image = self.animation.adjust_images("right")
 
-
-
-
-        #self.image = EnemyImageArray[self.imgindex][0]
         self.curnode = 0
-        #self.distance = 0
         if letter=='a':
             self.movelist = mapvar.pointmovelists[0]
         elif letter=='b':
@@ -89,35 +84,25 @@ class Enemy(Path):
                     player.die()
                 mapvar.wavesSinceLoss = 0
                 return
-            '''for wall in wallrectlist:
-                if self.rect.colliderect(wall):
-                    self.curnode = self.curnode-1'''
+
             #move enemy x and y based on the moveamt calculated above
             if self.rect.collidepoint(self.movelist[self.curnode+1]):
                 self.curnode+=1
             if self.movelist[self.curnode+1][0]>self.rect.centerx:
-                #self.distance+=moveamt
                 self.holdcentx+=moveamt
                 self.image = self.animation.adjust_images("right")
-                #self.image = EnemyImageArray[self.imgindex][0]
                 self.rect.centerx = int(self.holdcentx)
             elif self.movelist[self.curnode+1][0]<self.rect.centerx:
-                #self.distance+=moveamt
                 self.holdcentx-=moveamt
                 self.image = self.animation.adjust_images("left")
-                #self.image = EnemyImageArray[self.imgindex][2]
                 self.rect.centerx = int(self.holdcentx)
             if self.movelist[self.curnode+1][1]>self.rect.centery:
-                #self.distance+=moveamt
                 self.holdcenty+=moveamt
                 self.image = self.animation.adjust_images("down")
-                #self.image = EnemyImageArray[self.imgindex][3]
                 self.rect.centery = int(self.holdcenty)
             elif self.movelist[self.curnode+1][1]<self.rect.centery:
-                #self.distance+=moveamt
                 self.holdcenty-=moveamt
                 self.image = self.animation.adjust_images("up")
-                #self.image = EnemyImageArray[self.imgindex][1]
                 self.rect.centery = int(self.holdcenty)
     def checkHealth(self):
         if self.health<=0:

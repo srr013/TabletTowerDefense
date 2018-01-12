@@ -1,1 +1,0 @@
-completedMaps=,Simple,Level3,Pathfinding,Level1

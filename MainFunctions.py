@@ -76,7 +76,7 @@ def workShots():
 def dispExplosions():
     #Display any explosions in the queue, then remove them.
     for rect in explosions:
-        player.screen.blit(imgLoad('explosion.png'),rect)
+        player.screen.blit(imgLoad(os.path.join("enemyimgs",'explosion.png')),rect)
         explosions.remove(rect)
 
 def dispText():
@@ -88,7 +88,7 @@ def dispText():
 
 def addAlert(message, fontsize, location, color, length = 2):
     if location == "center":
-        location = (winwid/2, winhei/2)
+        location = (scrwid+mapoffset[0]/2, scrhei+mapoffset[1]/2)
 
     font = pygame.font.Font(None, fontsize)
     text = font.render(message, 1, color)
@@ -132,36 +132,6 @@ def selectedTower(selected):
     player.towerSelected = selected
     gui.showTowerButtons(selected)
 
-    #selected.genButtons(screen)
-    """for img,rect,info,infopos,cb in selected.buttonlist:
-        screen.blit(img,rect)
-        if rect.collidepoint(mousepos):
-            screen.blit(info,infopos)
-    def r():
-        rn = int(selected.range)
-        area = pygame.Surface((2*rn,2*rn),SRCALPHA)
-        pygame.draw.circle(area,(255,255,255,85),(rn,rn),rn,0)
-        screen.blit(area,selected.rect.move((-1*rn,-1*rn)).center)
-    def s():
-        st = 65
-        area = pygame.Surface((2*st,2*st),SRCALPHA)
-        pygame.draw.circle(area,(0,0,0,85),(st,st),st,0)
-        screen.blit(area,selected.rect.move((-1*st,-1*st)).center)
-    if selected.range<65:
-        s()
-        r()
-    else:
-        r()
-        s()"""
-
-
-#def dispIcons(screen,mousepos,font):
-#    for icon in iconlist:
-#        screen.blit(icon.img,icon.rect)
-#        if icon.rect.collidepoint(mousepos):
-#            text = font.render("%s Tower (%d)" % (icon.type,eval(icon.type+"Tower").basecost*(1-player.modDict[icon.type.lower()+"CostMod"])*(1-player.modDict["towerCostMod"])),1,(0,0,0))
-#            textpos = text.get_rect(left=icon.rect.left,bottom=icon.rect.top-2)
-#            screen.blit(text,textpos)
 
 def roundPoint(point):
     x = squsize*(point[0]/squsize)
@@ -173,7 +143,7 @@ def roundRect(rect):
     new.topleft = roundPoint((rect.centerx,rect.centery))
     return new
 
-##Called from towerdefense.py. Handles user input.
+#Called from towerdefense.py. Handles user input.
 def workEvents(selected, wavestart, menu):
     for event in pygame.event.get():
         # Thorpy integration
@@ -193,11 +163,9 @@ def workEvents(selected, wavestart, menu):
             elif event.type==KEYDOWN and event.dict['key']==K_n:
                 player.next_wave = True
             elif keyinput[K_f]:
-                player.screen = pygame.display.set_mode((scrwid,scrhei),FULLSCREEN)
+                player.screen = pygame.display.set_mode((winwid,winhei),FULLSCREEN)
             elif keyinput[K_w]:
-                player.screen = pygame.display.set_mode((scrwid,scrhei))
-            elif keyinput[K_s]:
-                player.save()
+                player.screen = pygame.display.set_mode((winwid,winhei))
             elif keyinput[K_UP]:
                 if player.game_speed<10:
                     game_speed_update(1,True)
@@ -222,6 +190,7 @@ def resetGame():
 
     player.wavenum = 0
 
+#instantiate the GUI
 gui = GUI(player)
 
 def getGUI(timer):
