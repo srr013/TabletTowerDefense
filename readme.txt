@@ -23,7 +23,9 @@ Text files:
     under an open source license
 
 Game files(.py):
-    These files are new or have been heavily modified from the legacy code:
+    These files are new or have been heavily modified from the legacy code. If you are reviewing the entire game this list
+    is organized for a top-down review:
+
     towerdefense - contains the game's main loop and instantiates basic classes and variables
     MainFunctions - contains most of the basic functions required by the main loop
     localclasses - contains the Tower, Enemy, Timer, and Shot classes used in the game
