@@ -11,6 +11,15 @@ Tower Class overhaul:
 Enemy overhaul:
 -Create new enemy types including artwork and functions related to behavior
 -Ensure enemies turn around on path if path changes instead of "floating" to nearest path
+-Death/coin animations - improve explosions.
+
+Gameplay:
+-Variable-based wave generation and random unit selection
+-Add gameplay modes - multiple entrances, easy/medium/hard
 
 Perform enemy/tower balancing
 Add sound
+
+Web setup:
+conversion to java
+
