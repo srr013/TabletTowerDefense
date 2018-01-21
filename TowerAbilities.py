@@ -1,4 +1,7 @@
-from localdefs import player,towerlist, mapvar
+import Player
+import localdefs
+import Map
+
 
 class TowerAbility:
     pass
@@ -14,12 +17,12 @@ class Sell(TowerAbility):
         return True
     @classmethod
     def apply(cls,**kwargs):
-        print "selling"
+        print ("selling")
         tower = kwargs['tower']
-        player.money+=(tower.totalspent)
-        towerlist.remove(tower)
-        player.towerSelected = None
-        mapvar.updatePath = True
+        Player.player.money+=(tower.totalspent)
+        localdefs.towerlist.remove(tower)
+        Player.player.towerSelected = None
+        Map.mapvar.updatePath = True
         return True
 
 class AddFighter(TowerAbility):
@@ -36,7 +39,7 @@ class AddFighter(TowerAbility):
             return False
     @classmethod
     def apply(cls,tower):
-        player.num_fighters -= 1
+        Player.player.num_fighters -= 1
         tower.num_fighters +=1
         return True
 
@@ -54,7 +57,7 @@ class RemoveFighter(TowerAbility):
             return False
     @classmethod
     def apply(cls,tower):
-        player.num_fighters += 1
+        Player.player.num_fighters += 1
         tower.num_fighters -=1
         return True
 
@@ -69,10 +72,10 @@ class Upgrade(TowerAbility):
         return (cls not in tower.upgrades)
     @classmethod
     def apply(cls,**kwargs):
-        print "applying Upgrade"
+        print ("applying Upgrade")
         tower = kwargs['tower']
-        if player.money>=cls.cost(tower):
-            player.money-=cls.cost(tower)
+        if Player.player.money>=cls.cost(tower):
+            Player.player.money-=cls.cost(tower)
             tower.damageMod += 0.15*tower.basedamage
             tower.reload()
             tower.upgrades.append(cls)
@@ -90,14 +93,14 @@ class ExtendRange1(TowerAbility):
         return (cls not in tower.upgrades)
     @classmethod
     def apply(cls,tower):
-        if player.money>=cls.cost(tower):
-            player.money-=cls.cost(tower)
+        if Player.player.money>=cls.cost(tower):
+            Player.player.money-=cls.cost(tower)
             tower.rangeMod += 0.5*tower.baserange
             tower.reload()
             tower.upgrades.append(cls)
             return True
         else:
-            print "Not enough money!"
+            print ("Not enough money!")
             return False
 
 TowerAbilityList = list([Sell,Upgrade])

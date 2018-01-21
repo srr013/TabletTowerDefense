@@ -1,7 +1,7 @@
 import pygame
 import itertools
 import os
-from localdefs import imgLoad
+from Utilities import imgLoad
 import time
 
 class Animate():

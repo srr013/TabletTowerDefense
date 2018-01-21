@@ -4,7 +4,7 @@ import os
 import EventFunctions
 import pygame
 import localclasses
-import TowerAbilities
+import Towers
 import math
 
 class GUI:
@@ -115,10 +115,10 @@ class GUI:
     def createTowerButtons(self,tower):
         '''Creates the buttons available when a tower is selected. Called at tower instantiation
         Tower: tower object'''
-        abilitylist = [i for i in TowerAbilities.TowerAbilityList if
+        abilitylist = [i for i in Towers.TowerAbilityList if
                        (i.doesFit(tower) and (i.shortname in localdefs.player.modDict['towerAbilities']))]
         buttonlist = thorpy.make_group([])
-        buttonnum = len(TowerAbilities.TowerAbilityList)
+        buttonnum = len(Towers.TowerAbilityList)
         radius =70
         inddeg = (2.0 * math.pi) / buttonnum
         for ind, towerability in enumerate(abilitylist):
@@ -240,3 +240,52 @@ class GUI:
 
             thorpy.store(self.botPanel_titleandimage, align='center')
             thorpy.store(self.botPanel_enemystats, align='center')
+
+
+##fromMainFunc
+
+
+def getGUI(timer):
+    '''Creates all Thorpy-based elements
+    Timer: from the Timer class. Used to update the top bar'''
+    gui.createTopBar(timer)
+    gui.createBottomBar()
+    gui.createRightPanel()
+
+    for box in gui.boxes:
+        box.blit()
+        box.update()
+
+    game_speed_reaction = thorpy.Reaction(reacts_to=thorpy.constants.THORPY_EVENT,
+                                          reac_func=game_speed_update,
+                                          event_args={"id": thorpy.constants.EVENT_SLIDE},
+                                          params={},
+                                          reac_name="updating game speed")
+    gui.game_speed.add_reaction(game_speed_reaction)
+
+
+    return gui.boxes
+
+def updateMenu():
+    '''Returns an updated list of boxes from GUI'''
+    return gui.boxes
+
+def updateGUI(timer):
+    '''Updates the Thorpy elements once per frame
+    Timer: from the Timer class. Used to update the top bar'''
+    gui.updateGui(timer)
+    gui.updatePanel()
+
+    for box in gui.boxes:
+        box.blit()
+        box.update()
+
+def game_speed_update(change=0, keydown = False):
+    '''Updates the game speed based on keypress or slider bar
+    change: Int. Default 0. The change in game speed.
+    keydown - Boolean. Default false. Used to detect if game speed was changed via keyboard. Updates the thorpy element to match.'''
+    if keydown == True:
+        gui.game_speed.unblit_and_reblit_func(gui.game_speed.set_value, value=player.game_speed+change)
+    Player.player.game_speed = gui.game_speed.get_value()
+    print (Player.player.game_speed)
+

@@ -4,7 +4,10 @@ import localclasses
 import sys
 import threading
 import pygame
-
+import Map
+import Player
+import Towers
+import Utilities
 
 
 def leftCheckSelect(event,selected):
@@ -29,33 +32,55 @@ def leftSelectedTower(event,selected):
 ##if a tower isn't already there, and the selected spot isn't on the path, return true.
 ##called by leftSelectedIcon below
 
-def placeTower(event,selected):
+def placeTower(*args):
     '''Places a tower at location of event (mouseclick)
     Event: Dict of user actions from keyboard/mouse
     Selected: tower or icon selected'''
     #currently assume that all towers are 60x60. Need to add something to the Icon class to accomodate other sizes if that changes
-    roundpoint = (MainFunctions.roundPoint(event.dict['pos']))
-    newTowerRect = pygame.Rect(roundpoint, (60,60))
-    if localdefs.mapvar.openPath \
-            and not any([wall.colliderect(newTowerRect) for wall in localdefs.wallrectlist]) \
-            and not any([tower.rect.colliderect(newTowerRect) for tower in localdefs.towerlist]):
-        #place the tower if it's an open map and no wall is at that point
-        eval("localclasses."+selected.type+selected.base)(roundpoint)
-        localdefs.mapvar.updatePath = True
-        localdefs.player.towerSelected = None
-        return None,True
-    elif not localdefs.mapvar.openPath and not any\
-        ([p.inflate(25,25).collidepoint(event.dict['pos']) for pathrectlist in localdefs.mapvar.pathrectlists for p in pathrectlist])\
-        and not any ([wall.collidepoint(event.dict['pos']) for wall in localdefs.wallrectlist])\
-        and not any([ttower.rect.collidepoint(event.dict['pos']) for ttower in localdefs.towerlist]):
-        #place the tower if it's a closed path map, and no path
+    instance = args[0]
+    #the conversion of pos on the line below must match (opposite) of the tbbox conversion in GUI_Kivy.builderMenu
+    pos = (instance.parent.pos[0]+Map.squsize*2, instance.parent.pos[1]+Map.squsize*2)
+    towerselected = instance.button
+    towerWidgetList = Map.mapvar.towercontainer.walk(restrict=True)
+    newTower = eval("Towers." + towerselected.type + towerselected.base)(pos)
+    toweroverlap = []
+    for tower in towerWidgetList:
+        toweroverlap.append(newTower.collide_widget(tower))
 
-        eval("localclasses." + selected.type + selected.base)(MainFunctions.roundPoint(event.dict['pos']))
-        localdefs.player.towerSelected = None
+    walloverlap = set(Map.path.wall_list).intersection(newTower.towerwalls)
+    print (walloverlap, newTower.towerwalls)
+
+    if Map.mapvar.openPath and not any(toweroverlap) and str(walloverlap) == 'set()':
+        #place the tower if it's an open map and no wall is at that point
+        #add the tower to the tower container after the if statement, otherwise it collides with itself
+
+        if MainFunctions.updatePath(Map.mapvar.openPath)== False:
+            i = 0
+            while i < len(localdefs.towerlist[-1].towerwalls):
+                Map.path.wall_list.pop(-1)
+                i += 1
+            print("Path blocked!!")
+            localdefs.towerlist.pop()
+            Map.mapvar.towercontainer.remove_widget(newTower)
+            return towerselected, False
+        else:
+            Map.mapvar.towercontainer.add_widget(newTower)
+            Player.player.towerSelected = None
+            return None, True
+
+    elif not Map.mapvar.openPath and not any(toweroverlap) and str(walloverlap) == 'set()':
+        #place the tower if it's a closed path map, and no path
+        Map.mapvar.towercontainer.add_widget(newTower)
+        eval("Towers." + towerselected.type + towerselected.base)(pos)
+        Player.player.towerSelected = None
         return None,True
+
     else:
-        MainFunctions.addAlert("Invalid Location {0}".format(roundpoint), 48, "center", (240, 0, 0))
-        return selected,False
+        print ("tower not placed")
+        localdefs.towerlist.pop()
+        Map.mapvar.towercontainer.remove_widget(newTower)
+        MainFunctions.addAlert("Invalid Location".format(pos), 48, "center", (240, 0, 0))
+        return towerselected,False
 
 ##Checks to see if player has enough money to purchase the tower
 ##called by leftAlreadySelected below. Calls PlaceTower
@@ -63,20 +88,20 @@ def leftSelectedIcon(event,selected):
     '''If an Icon was previously selected check for available money then call PlaceTower
     Event: Dict of user actions from keyboard/mouse
     Selected: tower or icon selected'''
-    if event.dict['pos'][1]< localdefs.scrhei+localdefs.mapoffset[1]*localdefs.squsize and event.dict['pos'][1] > localdefs.mapoffset[1]*localdefs.squsize:
-        if event.dict['pos'][0]< localdefs.scrwid+localdefs.mapoffset[0]*localdefs.squsize and event.dict['pos'][1] > localdefs.mapoffset[0]*localdefs.squsize:
-            if localdefs.player.money>=eval("localclasses."+selected.type+"Tower").basecost*(1-localdefs.player.modDict[selected.type.lower()+"CostMod"])*(1-localdefs.player.modDict["towerCostMod"]):
+    if event.dict['pos'][1]< Map.scrhei+Map.mapoffset[1]*Map.squsize and event.dict['pos'][1] > Map.mapoffset[1]*Map.squsize:
+        if event.dict['pos'][0]< Map.scrwid+Map.mapoffset[0]*Map.squsize and event.dict['pos'][1] > Map.mapoffset[0]*Map.squsize:
+            if Player.player.money>=eval("localclasses."+selected.type+"Tower").basecost*(1-Player.player.modDict[selected.type.lower()+"CostMod"])*(1-Player.player.modDict["towerCostMod"]):
                 return placeTower(event, selected)
             else:
-                localdefs.player.towerSelected = None
+                Player.player.towerSelected = None
                 selected = None
                 MainFunctions.addAlert("Not Enough Money", 48, "center", (240, 0, 0))
         else:
-            localdefs.player.towerSelected = None
+            Player.player.towerSelected = None
             selected = None
             MainFunctions.addAlert("Invalid Location", 48, "center", (240, 0, 0))
     else:
-        localdefs.player.towerSelected = None
+        Player.player.towerSelected = None
         selected = None
         MainFunctions.addAlert("Invalid Location", 48, "center", (240, 0, 0))
     return selected,False
@@ -100,6 +125,7 @@ def mouseButtonUp(event,selected):
     '''If mousebuttonUp event is detected determine next steps and call appropriate function
     Event: Dict of user actions from keyboard/mouse
     Selected: tower or icon selected'''
+    print ("in MBup")
     if event.dict['button']==1:
         selected,lCSb = leftCheckSelect(event, selected)
         if not lCSb and selected:
@@ -113,25 +139,26 @@ def nextWave(Sender,curtime):
     '''Send the next enemy wave
     Sender: the sender class for creating new enemies
     curtime: the current time. Sets wavestart time for timer.'''
-    localdefs.player.wavestart = curtime
-    localdefs.player.wavenum+=1
-    localdefs.mapvar.wavesSinceLoss+=1
+    Player.player.wavestart = curtime
+    Player.player.wavenum+=1
+    Map.mapvar.wavesSinceLoss+=1
+    print(Player.player.wavenum, Map.mapvar.mapdict)
     ##creates a Sender() and adds it to senderlist
-    if ('wave'+str(localdefs.player.wavenum)+'a') in localdefs.mapvar.mapdict:
-        Sender(localdefs.player.wavenum,'a')
-    if ('wave'+str(localdefs.player.wavenum)+'b') in localdefs.mapvar.mapdict:
-        Sender(localdefs.player.wavenum,'b')
-    if ('wave'+str(localdefs.player.wavenum)+'c') in localdefs.mapvar.mapdict:
-        Sender(localdefs.player.wavenum,'c')
-    if ('wave'+str(localdefs.player.wavenum)+'d') in localdefs.mapvar.mapdict:
-        Sender(localdefs.player.wavenum,'d')
+    if ('wave'+str(Player.player.wavenum)+'a') in Map.mapvar.mapdict:
+        Sender(Player.player.wavenum,'a')
+    elif ('wave'+str(Player.player.wavenum)+'b') in Map.mapvar.mapdict:
+        Sender(Player.player.wavenum,'b')
+    elif ('wave'+str(Player.player.wavenum)+'c') in Map.mapvar.mapdict:
+        Sender(Player.player.wavenum,'c')
+    elif ('wave'+str(Player.player.wavenum)+'d') in Map.mapvar.mapdict:
+        Sender(Player.player.wavenum,'d')
     ##if no more waves in the dictionary and no more enemies on screen then "win" upon next call to this function
     ##issue: no functionality built in for losses yet
-    if all([('wave'+str(localdefs.player.wavenum)+letter) not in localdefs.mapvar.mapdict for letter in ['a','b','c','d']]):
+    if all([('wave'+str(Player.player.wavenum)+letter) not in Map.mapvar.mapdict for letter in ['a','b','c','d']]):
         if len(localdefs.enemylist) == 0:
             MainFunctions.addAlert("You Win!", 48, "center", (255,215, 0))
             sys.exit()
         else:
-            localdefs.player.wavenum-=1
-            localdefs.player.wavestart = 0
+            Player.player.wavenum-=1
+            Player.player.wavestart = 0
 

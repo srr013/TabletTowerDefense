@@ -1,4 +1,4 @@
-import Queue
+import queue as Queue
 
 
 def heuristic(a, b):
@@ -121,5 +121,5 @@ def draw_grid(graph, width=1, **style):
         xlist = list()
         for x in range(graph.width):
             xlist.append("%%-%ds" % width % draw_tile(graph, (x, y), style, width))
-        print xlist
+        print (xlist)
 
