@@ -1,16 +1,12 @@
 import pygame
 import os
-import sys
 from pygame.locals import *
 import localdefs
-import random
 import math, operator
-import Animation
 import Utilities
 import Player
 import Map
 import Shot
-import main
 
 from kivy.uix.widget import Widget
 from kivy.graphics import *
@@ -109,7 +105,7 @@ class Tower(Widget):
     def target(self):
         '''Create a sorted list of enemies based on distance from the tower. If enemy is within tower range then hit enemy'''
         tower=self
-        sortedlist = sorted(localdefs.enemylist, key=operator.attrgetter("distBase"))
+        sortedlist = sorted(Map.mapvar.enemycontainer.children, key=operator.attrgetter("distBase"))
 
         ##the distance attribute here isn't reliable. it's set above by movement.
         for enemy in sortedlist:
@@ -147,6 +143,7 @@ class FighterTower(Tower):
         self.type = FighterTower.type
         self.attacktype = 'single'
         self.image = Utilities.imgLoad(os.path.join('towerimgs','Fighter','1.png'))
+        self.imagestr = os.path.join('towerimgs','Fighter','1.png')
         self.image.size = self.size
         self.image.pos = self.pos
         self.add_widget(self.image)
@@ -169,6 +166,7 @@ class ArcherTower(Tower):
         self.type = ArcherTower.type
         self.attacktype = 'single'
         self.image = Utilities.imgLoad(os.path.join('towerimgs', 'Archer', '1.png'))
+        self.imagestr = os.path.join('towerimgs', 'Archer', '1.png')
         self.image.pos = self.pos
         self.image.size = self.size
         self.add_widget(self.image)
@@ -190,6 +188,7 @@ class MineTower(Tower):
         self.reload = MineTower.reload
         self.type = MineTower.type
         self.image = Utilities.imgLoad(os.path.join('towerimgs', 'Mine', '1.png'))
+        self.imagestr = os.path.join('towerimgs', 'Mine', '1.png')
         self.image.pos = self.pos
         self.image.size = self.size
         self.add_widget(self.image)
@@ -212,6 +211,7 @@ class SlowTower(Tower):
         self.reload = SlowTower.reload
         self.type = SlowTower.type
         self.image = Utilities.imgLoad(os.path.join('towerimgs', 'Slow', '1.png'))
+        self.imagestr = os.path.join('towerimgs', 'Slow', '1.png')
         self.image.pos = self.pos
         self.image.size = self.size
         self.add_widget(self.image)
@@ -233,6 +233,7 @@ class AntiAirTower(Tower):
         self.damage = AntiAirTower.damage
         self.reload = AntiAirTower.reload
         self.type = "AntiAir"
+        self.imagestr = os.path.join('towerimgs', 'AntiAir', '1.png')
         self.image = Utilities.imgLoad(os.path.join('towerimgs', 'AntiAir', '1.png'))
         self.image.pos = self.pos
         self.image.size = self.size

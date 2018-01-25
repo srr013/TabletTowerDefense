@@ -1,22 +1,58 @@
-import localdefs
-import os
-import EventFunctions
-import pygame
-import localclasses
 import random
+import Enemy
 
-def wavegen(player, enemylist):
-    wave = 1
-    set = 1 #a set is counted every X waves
-    allwaves = []
 
-    while wave < 100:
-        enemy  = random(0, len(enemylist)-1)#selects a random enemy type
+maxSets = 6
 
-        #enemy properties are stored in the mapvar.mapdict. EventFunctions.nextwave also calls this dict.
-        #need to replace the dict structure with an output from this wavegenerator. Setup a dict for each wave and return that dict
-        #to towerdefense so it's accessible. Could also just stick this function in the player module.
+def genModList():
+    modifiers = ['speedInc', 'strInc', 'numInc', 'fireRes', 'waterRes', 'gravRes']
+    modList = []
 
-        allwaves.append()
+    setNum = 1  # a set is counted every X waves
+    sets = maxSets
+
+    while sets > 0:
+        x = 0
+        numMods = int((setNum) / 2.5)
+        if numMods == 0:
+            modList.append([])
+        elif numMods >= 0:
+            list = []
+            while x < numMods:
+                list.append(modifiers[random.randint(0,len(modifiers)-1)])
+                x += 1
+            modList.append(list)
+        sets -= 1
+        setNum += 1
+    return modList
+
+def wavegen():
+    enemyModList = genModList()
+    setNum = 1 # a set is counted every X waves
+    wavesPerSet = 7
+    enemytypes = ['Standard', 'Airborn', 'Splinter', 'Strong', 'Crowd']
+    waveList = []
+    waveNum = 1
+
+    while setNum < maxSets:
+        while waveNum/wavesPerSet <= setNum:
+            enemyType  = enemytypes[random.randint(0, len(enemytypes)-1)]   #selects a random enemy type
+            numEnemies = int(eval("Enemy."+enemyType +".defaultNum") * (1+ (setNum/10)))    #include the following in new enemy build. 1 class per enemy, like towers.
+            healthEnemies = eval("Enemy."+enemyType +".health") * (1 + (setNum/10))
+            speedEnemies = eval("Enemy."+enemyType +".speed") * (1 + (setNum/10))
+            armorEnemies = eval("Enemy."+enemyType +".armor") * (1 + (setNum/10))
+            rewardEnemies = int(eval("Enemy."+enemyType +".reward") * (1 + (setNum/10)))
+
+            if waveNum/wavesPerSet == setNum:
+                isBoss = True
+            else:
+                isBoss = False
+
+            wave = {'wavenum':waveNum, 'setnum':setNum, 'numenemies':numEnemies, 'enemyhealth':healthEnemies, 'enemyspeed':speedEnemies,
+             'enemytype':enemyType, 'enemyarmor': armorEnemies, 'enemymods':enemyModList[setNum-1], 'enemyreward':rewardEnemies, 'isBoss':isBoss}
+            waveList.append(wave)
+            waveNum += 1
+        setNum += 1
+    return waveList
 
 

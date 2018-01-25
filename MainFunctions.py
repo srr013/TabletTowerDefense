@@ -1,12 +1,10 @@
 import localdefs, localclasses, Map, Towers, pathfinding, Utilities
 import pygame
 from pygame.locals import *
-import EventFunctions
-import sys, os
 import time
 import Player
-import Enemy
-
+import GUI_Kivy
+import TowerAbilities
 
 black = (0,0,0)
 white = (255,255,255)
@@ -16,6 +14,10 @@ def makeIcons():
     '''Creates an Icon from the class for each tower'''
     for tower in Towers.baseTowerList:
         Towers.Icon(tower)
+
+def makeUpgradeIcons():
+    for ability in TowerAbilities.baseAbilityList:
+        TowerAbilities.TowerAbility(ability)
 
 def tickAndClear(clock,background):
     '''Updates the game time and blits the background
@@ -107,28 +109,27 @@ def addAlert(message, fontsize, location, color, length = 2):
 def workEnemies():
     '''Move, draw to screen, draw health bars of enemys.
     Frametime: the amount of time elapsed per frame'''
-    for enemy in localdefs.enemylist:
+    for enemy in Map.mapvar.enemycontainer.children:
         enemy.distBase = enemy.distToBase()
         enemy.takeTurn()
 
-    ##health bars not working w/out pygame
-        #pygame.draw.line(Player.player.screen, (0,0,0), (enemy.rect_x,enemy.rect_y-2), (enemy.rect_x+enemy.rect_w,enemy.rect_y-2), 3)
+
+            #(Player.player.screen, (0,0,0), (enemy.rect_x,enemy.rect_y-2), (enemy.rect_x+enemy.rect_w,enemy.rect_y-2), 3)
         #if enemy.poisontimer:
         #    pygame.draw.line(Player.player.screen, (0,255,0), (enemy.rect_x,enemy.rect_y-2), (enemy.rect_x+(enemy.health*1.0/enemy.starthealth*1.0)*enemy.rect_w,enemy.rect_y-2), 3)
         #else:
         #    pygame.draw.line(Player.player.screen, (255,0,0), (enemy.rect_x,enemy.rect_y-2), (enemy.rect_x+(enemy.health*1.0/enemy.starthealth*1.0)*enemy.rect_w,enemy.rect_y-2), 3)
 
-def dispStructures():
-    '''Display all the towers in towerlist'''
-    for struct in (localdefs.towerlist):
-        pass
-        #Player.player.screen.blit(struct.image,struct.rect)
+def updateGUI(wavetime):
+    GUI_Kivy.gui.updateTopBar(wavetime)
+
+
 
 def towerButtonPressed(selected):
     '''receives a Button object from GUI_Kivy
     Display the tower and a circle for tower range if a button is pressed'''
 
-    mouseat = Map.mapvar.backgroundimg.touch_pos
+    mouseat = Map.mapvar.background.touch_pos
     if eval("Towers."+selected.type+"Tower").basecost*(1-Player.player.modDict[selected.type.lower()+"CostMod"])*(1-Player.player.modDict["towerCostMod"]) > Player.player.money:
         addAlert("Not Enough Money", 48, "center", (240, 0, 0))
         Player.player.towerSelected = None
@@ -136,7 +137,7 @@ def towerButtonPressed(selected):
         return selected
 
     selected.img.pos = mouseat
-    Map.mapvar.backgroundimg.add_widget(selected.img)
+    Map.mapvar.background.add_widget(selected.img)
 
     if selected.base == "Tower":
         rn = int(eval("Towers."+selected.type+"Tower").baserange*(1+Player.player.modDict['towerRangeMod'])*(1+Player.player.modDict[selected.type.lower()+'RangeMod']))
@@ -152,9 +153,21 @@ def selectedTower(selected):
     #gui.showTowerButtons(selected)
 
 
+def pauseGame(*args):
+    id = args[0].id
+    print (id)
+    if Player.player.state == 'Playing':
+        if id == 'pause':
+            Player.player.state = 'Paused'
+        if id == 'menu':
+            Player.player.state = 'Menu'
+    elif Player.player.state == 'Paused':
+        Player.player.state = 'Playing'
+
+
 def resetGame():
     '''Resets game variables so player can restart the game quickly.'''
-    AllLists = [localdefs.towerlist,localdefs.enemylist, localdefs.bulletlist,localdefs.iconlist,localdefs.menulist, localdefs.explosions, localdefs.senderlist, localdefs.timerlist, localdefs.shotlist, localdefs.alertQueue]
+    AllLists = [localdefs.towerlist, localdefs.bulletlist, localdefs.menulist, localdefs.explosions, localdefs.senderlist, localdefs.timerlist, localdefs.shotlist, localdefs.alertQueue]
 
     i=0
     for list in AllLists:
@@ -168,3 +181,9 @@ def resetGame():
     Player.player.health = Player.playerhealth
     Player.player.kill_score = 0
     Player.player.bonus_score = 0
+
+    Map.mapvar.towercontainer.clear_widgets()
+    Map.mapvar.enemycontainer.clear_widgets()
+    Map.mapvar.explosioncontainer.clear_widgets()
+    Map.mapvar.roadcontainer.clear_widgets()
+    Map.mapvar.towercontainer.clear_widgets()

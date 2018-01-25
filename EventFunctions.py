@@ -8,6 +8,7 @@ import Map
 import Player
 import Towers
 import Utilities
+import SenderClass
 
 
 def leftCheckSelect(event,selected):
@@ -40,7 +41,7 @@ def placeTower(*args):
     instance = args[0]
     #the conversion of pos on the line below must match (opposite) of the tbbox conversion in GUI_Kivy.builderMenu
     pos = (instance.parent.pos[0]+Map.squsize*2, instance.parent.pos[1]+Map.squsize*2)
-    towerselected = instance.button
+    towerselected = instance.instance
     towerWidgetList = Map.mapvar.towercontainer.walk(restrict=True)
     newTower = eval("Towers." + towerselected.type + towerselected.base)(pos)
     toweroverlap = []
@@ -48,7 +49,7 @@ def placeTower(*args):
         toweroverlap.append(newTower.collide_widget(tower))
 
     walloverlap = set(Map.path.wall_list).intersection(newTower.towerwalls)
-    print (walloverlap, newTower.towerwalls)
+    #print (walloverlap, newTower.towerwalls)
 
     if Map.mapvar.openPath and not any(toweroverlap) and str(walloverlap) == 'set()':
         #place the tower if it's an open map and no wall is at that point
@@ -134,31 +135,10 @@ def mouseButtonUp(event,selected):
     else:
         return None,(False if not selected else True)
 
-#called fromMainFunctions.WorkEvents when user presses "n"
-def nextWave(Sender,curtime):
-    '''Send the next enemy wave
-    Sender: the sender class for creating new enemies
-    curtime: the current time. Sets wavestart time for timer.'''
-    Player.player.wavestart = curtime
+
+def nextWave():
+    '''Send the next enemy wave'''
     Player.player.wavenum+=1
-    Map.mapvar.wavesSinceLoss+=1
-    print(Player.player.wavenum, Map.mapvar.mapdict)
-    ##creates a Sender() and adds it to senderlist
-    if ('wave'+str(Player.player.wavenum)+'a') in Map.mapvar.mapdict:
-        Sender(Player.player.wavenum,'a')
-    elif ('wave'+str(Player.player.wavenum)+'b') in Map.mapvar.mapdict:
-        Sender(Player.player.wavenum,'b')
-    elif ('wave'+str(Player.player.wavenum)+'c') in Map.mapvar.mapdict:
-        Sender(Player.player.wavenum,'c')
-    elif ('wave'+str(Player.player.wavenum)+'d') in Map.mapvar.mapdict:
-        Sender(Player.player.wavenum,'d')
-    ##if no more waves in the dictionary and no more enemies on screen then "win" upon next call to this function
-    ##issue: no functionality built in for losses yet
-    if all([('wave'+str(Player.player.wavenum)+letter) not in Map.mapvar.mapdict for letter in ['a','b','c','d']]):
-        if len(localdefs.enemylist) == 0:
-            MainFunctions.addAlert("You Win!", 48, "center", (255,215, 0))
-            sys.exit()
-        else:
-            Player.player.wavenum-=1
-            Player.player.wavestart = 0
+    SenderClass.Sender(specialSend = False)
+
 

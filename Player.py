@@ -9,6 +9,8 @@ from sys import exit as sysexit
 from pygame.locals import *
 import pathfinding
 import Map
+import wavegen
+
 
 from kivy.uix.image import Image
 
@@ -30,10 +32,11 @@ class Player():
         self.game_speed = 3
         self.screen = None
         self.pausetime = 0
-        self.paused = False
+        self.state = "Menu"
         self.restart = False
         self.kill_score = 0
         self.bonus_score = 0
+        self.waveList = wavegen.wavegen() #[{'wavenum': 1, 'setnum': 1, 'enemytype': 'b', 'enemymods': []}, dict repeats]
 
 
         #Legacy code handling player access to towers and attributes.

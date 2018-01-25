@@ -1,16 +1,15 @@
 from kivy.uix.image import Image
 from kivy.uix.widget import Widget
+from kivy.event import EventDispatcher
 
 import os
-import pygame
 import Map
 
 def imgLoad(source, pos=(0,0)):
     '''Load an image via a kivy Image layout. By default does not size the widget containing the image.
     img = filepath to image
     Returns: Image instance which includes size (w/h) data via .size'''
-    img = source
-    file = os.path.join(img)
+    file = os.path.join(source)
     image = Image(source=file, pos=pos)
     return image
 
@@ -70,9 +69,17 @@ def getPos(point):
     x = point[0]
     y = point[1]
 
-    pos = (x - x%Map.squsize, y - y%Map.squsize)
+    pos = [x - x%Map.squsize, y - y%Map.squsize]
     return pos
 
+class EventDisp(EventDispatcher):
+    def __init__(self,**kwargs):
+        super(EventDisp, self).__init__(**kwargs)
+
+
+    def callback(instance, value):
+        print('My callback is call from', instance)
+        print('and the a value changed to', value)
 
 
 ##Use this if the sprite comes in a single PNG

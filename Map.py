@@ -1,30 +1,26 @@
 import Utilities, localdefs, pathfinding
-import os, sys
-import pygame
-import MainFunctions
+import os
 import GUI_Kivy
 import Player
-import EventFunctions
-import math
-import Towers
+
 
 from kivy.uix.scatterlayout import ScatterLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.image import Image
-from kivy.core.window import Window, WindowBase
 
 from kivy.graphics import *
 
 winwid = 1300 #window width
 winhei = 830
 scrwid = 1020 #Playable screen width.
-scrhei = 760 #Playable screen height.
+scrhei = 780 #Playable screen height.
 squsize = 30
 mapoffset = (0,0) #offset of the playing field(including walls) in tiles
 squwid = int(scrwid/squsize + mapoffset[0]) #playable field is 33 squ wide (including border)
 squhei = int(scrhei/squsize + mapoffset[1]) #playable field is 24 squ high
 border = 30
 squborder = border/squsize
+waveseconds = 20
 
 wallrectlist = list()
 def gen_border_walls():
@@ -36,6 +32,10 @@ def gen_border_walls():
         walls.append((x,y))
         y = squhei
         walls.append((x,y))
+        y = mapoffset[1]+1
+        walls.append((x, y))
+        y = squhei-1
+        walls.append((x, y))
         x += 1
     y = mapoffset[1]
     while y <= squhei:
@@ -43,6 +43,10 @@ def gen_border_walls():
         walls.append((x,y))
         x = squwid-1
         walls.append((x,y))
+        x = mapoffset[0]+1
+        walls.append((x, y))
+        x = squwid
+        walls.append((x, y))
         y += 1
     for wall in walls:
         rect = Utilities.createRect(wall[0],wall[1], squsize, squsize)
@@ -61,23 +65,54 @@ class playField(ScatterLayout):
         self.do_translation = False
         self.size = scrwid,scrhei
         self.pos = mapoffset[0]*30,mapoffset[1]*30
+        print(self.pos)
         self.do_collide_after_children = True
+        self.inbounds = FloatLayout(pos = (2*squsize, 2*squsize), size_hint=(None,None), size = (scrwid - 4 * squsize, scrhei- 4 * squsize))
+        self.add_widget(self.inbounds)
+
 
     def on_touch_down(self, touch):
         squarepos = Utilities.getPos(touch.pos)
-        if not Player.player.tbbox:
-            GUI_Kivy.builderMenu(squarepos)
-            return True
+        if squarepos[0] > scrwid-4*squsize:
+            squarepos[0] -= 30
+        if squarepos[1] > scrhei-4*squsize:
+            squarepos[1] -= 30
 
-        elif Player.player.tbbox and Player.player.tbbox.collide_point(*touch.pos):
+        if Player.player.state == 'Paused' or Player.player.state == 'Menu':
+            return
+
+        #print ("in Map on touchdown")
+        elif self.inbounds.collide_point(*touch.pos):
+            if Player.player.tbbox and Player.player.tbbox.collide_point(*touch.pos):
+                return super(playField, self).on_touch_down(touch)
+
+            for tower in mapvar.towercontainer.walk(restrict=True):
+               if tower.collide_point(*touch.pos):
+                   if Player.player.tbbox != None:
+                       self.removePopUp()
+                   Player.player.towerSelected = tower
+                   GUI_Kivy.gui.towerMenu(tower.pos)
+                   return True
+
+            if not Player.player.tbbox:
+                GUI_Kivy.gui.builderMenu(squarepos)
+                return True
+
+            elif Player.player.tbbox and not Player.player.tbbox.collide_point(*touch.pos):
+                self.removePopUp()
+
+            #returning this super argument allows the touch to propogate to children.
             return super(playField, self).on_touch_down(touch)
 
-        elif Player.player.tbbox and not Player.player.tbbox.collide_point(*touch.pos):
-            mapvar.backgroundimg.remove_widget(Player.player.tbbox)
-            Player.player.tbbox = None
+        else:
+            print ("outside area")
+            self.removePopUp()
 
-        #returning this super argument allows the touch to propogate to children.
-        return super(playField, self).on_touch_down(touch)
+
+    def removePopUp(self):
+        mapvar.backgroundimg.remove_widget(Player.player.tbbox)
+        Player.player.tbbox = None
+        Player.player.layout = None
 
 
     def on_pressed(self, instance, pos):
@@ -92,7 +127,6 @@ class Map():
         self.mapdict = dict()
         self.pointmovelists = list()
         self.pathrectlists = list()
-        self.wavesSinceLoss = 0
         self.total_waves = 0
         self.movelists = list()
         self.movelistnum = -1
@@ -162,10 +196,16 @@ class Map():
         self.mapdict = dict(mapPropertiesGen(self))
 
     def backgroundInit(self):
-        self.backgroundimg = Utilities.imgLoad(source=os.path.join('backgroundimgs','backgroundgrid1024x768.jpeg'))
+        self.backgroundimg = Image()
         self.background = playField()
         self.backgroundimg.size = self.background.size
         self.backgroundimg.pos = self.background.pos
+        with self.backgroundimg.canvas:
+            Color(.05,.05,.05,.05)
+            Rectangle(size=self.backgroundimg.size, pos=self.backgroundimg.pos)
+            Color(0,0,0,.6)
+            Line(points=[squsize*2,squsize*2, squsize*2,scrhei-squsize*2, scrwid-squsize*2,scrhei-squsize*2,scrwid-squsize*2,squsize*2, squsize*2,squsize*2], width=1)
+
         self.background.add_widget(self.backgroundimg)
 
         self.towercontainer = Utilities.container()
@@ -191,7 +231,7 @@ class Map():
         #2 movelists are passed in currently. Only print tiles for the first, the ground move list. The flying move list should be the last list.
         for pathnum in range(1 if len(self.movelists)==1 else len(self.movelists)-1):
             for square in self.pathrectlists[pathnum]:
-                image = Utilities.imgLoad(source=os.path.join('backgroundimgs','roadsquare.png'), pos=(square[0],square[1]))
+                image = Utilities.imgLoad(source=os.path.join('backgroundimgs','roadarrow.png'), pos=(square[0],square[1]))
                 image.size = (30,30)
                 #print ("roadpos:", image.pos)
                 self.roadcontainer.add_widget(image)
@@ -218,8 +258,6 @@ class Map():
             return self.backgroundInit()
         else:
             print ("You Won!!!")
-            pygame.quit()
-            sys.exit(1)
 
     def getPathProperties(self):
         #self.openPath = localclasses.path.is_open_path()

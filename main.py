@@ -16,42 +16,28 @@
 #
 #/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/
 
-
-import sys, os
 import pygame
-from pygame.locals import *
-import localdefs
-import localclasses
-from SenderClass import Sender
 import MainFunctions
 import EventFunctions
 import time
-import Animation
 import Map
 import Player
 import Towers
 import GUI_Kivy
 import Keyboard_Kivy
-import Utilities
+
 
 from kivy.app import App
 from kivy.uix.widget import Widget
-from kivy.uix.label import Label
-from kivy.uix.button import Button
+
 from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.anchorlayout import AnchorLayout
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.scatterlayout import ScatterLayout
-from kivy.uix.image import Image
-from kivy.properties import NumericProperty,ReferenceListProperty,ObjectProperty
-from kivy.vector import Vector
 from kivy.clock import Clock
 from kivy.core.window import Window, WindowBase
-from kivy.graphics import *
-from functools import partial
-from random import randint
 from kivy.config import Config
 Config.set('modules', 'touchring', '')
+
+import cProfile
+import pstats
 
 class Background(Widget):
     def __init__(self,**kwargs):
@@ -67,51 +53,95 @@ class Game(Widget):
         super(Game, self).__init__(**kwargs)
         self._keyboard = Window.request_keyboard(Keyboard_Kivy._keyboard_closed, self)
         self._keyboard.bind(on_key_up=Keyboard_Kivy._on_keyboard_up)
+        self.mainMenu = None
+        self.pauseMenu = None
+        self.wavetime = Map.waveseconds
+
+    def menuFuncs(self, obj):
+        if obj.text == 'Play':
+            Player.player.state = 'Playing'
+            self.remove_widget(self.mainMenu)
+        if obj.text == 'Restart':
+            MainFunctions.resetGame()
+            Player.player.state = 'Playing'
+            self.remove_widget(self.mainMenu)
+        if obj.id == 'unpause':
+            Player.player.state = 'Playing'
+            self.remove_widget(self.pauseMenu)
+
+
+
+    def dispMainMenu(self):
+        if self.mainMenu == None:
+            self.mainMenu = GUI_Kivy.mainMenu()
+            for button in self.mainMenu.walk(restrict=True):
+                button.bind(on_release=self.menuFuncs)
+            self.add_widget(self.mainMenu)
+        elif self.mainMenu.parent == None:
+            self.add_widget(self.mainMenu)
+
+    def dispPauseMenu(self):
+        if self.pauseMenu == None:
+            self.pauseMenu = GUI_Kivy.pauseMenu()
+            for button in self.pauseMenu.walk(restrict=True):
+                button.bind(on_release=self.menuFuncs)
+            self.add_widget(self.pauseMenu)
+        elif self.pauseMenu.parent == None:
+            self.add_widget(self.pauseMenu)
+
+
+
 
     def update(self, dt):
-        if Player.player.gameover == True:
-            #need some sort of gameover screen. Wait on user to start new game.
-            MainFunctions.resetGame()
-            Player.player.gameover = False
-
-        ##update path when appropriate
-        if Map.mapvar.updatePath == True:
-            MainFunctions.updatePath(Map.mapvar.openPath)
-
-        if Player.player.next_wave == True:
-            Player.player.bonus_score += localclasses.wavetimer.timer * Player.player.wavenum
-            EventFunctions.nextWave(Sender, 0)
-            Player.player.next_wave = False
-
-
         starttime = time.time()
-        Player.player.frametime = 1 / 60.0  # broke the pause and speed change functions with this change
-        Player.player.pausetime = 0
-        MainFunctions.workSenders()
-        ##Check each tower and shoot at an enemy if one is in range
-        MainFunctions.workTowers()
-        ##Display explosions from any enemies killed in during previous frame
-        MainFunctions.dispExplosions()
-        ##Check if enemy is slowed and move the enemy
-        MainFunctions.workEnemies()
-        ##check for keyboard/Mouse input and take action based on those inputs
-        MainFunctions.workShots()
+        if Player.player.state == 'Menu':
+            self.dispMainMenu()
+            MainFunctions.updateGUI(self.wavetime)
+        if Player.player.state == 'Paused':
+            self.dispPauseMenu()
+            MainFunctions.updateGUI(self.wavetime)
+        if Player.player.state == 'Playing':
+            Player.player.frametime = 5 / 60.0
+            if Player.player.gameover:
+                #need some sort of gameover screen. Wait on user to start new game.
+                MainFunctions.resetGame()
+                Player.player.gameover = False
 
-        selected = None
-        if Player.player.paused == True:
-            localdefs.pauseGame()
-        ##update the wave timer
-        #if localclasses.wavetimer.updateTimer():
-        #    EventFunctions.nextWave(Sender, starttime)
-        ##if an icon is selected then display the tower + circle around it where the mouse is located
-        if Player.player.towerSelected is not None:
-            selected = Player.player.towerSelected
-        ##if a tower is selected then display the circle around it
-        if selected and Towers.Tower in selected.__class__.__bases__:
-            MainFunctions.selectedTower(selected)
+            ##update path when appropriate
+            if Map.mapvar.updatePath:
+                MainFunctions.updatePath(Map.mapvar.openPath)
 
+            if Player.player.next_wave:
+                Player.player.bonus_score += self.wavetime * Player.player.wavenum
+                EventFunctions.nextWave()
+                Player.player.next_wave = False
 
+            MainFunctions.workSenders()
+            ##Check each tower and shoot at an enemy if one is in range
+            MainFunctions.workTowers()
+            ##Display explosions from any enemies killed in during previous frame
+            MainFunctions.dispExplosions()
+            ##Check if enemy is slowed and move the enemy
+            MainFunctions.workEnemies()
+            ##check for keyboard/Mouse input and take action based on those inputs
+            MainFunctions.workShots()
 
+            #MainFunctions.updateGUI(self.wavetime)
+            selected = None
+
+            ##if an icon is selected then display the tower + circle around it where the mouse is located
+            if Player.player.towerSelected is not None:
+                selected = Player.player.towerSelected
+            ##if a tower is selected then display the circle around it
+            if selected and Towers.Tower in selected.__class__.__bases__:
+                MainFunctions.selectedTower(selected)
+
+            if Player.player.wavenum > 0:
+                self.wavetime -= Player.player.frametime
+
+            if self.wavetime < .05:
+                self.wavetime = Map.waveseconds
+                Player.player.next_wave=True
 
 
 #the game's main loop
@@ -129,19 +159,30 @@ class Main(App):
 
         ##create a list of available towers to add to the bottom tower buttons
         MainFunctions.makeIcons()
+        MainFunctions.makeUpgradeIcons()
 
         #create toolbars
-        #background.add_widget(GUI_Kivy.createBottomBar())
-        background.add_widget(GUI_Kivy.createTopBar())
+        game.topBar = GUI_Kivy.gui.createTopBar()
+        background.add_widget(game.topBar)
+        background.add_widget(GUI_Kivy.gui.createTopSideBar())
+        background.add_widget(GUI_Kivy.gui.createBottomSideBar())
 
         ##update path at start
         if Map.mapvar.updatePath == True:
             MainFunctions.updatePath(Map.mapvar.openPath)
 
         #this runs the game.update loop, which is used for handling the entire game
-        Clock.schedule_interval(game.update,1/60)
+        Clock.schedule_interval(game.update,5/60)
+
         return game
 
 if __name__ == '__main__':
     Window.size = (Map.winwid,Map.winhei)
     Main().run()
+    # cProfile.run('Main().run()', 'cprofile_results')
+    #
+    # p = pstats.Stats('cprofile_results')
+    # # sort by cumulative time in a function
+    # p.sort_stats('cumulative').print_stats(10)
+    # # sort by time spent in a function
+    # p.sort_stats('time').print_stats(10)

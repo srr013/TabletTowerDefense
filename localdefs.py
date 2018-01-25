@@ -1,18 +1,3 @@
-import os.path
-import math
-import os
-import sys
-import pygame
-import threading
-import time
-from pygame.locals import *
-import pathfinding
-import Map
-import Player
-
-
-from kivy.uix.image import Image
-
 
 enemylist = list()
 towerlist = list()
@@ -24,9 +9,10 @@ senderlist = list()
 timerlist = list()
 shotlist = list()
 alertQueue = list()
+towerabilitylist = list()
 
-def pauseGame():
-    '''Pauses the gameloop and counts the time paused.'''
+'''def pauseGame():
+    Pauses the gameloop and counts the time paused.
     timepaused = time.time()
     totaltimepaused = 0
 
@@ -43,7 +29,7 @@ def pauseGame():
                 if keyinput[K_SPACE]:
                     totaltimepaused = time.time() - timepaused
                     Player.player.paused = False
-    Player.player.pausetime =  totaltimepaused
+    Player.player.pausetime =  totaltimepaused'''
 
 
 
