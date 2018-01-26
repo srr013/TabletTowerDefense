@@ -7,18 +7,21 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.image import Image
 from kivy.core.window import Window, WindowBase
-from kivy.properties import ListProperty
+from kivy.properties import ListProperty, StringProperty
 from kivy.graphics import *
 
 import localdefs
+import localclasses
 import Player
 import EventFunctions
 import MainFunctions
 import Map
 import Utilities
+import TowerAbilities
 
 import math
 import os
+import operator
 
 
 
@@ -38,14 +41,13 @@ class MyButton(ButtonBehavior, Image):
 
 
     def on_pressed(self, button, pos):
-        print ("in on_pressed from GUI")
         if button.id == 'unpause':
             MainFunctions.pauseGame(button)
             return
+        #tower abilities like upgrade and sell
         elif button.instance  in localdefs.towerabilitylist:
             func = "TowerAbilities."+button.instance.type +"."+ button.instance.func + "()"
-            print (func)
-            print("eval func: ",eval(func))
+            eval(func)
             return
         else:
             EventFunctions.placeTower(button)
@@ -56,6 +58,7 @@ class MyLabel(Label):
     def __init__(self,**kwargs):
         super(MyLabel,self).__init__(**kwargs)
         self.font_size = Window.width*0.018
+        self.color = [0,0,0,1]
 
 class SmartMenu(Widget):
     buttonList = []
@@ -117,7 +120,7 @@ class mainMenu(SmartMenu):
     def __init__(self, **kwargs):
         super(mainMenu, self).__init__(**kwargs)
 
-        self.layout = BoxLayout(orientation='vertical', size=(300,500))
+        self.layout = BoxLayout(orientation='vertical', size=(300,300))
         self.layout.center = ((Map.scrwid-self.width)/2,(Map.scrhei-self.height)/2)
         self.layout.padding = [20]
         self.layout.spacing = 20
@@ -149,16 +152,36 @@ class mainMenu(SmartMenu):
         self.layout.add_widget(self.startButton)
         self.layout.add_widget(self.restartButton)
 
+class topBarWidget():
+    def __init__(self, label, var,source,icon):
+        self.Box = GridLayout(cols=3, col_force_default=True, row_force_default=True, row_default_height=50,
+                         col_default_width=45)
+        self.Label = MyLabel(text=label)
+
+        self.Variable = MyLabel(text=str(source), halign='right')
+        gui.myDispatcher.fbind(var, self.set_value, var)
+
+        self.Icon = Utilities.imgLoad(icon)
+        self.Icon.size_hint_x = None
+        self.Icon.size = (30, 30)
+        self.Label.size_hint_x = None
+        self.Label.size = (30, 50)
+        self.Variable.size_hint_x = None
+        self.Variable.size = (50, 50)
+        self.Box.add_widget(self.Icon)
+        self.Box.add_widget(self.Label)
+        self.Box.add_widget(self.Variable)
+        gui.topBar_Boxlist.append(self.Box)
+        gui.topBar.layout.add_widget(self.Box)
+
+    def set_value(self, *args):
+        self.Variable.text = args[2]
 
 class GUI():
     def __init__(self):
 
         self.topBar_Boxlist = []
-        self.topBar_ElementList = [("Wave: ", str(Player.player.wavenum), "iconimgs/default.png"),
-                       ("Score: ", str(Player.player.kill_score)+" + "+str(Player.player.bonus_score), "iconimgs/100.png"),
-                       ("Money: ", str(Player.player.money), "iconimgs/coin20x24.png"),
-                       ("Health: ", str(Player.player.health), "iconimgs/heart24x24.png"), ("Timer: ", '999', "iconimgs/clock.png")]
-
+        self.myDispatcher = localclasses.EventDisp()
 
     def createTopBar(self):
         self.topBar=Bar(pos=(0,Window.height-45), size = (Window.width,45))
@@ -174,51 +197,15 @@ class GUI():
         self.pauseButton.bind(on_release=MainFunctions.pauseGame)
         self.nextwaveButton = Button(text = 'Next Wave', id = 'next', size_hint=(None,None), width=80, height=30)
         self.nextwaveButton.bind(on_release=EventFunctions.nextWave)
-        self.nextwaveButton.background_color = [1,1,1,1]
-        self.nextwaveButton.background_normal=''
-        self.nextwaveButton.color=[0,0,0,1]
         self.nextwaveButton.valign = 'top'
         self.topBar.layout.add_widget(self.menuButton)
         self.topBar.layout.add_widget(self.pauseButton)
         self.topBar.layout.add_widget(self.nextwaveButton)
         self.topBar.layout.padding=[5]
-        self.topBar.addElements(self.topBar_ElementList)
+        for label,var,source,icon in localdefs.topBar_ElementList:
+            topBarWidget(label,var,source, icon)
+
         return self.topBar
-
-    def updateTopBar(self, wavetime):
-        self.topBar_Boxlist[0].children[0].text = str(Player.player.wavenum)
-        self.topBar_Boxlist[1].children[0].text = str(int(Player.player.kill_score))+" + "+str(int(Player.player.bonus_score))
-        self.topBar_Boxlist[2].children[0].text = str(Player.player.money)
-        self.topBar_Boxlist[3].children[0].text = str(Player.player.health)
-        self.topBar_Boxlist[4].children[0].text = str(int(wavetime))
-
-        if Player.player.towerSelected != None:
-            self.topSideBar_header.text=Player.player.towerSelected.type + "Tower"
-            self.topSideBar_image.source = os.path.join(Player.player.towerSelected.imagestr)
-            self.topSideBar_image.color = [1,1,1,1]
-            print (self.topSideBar_image.pos)
-            self.topSideBar_towerinfo.text="Range:  "+str(Player.player.towerSelected.range)+\
-                                           " Damage:  "+str(Player.player.towerSelected.damage)+\
-                                           " DPS: "+str(int(Player.player.towerSelected.damage/Player.player.towerSelected.reload))+\
-                                           " Reload:  "+str(Player.player.towerSelected.reload)
-        else:
-            self.topSideBar_header.text=''
-            self.topSideBar_towerinfo.text=''
-
-
-        ##Potential button/UI changes
-        with self.nextwaveButton.canvas:
-            Color(.4, .4, .4,.7)
-            #Line(rectangle=(self.nextwaveButton.pos[0]+3, self.nextwaveButton.pos[1]+3, self.nextwaveButton.width-6,
-             #                       self.nextwaveButton.height-6), width=1.4)
-            Line(points=[self.nextwaveButton.x+2, self.nextwaveButton.y+2,self.nextwaveButton.x+self.nextwaveButton.width-2,
-                         self.nextwaveButton.y+2,self.nextwaveButton.x+self.nextwaveButton.width-2, self.nextwaveButton.y+self.nextwaveButton.height-2], width=2.2, cap = 'square')
-            # Line(rectangle=(self.nextwaveButton.pos[0]+3, self.nextwaveButton.pos[1]+3, self.nextwaveButton.width-6,
-            #                       self.nextwaveButton.height-6), width=1.4)
-            Line(points=[self.nextwaveButton.x+1, self.nextwaveButton.y+2,self.nextwaveButton.x+1,
-                         self.nextwaveButton.y+self.nextwaveButton.height-1,self.nextwaveButton.x+self.nextwaveButton.width-1, self.nextwaveButton.y+self.nextwaveButton.height-1],
-                 width=.6, cap='square')
-            #Line(points=[self.nextwaveButton.x+self.nextwaveButton.width, self.nextwaveButton.y, self.nextwaveButton.x+self.nextwaveButton.width-2, self.nextwaveButton.y+2], width=.4)
 
     def createTopSideBar(self):
         self.topSideBar=Bar(size=(270, (Window.height - 65)/2))
@@ -248,10 +235,53 @@ class GUI():
             Color(1,1,1,.6)
             Line(rounded_rectangle = (self.bottomSideBar.x, self.bottomSideBar.y, self.bottomSideBar.width, self.bottomSideBar.height, 20, 20, 20, 20, 100), width = 2)
 
-        self.bottomSideBar_Element = MyLabel(text="hi")
-        self.bottomSideBar.layout.add_widget((self.bottomSideBar_Element))
+        self.bottomSideBar_header = MyLabel(text='')
+        self.bottomSideBar_image = Image(size=(60, 60), pos=self.topSideBar.layout.center, color=(0, 0, 0, 0))
+        self.bottomSideBar_nextEnemies = MyLabel(text='Next Enemies:', text_size = [150, 60])
+        self.bottomSideBar_enemyinfo = GridLayout(cols=2, col_force_default=True, row_force_default=True,
+                                                  row_default_height=30, col_default_width=90)
+        self.bottomSideBar_enemyinfo_numEnemies = MyLabel(text='')
+        self.bottomSideBar_enemyinfo_enemyHealth = MyLabel(text='')
+        self.bottomSideBar_enemyinfo_enemySpeed = MyLabel(text='')
+        self.bottomSideBar_enemyinfo_enemyArmor = MyLabel(text='')
+        self.bottomSideBar_enemyinfo_enemyMods = MyLabel(text='')
+        self.bottomSideBar_enemyinfo_enemyReward = MyLabel(text='')
+        self.bottomSideBar_enemyinfo_isBoss = MyLabel(text='')
+
+        self.myDispatcher.bind(WaveNum=self.setBottomBar)
+        self.bottomSideBar_enemyinfo.add_widget(self.bottomSideBar_enemyinfo_numEnemies)
+        self.bottomSideBar_enemyinfo.add_widget(self.bottomSideBar_enemyinfo_enemyHealth)
+        self.bottomSideBar_enemyinfo.add_widget(self.bottomSideBar_enemyinfo_enemySpeed)
+        self.bottomSideBar_enemyinfo.add_widget(self.bottomSideBar_enemyinfo_enemyArmor)
+        self.bottomSideBar_enemyinfo.add_widget(self.bottomSideBar_enemyinfo_enemyMods)
+        self.bottomSideBar_enemyinfo.add_widget(self.bottomSideBar_enemyinfo_enemyReward)
+        self.bottomSideBar_enemyinfo.add_widget(self.bottomSideBar_enemyinfo_isBoss)
+        self.bottomSideBar.layout.add_widget(self.bottomSideBar_header)
+        self.bottomSideBar.layout.add_widget(self.bottomSideBar_image)
+        self.bottomSideBar.layout.add_widget(self.bottomSideBar_enemyinfo)
+        self.bottomSideBar.layout.add_widget(self.bottomSideBar_nextEnemies)
 
         return self.bottomSideBar
+
+    def setBottomBar(self, *args):
+        #see wavegen for dict creation
+        wavedict = Player.player.waveList
+        i = int(Player.player.wavenum)
+        enemyType = wavedict[i]['enemytype']
+        self.bottomSideBar_header.text = str(enemyType)
+        imgSrc= eval(("Enemy."+enemyType +".imagesrc"))
+        print (imgSrc)
+        self.bottomSideBar_image.source = imgSrc
+        self.bottomSideBar_image.color = (1,1,1,1)
+        self.bottomSideBar_enemyinfo_numEnemies.text = "Number: " + str(wavedict[i]['enemynum'])
+        self.bottomSideBar_enemyinfo_enemyHealth.text = "HP: "+ str(int(wavedict[i]['enemyhealth']))
+        self.bottomSideBar_enemyinfo_enemySpeed.text = "Speed: "+ str(int(wavedict[i]['enemyspeed']))
+        self.bottomSideBar_enemyinfo_enemyArmor.text = "Armor: " + str(int(wavedict[i]['enemyarmor']))
+        self.bottomSideBar_enemyinfo_enemyMods.text = "Mods: " + str(wavedict[i]['enemymods'])
+        self.bottomSideBar_enemyinfo_enemyReward.text = "Reward: " + str(int(wavedict[i]['enemyreward']))
+        self.bottomSideBar_enemyinfo_isBoss.text = "Boss: "+ str(wavedict[i]['isboss'])
+
+        self.bottomSideBar_nextEnemies.text = "Next Enemies: " + wavedict[i+1]['enemytype']+", "+ wavedict[i+2]['enemytype']+", "+ wavedict[i+3]['enemytype']
 
     def createTBBox(self, squarepos):
 
@@ -272,7 +302,6 @@ class GUI():
         radius = 70
         inddeg = (2.0 * math.pi) / tbbuttonnum
         for ind,instance in enumerate(localdefs.towerabilitylist):
-            print(ind,instance)
             tmpbtn = MyButton()
             tmpbtn.instance = instance
             tmpbtn.text = instance.type
@@ -326,9 +355,12 @@ class Bar(SmartMenu):
     def addElements(self, elementList):
         #likely need to create individual widgets to update later.
         for element,var,icon in elementList:
+
             box = GridLayout(cols=3, col_force_default = True, row_force_default=True, row_default_height=50, col_default_width=55)
             label = MyLabel(text=element)
+            element = StringProperty()
             variable = MyLabel(text=str(var))
+            variable.id = element
             icon = Utilities.imgLoad(icon)
             icon.size_hint_x = None
             icon.size = (30,30)

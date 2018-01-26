@@ -66,6 +66,7 @@ def updatePath(openPath):
             updateFlyingList()
         Map.mapvar.genmovelists()
         Map.mapvar.updatePath = False
+        Player.player.newMoveList = True
 
         Map.mapvar.roadGen()
 
@@ -111,7 +112,11 @@ def workEnemies():
     Frametime: the amount of time elapsed per frame'''
     for enemy in Map.mapvar.enemycontainer.children:
         enemy.distBase = enemy.distToBase()
+        if Player.player.newMoveList:
+            enemy.movelist = Map.mapvar.pointmovelists[enemy.movelistNum]
         enemy.takeTurn()
+
+    Player.player.newMoveList = False
 
 
             #(Player.player.screen, (0,0,0), (enemy.rect_x,enemy.rect_y-2), (enemy.rect_x+enemy.rect_w,enemy.rect_y-2), 3)
@@ -139,20 +144,6 @@ def towerButtonPressed(selected):
     selected.img.pos = mouseat
     Map.mapvar.background.add_widget(selected.img)
 
-    if selected.base == "Tower":
-        rn = int(eval("Towers."+selected.type+"Tower").baserange*(1+Player.player.modDict['towerRangeMod'])*(1+Player.player.modDict[selected.type.lower()+'RangeMod']))
-        area = pygame.Surface((2*rn,2*rn),SRCALPHA)
-        pygame.draw.circle(area, (255, 255, 255, 75), (rn, rn), rn, 0)
-        Player.player.screen.blit(area,mouseat.move((-1*rn,-1*rn)).center)
-        return selected
-
-def selectedTower(selected):
-    '''Displays the buttons for a tower if one is selected
-    Selected: variable set in gameloop by MainFunctions.WorkEvents indicating the tower or icon selected by a mouse click'''
-    Player.player.towerSelected = selected
-    #gui.showTowerButtons(selected)
-
-
 def pauseGame(*args):
     id = args[0].id
     print (id)
@@ -175,7 +166,6 @@ def resetGame():
             list.pop()
 
     Player.player.wavenum = 0
-    Map.mapvar.getPathProperties()
     Player.player.wavestart = 999
     Player.player.money = Player.playermoney
     Player.player.health = Player.playerhealth

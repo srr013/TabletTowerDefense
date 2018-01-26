@@ -1,3 +1,5 @@
+import Player
+import Map
 
 enemylist = list()
 towerlist = list()
@@ -10,6 +12,12 @@ timerlist = list()
 shotlist = list()
 alertQueue = list()
 towerabilitylist = list()
+towerGroupDict = {'Archer':[], 'Fighter':[]}
+topBar_ElementList = [("Wave: ", "Wave", Player.player.wavenum,"iconimgs/default.png"),
+                                    ("Score: ", "Score", Player.player.score, "iconimgs/100.png"),
+                                    ("Money: ", "Money", Player.player.money,"iconimgs/coin20x24.png"),
+                                    ("Health: ", "Health", Player.player.health,"iconimgs/heart24x24.png"),
+                                    ("Timer: ", "Timer", Map.waveseconds, "iconimgs/clock.png")]
 
 '''def pauseGame():
     Pauses the gameloop and counts the time paused.

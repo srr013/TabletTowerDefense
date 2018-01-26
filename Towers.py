@@ -7,6 +7,8 @@ import Utilities
 import Player
 import Map
 import Shot
+import TowerGroup
+import GUI_Kivy
 
 from kivy.uix.widget import Widget
 from kivy.graphics import *
@@ -17,29 +19,64 @@ class Tower(Widget):
     def __init__(self,pos,**kwargs):
         super(Tower, self).__init__(**kwargs)
         self.pos=pos #tower's position
-        self.range= 5*Map.squsize #range a tower can shoot
-        self.damage = 10 #damage per shot
-        self.reload = 2 #seconds before a tower can shoot again
-        self.targetTimer= int(self.reload)
-        self.cost = 10 #cost of the tower
+        self.targetTimer= int(self.initreload)
         Player.player.money-=self.cost
+        GUI_Kivy.gui.myDispatcher.Money = str(Player.player.money)
         self.size = (Map.squsize*2-1, Map.squsize*2-1)
         self.rect = Utilities.createRect(self.pos, self.size, instance=self)
         self.squareheight = 2
         self.squarewidth = 2
         self.towerwalls = self.genWalls()
+        self.neighbors = self.getNeighbors() #neighbors is a directional dict 'left':towerobj
+        self.towerGroup = None
+        self.getGroup()
         localdefs.towerlist.append(self)
         self.totalspent = self.cost
         self.abilities = list()
         self.buttonlist = list()
         self.upgrades = list()
-        self.type = "tower"
+        #self.type = "tower"
         self.attackair = True
         self.attackground = True
         self.attacktype = 'single'
-        #self.buttons = gui.createTowerButtons(self)
+        self.updateModifiers()
 
+        #Update tower group dict so it's accurate based on new tower
+        for towergroup in localdefs.towerGroupDict[self.type]:
+            towergroup.updateTowerGroup()
 
+    def getNeighbors(self):
+        neighbors = {}
+        for tower in localdefs.towerlist:
+            if tower.rect_x == self.rect_x - 2 * Map.squsize and tower.rect_y == self.rect_y and tower.type == self.type:
+                neighbors['left'] = tower
+            if tower.rect_x == self.rect_x + 2 * Map.squsize and tower.rect_y == self.rect_y and tower.type == self.type:
+                neighbors['right'] = tower
+            if tower.rect_y == self.rect_y + 2 * Map.squsize and tower.rect_x == self.rect_x and tower.type == self.type:
+                neighbors['top'] = tower
+            if tower.rect_y == self.rect_y - 2 * Map.squsize and tower.rect_x == self.rect_x and tower.type == self.type:
+                neighbors['bottom'] = tower
+        return neighbors
+
+    def getGroup(self):
+        towerGroupList = []
+        if not self.neighbors:
+            self.towerGroup =  TowerGroup.TowerGroup(self.type)
+        else:
+            for key,value in self.neighbors.items():
+                towerGroupList.append([value,value.towerGroup])
+            x = 0
+            self.towerGroup = towerGroupList[0][1]
+            while x < len(towerGroupList)-1:
+                if towerGroupList[x][1] != towerGroupList[x+1][1]:
+                    for tower in towerGroupList[x+1][0].towerGroup.towerSet:
+                        tower.towerGroup = towerGroupList[x][0].towerGroup
+                x +=1
+
+    def updateModifiers(self):
+        self.damage = self.initdamage * self.towerGroup.dmgModifier
+        self.reload = self.initreload * self.towerGroup.reloadModifier
+        self.range = self.initrange * self.towerGroup.rangeModifier
 
     def genWalls(self):
         '''Generating the rects for the tower used in collision and path generation'''
@@ -130,20 +167,21 @@ class Tower(Widget):
 class FighterTower(Tower):
     type = "Fighter"
     cost = 5
-    damage = 5
-    range = 3*30
-    reload = 2
+    initdamage = 30
+    initrange = 3*30
+    initreload = 2
+    imagestr = os.path.join('towerimgs', 'Fighter', '1.png')
     def __init__(self,pos,**kwargs):
         Tower.__init__(self, pos, **kwargs)
         self.pos = pos
         self.cost = FighterTower.cost
-        self.range = FighterTower.range
-        self.damage = FighterTower.damage
-        self.reload = FighterTower.reload
+        self.initrange = FighterTower.initrange
+        self.initdamage = FighterTower.initdamage
+        self.initreload = FighterTower.initreload
         self.type = FighterTower.type
         self.attacktype = 'single'
-        self.image = Utilities.imgLoad(os.path.join('towerimgs','Fighter','1.png'))
-        self.imagestr = os.path.join('towerimgs','Fighter','1.png')
+        self.imagestr = FighterTower.imagestr
+        self.image = Utilities.imgLoad(self.imagestr)
         self.image.size = self.size
         self.image.pos = self.pos
         self.add_widget(self.image)
@@ -153,20 +191,21 @@ class FighterTower(Tower):
 class ArcherTower(Tower):
     type = "Archer"
     cost = 10
-    range = 10*30
-    damage = 6
-    reload = 1.0
+    initrange = 10*30
+    initdamage = 30
+    initreload = 1.0
+    imagestr = os.path.join('towerimgs', 'Archer', '1.png')
     def __init__(self,pos, **kwargs):
         Tower.__init__(self, pos, **kwargs)
         self.pos = pos
         self.cost = ArcherTower.cost
-        self.range = ArcherTower.range
-        self.damage = ArcherTower.damage
-        self.reload = ArcherTower.reload
+        self.initrange = ArcherTower.initrange
+        self.initdamage = ArcherTower.initdamage
+        self.initreload = ArcherTower.initreload
         self.type = ArcherTower.type
         self.attacktype = 'single'
-        self.image = Utilities.imgLoad(os.path.join('towerimgs', 'Archer', '1.png'))
-        self.imagestr = os.path.join('towerimgs', 'Archer', '1.png')
+        self.imagestr = ArcherTower.imagestr
+        self.image = Utilities.imgLoad(self.imagestr)
         self.image.pos = self.pos
         self.image.size = self.size
         self.add_widget(self.image)
@@ -176,19 +215,20 @@ class ArcherTower(Tower):
 class MineTower(Tower):
     type = "Mine"
     cost = 15
-    range = 3*30
-    damage = 4
-    reload = 4
+    initrange = 3*30
+    initdamage = 4
+    initreload = 4
+    imagestr = os.path.join('towerimgs', 'Mine', '1.png')
     def __init__(self,pos,**kwargs):
         Tower.__init__(self, pos, **kwargs)
         self.pos = pos
         self.cost = MineTower.cost
-        self.range = MineTower.range
-        self.damage = MineTower.damage
-        self.reload = MineTower.reload
+        self.initrange = MineTower.initrange
+        self.initdamage = MineTower.initdamage
+        self.initreload = MineTower.initreload
         self.type = MineTower.type
-        self.image = Utilities.imgLoad(os.path.join('towerimgs', 'Mine', '1.png'))
-        self.imagestr = os.path.join('towerimgs', 'Mine', '1.png')
+        self.imagestr = MineTower.imagestr
+        self.image = Utilities.imgLoad(self.imagestr)
         self.image.pos = self.pos
         self.image.size = self.size
         self.add_widget(self.image)
@@ -199,19 +239,20 @@ class MineTower(Tower):
 class SlowTower(Tower):
     type = "Slow"
     cost = 10
-    range = 2
-    damage = 0
-    reload = 1.0
+    initrange = 2
+    initdamage = 0
+    initreload = 1.0
+    imagestr = os.path.join('towerimgs', 'Slow', '1.png')
     def __init__(self,pos, **kwargs):
         Tower.__init__(self, pos, **kwargs)
         self.pos = pos
         self.cost = SlowTower.cost
-        self.range = SlowTower.range
-        self.damage = SlowTower.damage
-        self.reload = SlowTower.reload
+        self.initrange = SlowTower.initrange
+        self.initdamage = SlowTower.initdamage
+        self.initreload = SlowTower.initreload
         self.type = SlowTower.type
-        self.image = Utilities.imgLoad(os.path.join('towerimgs', 'Slow', '1.png'))
-        self.imagestr = os.path.join('towerimgs', 'Slow', '1.png')
+        self.imagestr = SlowTower.imagestr
+        self.image = Utilities.imgLoad(self.imagestr)
         self.image.pos = self.pos
         self.image.size = self.size
         self.add_widget(self.image)
@@ -222,19 +263,20 @@ class SlowTower(Tower):
 class AntiAirTower(Tower):
     type = "AntiAir"
     cost = 35
-    range = 6
-    damage = 8
-    reload = 1.0
+    initrange = 6
+    initdamage = 8
+    initreload = 1.0
+    imagestr = os.path.join('towerimgs', 'AntiAir', '1.png')
     def __init__(self,pos, **kwargs):
         Tower.__init__(self, pos, **kwargs)
         self.pos = pos
         self.cost = AntiAirTower.cost
-        self.range = AntiAirTower.range
-        self.damage = AntiAirTower.damage
-        self.reload = AntiAirTower.reload
+        self.initrange = AntiAirTower.initrange
+        self.initdamage = AntiAirTower.initdamage
+        self.initreload = AntiAirTower.initreload
         self.type = "AntiAir"
-        self.imagestr = os.path.join('towerimgs', 'AntiAir', '1.png')
-        self.image = Utilities.imgLoad(os.path.join('towerimgs', 'AntiAir', '1.png'))
+        self.imagestr = AntiAirTower.imagestr
+        self.image = Utilities.imgLoad(self.imagestr)
         self.image.pos = self.pos
         self.image.size = self.size
         self.add_widget(self.image)
@@ -243,7 +285,7 @@ class AntiAirTower(Tower):
         self.shotimage = "bolt.png"
 
 available_tower_list =[ArcherTower, FighterTower,SlowTower, MineTower, AntiAirTower]
-baseTowerList = [(tower.type,tower.cost, tower.damage, tower.range, tower.reload) for tower in available_tower_list]
+baseTowerList = [(tower.type, tower.cost, tower.initdamage, tower.initrange, tower.initreload, tower.imagestr) for tower in available_tower_list]
 
 
 
@@ -252,17 +294,18 @@ class Icon():
         '''Instantiate an Icon with the tower information it represents'''
         self.type = tower[0]
         self.base = "Tower"
-        self.basecost = tower[1]
-        self.basedamage = tower[2]
-        self.baserange = tower[3]
-        self.basetime = tower[4]
+        self.cost = tower[1]
+        self.damage = tower[2]
+        self.range = tower[3]
+        self.reload = tower[4]
         localdefs.iconlist.append(self)
         try:
-            self.img = Utilities.imgLoad(os.path.join('towerimgs',self.type,'1.png'))
-            self.imgstr = str(os.path.join('towerimgs',self.type,'1.png'))
+            self.imgstr = tower[5]
+            self.img = Utilities.imgLoad(self.imgstr)
+
         except:
-            self.img = Utilities.imgLoad(os.path.join('towerimgs','Basic','1.png'))
             self.imgstr = str(os.path.join('towerimgs',self.type,'1.png'))
+            self.img = Utilities.imgLoad(self.imgstr)
         self.rect = Utilities.createRect(self.img.pos, self.img.size, self)
 
 

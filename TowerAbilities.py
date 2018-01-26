@@ -2,6 +2,8 @@ import Player
 import localdefs
 import Map
 import Utilities
+import GUI_Kivy
+
 import os
 
 
@@ -26,55 +28,16 @@ class Sell(TowerAbility):
     shortname = "Sell"
     @classmethod
     def cost(cls,tower):
-        return -1*(tower.totalspent)
-    @classmethod
-    def doesFit(cls,tower):
-        return True
+        Player.player.money += (tower.totalspent)
     @classmethod
     def apply(cls,**kwargs):
-        print ("selling")
         tower = Player.player.towerSelected
         Player.player.money+=(tower.totalspent)
+        GUI_Kivy.gui.myDispatcher.Money = str(Player.player.money)
         localdefs.towerlist.remove(tower)
         Map.mapvar.towercontainer.remove_widget(tower)
         Player.player.towerSelected = None
         Map.mapvar.updatePath = True
-        return True
-
-class AddFighter(TowerAbility):
-    name = "Add 1 Fighter"
-    shortname = "AddFighter"
-    @classmethod
-    def cost(cls,tower):
-        return 0
-    @classmethod
-    def doesFit(cls,tower):
-        if tower.type == "Fighter" and tower.num_fighters < 5:
-            return True
-        else:
-            return False
-    @classmethod
-    def apply(cls,tower):
-        Player.player.num_fighters -= 1
-        tower.num_fighters +=1
-        return True
-
-class RemoveFighter(TowerAbility):
-    name = "Remove 1 Fighter"
-    shortname = "RemoveFighter"
-    @classmethod
-    def cost(cls,tower):
-        return 0
-    @classmethod
-    def doesFit(cls,tower):
-        if tower.type == "Fighter" and tower.num_fighters > 0:
-            return True
-        else:
-            return False
-    @classmethod
-    def apply(cls,tower):
-        Player.player.num_fighters += 1
-        tower.num_fighters -=1
         return True
 
 class Upgrade(TowerAbility):
@@ -97,24 +60,3 @@ class Upgrade(TowerAbility):
             tower.upgrades.append(cls)
             return True
         return False
-
-class ExtendRange1(TowerAbility):
-    name = "150% Range"
-    shortname = "ExtendRange1"
-    @classmethod
-    def cost(cls,tower):
-        return 15
-    @classmethod
-    def doesFit(cls,tower):
-        return (cls not in tower.upgrades)
-    @classmethod
-    def apply(cls,tower):
-        if Player.player.money>=cls.cost(tower):
-            Player.player.money-=cls.cost(tower)
-            tower.rangeMod += 0.5*tower.baserange
-            tower.reload()
-            tower.upgrades.append(cls)
-            return True
-        else:
-            print ("Not enough money!")
-            return False

@@ -15,7 +15,7 @@ import wavegen
 from kivy.uix.image import Image
 
 playerhealth = 20
-playermoney = 50
+playermoney = 5000
 
 class Player():
     def __init__(self):
@@ -34,8 +34,8 @@ class Player():
         self.pausetime = 0
         self.state = "Menu"
         self.restart = False
-        self.kill_score = 0
-        self.bonus_score = 0
+        self.score = 0
+        self.newMoveList = False
         self.waveList = wavegen.wavegen() #[{'wavenum': 1, 'setnum': 1, 'enemytype': 'b', 'enemymods': []}, dict repeats]
 
 

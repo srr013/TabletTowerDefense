@@ -7,6 +7,7 @@ import Utilities
 import Player
 import Map
 import SenderClass
+import GUI_Kivy
 
 from kivy.graphics import *
 from kivy.uix.widget import Widget
@@ -17,29 +18,25 @@ class Enemy(Widget):
         #if self.imgindex == 2:
             #self.animation = Animation.Animate(folder = os.path.join("enemyimgs", "Bird A"))
             #self.image = self.animation.adjust_images("right")
-
-        self.curnode = 0
+        self.specialSend = kwargs['specialSend']
         self.size = (20, 20)
+        if not self.specialSend:
+            self.curnode = 0
+            self.rect = Utilities.createRect(self.movelist[self.curnode], self.size, instance=self)
+            self.pos = (self.rect_centerx, self.rect_centery)
         self.image.size = self.size
-        self.rect = Utilities.createRect(self.movelist[self.curnode], self.size, instance=self)
-        self.pos = (self.rect_centerx, self.rect_centery)
         self.add_widget(self.image)
         Map.mapvar.enemycontainer.add_widget(self)
-        self.cost = 1
-        self.health = 1
-        self.speed = 1
         self.starthealth = self.health
         self.startspeed = self.speed
-        self.route = 1
         self.slowtimers = list()
         self.slowpercent = .2
         self.slowtime = 0
         self.poisontimer = None
-        self.armor = 1
-        self.points = 1
         self.distBase = self.distToBase()
         self.explosionlength = 1
         self.isair = False
+        self.isAlive = True
 
         with self.canvas: #draw health bars
             Color(0,0,0,.6)
@@ -75,36 +72,43 @@ class Enemy(Widget):
         #if self.letter=='a':
         #    self.movelist = Map.mapvar.pointmovelists[0]
         if self.slowtime > 0:
-            moveamt = round(self.slowpercent*Player.player.frametime*self.speed*30,2)
+            moveamt_x = round(self.slowpercent*Player.player.frametime*self.speed,2)
+            moveamt_y = round(self.slowpercent*Player.player.frametime*self.speed,2)
         else:
-            moveamt = round(self.speed*Player.player.frametime*30,2)
+            moveamt_x = round(self.speed*Player.player.frametime,2)
+            moveamt_y = round(self.speed*Player.player.frametime,2)
 
         ##Check to see if the enemy hits the Base and remove enemy and decrement player health
         #for i in range(int(self.speed*30)):
         if self.curnode+1 >= len(self.movelist)-1:
             if Map.mapvar.baseimg.collide_widget(self.image):
                 Player.player.health -= 1
+                GUI_Kivy.gui.myDispatcher.Health = str(Player.player.health)
                 Map.mapvar.enemycontainer.remove_widget(self)
                 if Player.player.health<=0:
                     Player.player.die()
                 return
 
         #move enemy x and y based on the moveamt calculated above
-        if (round(self.pos[0],0), round(self.pos[1],0))==(self.movelist[self.curnode+1]):
+        distToNode = (abs(self.movelist[self.curnode][0] - self.pos[0]), abs(self.movelist[self.curnode][1]-self.pos[1]))
+        if distToNode[0] < moveamt_x and distToNode[1] < moveamt_y:
             self.curnode+=1
+            moveamt_x = distToNode[0]
+            moveamt_y = distToNode[1]
+
         #print ("pos,movelist", self.pos, self.movelist[self.curnode+1])
-        if self.movelist[self.curnode+1][0]>self.pos[0]:
+        if self.movelist[self.curnode][0]>self.pos[0]:
             #print ("moving right:", self.rect_centerx, self.movelist[self.curnode+1][0])
-            self.rect_centerx+=moveamt
+            self.rect_centerx+=moveamt_x
             #self.image = self.animation.adjust_images("right")
-        elif self.movelist[self.curnode+1][0]<self.pos[0]:
-            self.rect_centerx-=moveamt
+        elif self.movelist[self.curnode][0]<self.pos[0]:
+            self.rect_centerx-=moveamt_x
             #self.image = self.animation.adjust_images("left")
-        if self.movelist[self.curnode+1][1]>self.pos[1]:
-            self.rect_centery+=moveamt
+        if self.movelist[self.curnode][1]>self.pos[1]:
+            self.rect_centery+=moveamt_y
             #self.image = self.animation.adjust_images("down")
-        elif self.movelist[self.curnode+1][1]<self.pos[1]:
-            self.rect_centery-=moveamt
+        elif self.movelist[self.curnode][1]<self.pos[1]:
+            self.rect_centery-=moveamt_y
             #self.image = self.animation.adjust_images("up")
         self.pos = (self.rect_centerx,self.rect_centery)
         self.image.pos = self.pos
@@ -112,17 +116,22 @@ class Enemy(Widget):
     def checkHealth(self):
         '''Checks enemy health and kills the enemy if health <=0'''
         if self.health<=0:
-            Player.player.kill_score += self.points
             self.die()
 
     def die(self):
         '''If enemy runs out of health add them to explosions list, remove from enemy list, and add money to player's account'''
-        if self.type == 'Splinter':
+        if self.type == 'Splinter' and self.isAlive:
+            self.isAlive = False
             self.splinter()
-        localdefs.explosions.append([(self.rect_centerx, self.rect_centery),self.explosionlength, self])
+
+        #localdefs.explosions.append([(self.rect_centerx, self.rect_centery),self.explosionlength, self])
+        self.isAlive = False
         self.remove_widget(self.image)
         Map.mapvar.enemycontainer.remove_widget(self)
-        Player.player.money+=(self.cost)
+        Player.player.money += self.reward
+        Player.player.score += self.points
+        GUI_Kivy.gui.myDispatcher.Money = str(Player.player.money)
+        GUI_Kivy.gui.myDispatcher.Score = str(Player.player.score)
 
     def updateHealthBar(self):
         self.healthbar.points = [self.x, self.y + self.height + 2, self.x + self.width, self.y + self.height + 2]
@@ -150,10 +159,11 @@ class Standard(Enemy):
     defaultNum = 10
     deploySpeed = 1
     health = 100
-    speed = 20
+    speed = 30
     armor = 0
     reward = 5
     points = 10
+    imagesrc = os.path.join("enemyimgs","explosion.png")
 
     def __init__(self,**kwargs):
         self.type = 'Standard'
@@ -164,10 +174,11 @@ class Standard(Enemy):
         self.armor = Standard.armor
         self.reward = Standard.reward #cash granted per kill
         self.points = Standard.points #points granted per kill
-        self.image = Utilities.imgLoad(os.path.join("enemyimgs","explosion.png"))
-        self.movelist = Map.mapvar.pointmovelists[0] #0 for ground, 1 for air
-        self.isair = False
+        self.imagesrc = Standard.imagesrc
+        self.image = Utilities.imgLoad(self.imagesrc)
         self.isBoss = False
+        self.movelistNum = 0
+        self.movelist = Map.mapvar.pointmovelists[self.movelistNum] #0 for ground, 1 for air
         super(Standard, self).__init__(**kwargs)
 
 
@@ -179,6 +190,7 @@ class Airborn(Enemy):
     armor = 0
     reward = 5
     points = 10
+    imagesrc = os.path.join("enemyimgs", "Bird A", "frame-1.png")
     def __init__(self, **kwargs):
         self.type = 'Airborn'
         self.defaultNum = Airborn.defaultNum  # 10 enemies per wave
@@ -188,22 +200,24 @@ class Airborn(Enemy):
         self.armor = Airborn.armor
         self.reward = Airborn.reward  # cash granted per kill
         self.points = Airborn.points  # points granted per kill
-
-        self.image = Utilities.imgLoad(os.path.join("enemyimgs", "Bird A","frame-1.png"))
-        self.movelist = Map.mapvar.pointmovelists[1]  # 0 for ground, 1 for air
+        self.imagesrc = Airborn.imagesrc
+        self.image = Utilities.imgLoad(self.imagesrc)
         self.isair = True
+        self.movelistNum = 1
         self.isBoss = False
+        self.movelist = Map.mapvar.pointmovelists[self.movelistNum]  # 0 for ground, 1 for air
         super(Airborn, self).__init__(**kwargs)
 
 
 class Splinter(Enemy):
-    defaultNum = 5
+    defaultNum = 3
     deploySpeed = 3
-    health = 400
-    speed = 10
+    health = 300
+    speed = 25
     armor = 5
     reward = 10
     points = 20
+    imagesrc = os.path.join("enemyimgs", "explosion.png")
     def __init__(self, **kwargs):
         self.type = 'Splinter'
         self.defaultNum = Splinter.defaultNum  # 10 enemies per wave
@@ -213,25 +227,28 @@ class Splinter(Enemy):
         self.armor = Splinter.armor
         self.reward = Splinter.reward  # cash granted per kill
         self.points = Splinter.points  # points granted per kill
-        self.image = Utilities.imgLoad(os.path.join("enemyimgs", "Bird A","frame-1.png"))
-        self.movelist = Map.mapvar.pointmovelists[0]  # 0 for ground, 1 for air
+        self.imagesrc = Splinter.imagesrc
+        self.image = Utilities.imgLoad(self.imagesrc)
         self.isBoss = False
+        self.movelistNum = 0
+        self.movelist = Map.mapvar.pointmovelists[self.movelistNum]  # 0 for ground, 1 for air
         super(Splinter, self).__init__(**kwargs)
+
 
     #break the Splinter apart when it dies. 15 Crowd are released.
     def splinter(self):
-        SenderClass.Sender(specialSend = True, enemytype='Crowd', pos=self.pos, number=15)
+        SenderClass.Sender(specialSend = True, enemytype='Crowd', pos=self.pos, curnode = self.curnode, number=8, deploySpeed = 0)
 
 
 class Strong(Enemy):
     defaultNum = 5
     deploySpeed = 3
-    health = 600
-    speed = 10
+    health = 400
+    speed = 20
     armor = 10
     reward = 10
     points = 20
-
+    imagesrc = os.path.join("enemyimgs", "explosion.png")
     def __init__(self,**kwargs):
         self.type = 'Strong'
         self.defaultNum = Strong.defaultNum
@@ -241,21 +258,22 @@ class Strong(Enemy):
         self.armor = Strong.armor
         self.reward = Strong.reward #cash granted per kill
         self.points = Strong.points #points granted per kill
-        self.image = Utilities.imgLoad(os.path.join("enemyimgs","explosion.png"))
-        self.movelist = Map.mapvar.pointmovelists[0] #0 for ground, 1 for air
-        self.isair = False
+        self.imagesrc = Strong.imagesrc
+        self.image = Utilities.imgLoad(self.imagesrc)
+        self.movelistNum = 0
+        self.movelist = Map.mapvar.pointmovelists[self.movelistNum] #0 for ground, 1 for air
         self.isBoss = False ###is this needed?
         super(Strong, self).__init__(**kwargs)
 
 class Crowd (Enemy):
-    defaultNum = 30
-    deploySpeed = 5
-    health = 50
-    speed = 15
+    defaultNum = 20
+    deploySpeed = .4
+    health = 25
+    speed = 30
     armor = 0
     reward = 3
     points = 6
-
+    imagesrc = os.path.join("enemyimgs","explosion.png")
     def __init__(self,**kwargs):
         self.type = 'Crowd'
         self.defaultNum = Crowd.deploySpeed
@@ -264,8 +282,17 @@ class Crowd (Enemy):
         self.armor = Crowd.armor
         self.reward = Crowd.reward #cash granted per kill
         self.points = Crowd.points #points granted per kill
-        self.image = Utilities.imgLoad(os.path.join("enemyimgs","explosion.png"))
-        self.movelist = Map.mapvar.pointmovelists[0] #0 for ground, 1 for air
-        self.isair = False
+        self.imagesrc = Crowd.imagesrc
+        self.image = Utilities.imgLoad(self.imagesrc)
+        self.movelistNum = 0
+        self.movelist = Map.mapvar.pointmovelists[self.movelistNum] #0 for ground, 1 for air
         self.isBoss = False
+
+        if kwargs['specialSend']:
+            self.size = (20,20)
+            self.pos = kwargs['pos']
+            print ("pos:",self.pos)
+            self.curnode = kwargs['curnode']
+            self.rect = Utilities.createRect(self.pos, self.size, instance=self)
+
         super(Crowd, self).__init__(**kwargs)

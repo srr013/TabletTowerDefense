@@ -1,6 +1,5 @@
 from kivy.uix.image import Image
 from kivy.uix.widget import Widget
-from kivy.event import EventDispatcher
 
 import os
 import Map
@@ -71,15 +70,6 @@ def getPos(point):
 
     pos = [x - x%Map.squsize, y - y%Map.squsize]
     return pos
-
-class EventDisp(EventDispatcher):
-    def __init__(self,**kwargs):
-        super(EventDisp, self).__init__(**kwargs)
-
-
-    def callback(instance, value):
-        print('My callback is call from', instance)
-        print('and the a value changed to', value)
 
 
 ##Use this if the sprite comes in a single PNG

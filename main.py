@@ -34,6 +34,8 @@ from kivy.uix.floatlayout import FloatLayout
 from kivy.clock import Clock
 from kivy.core.window import Window, WindowBase
 from kivy.config import Config
+from kivy.properties import StringProperty
+
 Config.set('modules', 'touchring', '')
 
 import cProfile
@@ -48,7 +50,6 @@ class Background(Widget):
         self.add_widget(self.layout)
 
 class Game(Widget):
-
     def __init__(self, **kwargs):
         super(Game, self).__init__(**kwargs)
         self._keyboard = Window.request_keyboard(Keyboard_Kivy._keyboard_closed, self)
@@ -56,6 +57,7 @@ class Game(Widget):
         self.mainMenu = None
         self.pauseMenu = None
         self.wavetime = Map.waveseconds
+        self.wavetimeInt = 0
 
     def menuFuncs(self, obj):
         if obj.text == 'Play':
@@ -96,10 +98,10 @@ class Game(Widget):
         starttime = time.time()
         if Player.player.state == 'Menu':
             self.dispMainMenu()
-            MainFunctions.updateGUI(self.wavetime)
+            #MainFunctions.updateGUI(self.wavetime)
         if Player.player.state == 'Paused':
             self.dispPauseMenu()
-            MainFunctions.updateGUI(self.wavetime)
+            #MainFunctions.updateGUI(self.wavetime)
         if Player.player.state == 'Playing':
             Player.player.frametime = 5 / 60.0
             if Player.player.gameover:
@@ -112,7 +114,8 @@ class Game(Widget):
                 MainFunctions.updatePath(Map.mapvar.openPath)
 
             if Player.player.next_wave:
-                Player.player.bonus_score += self.wavetime * Player.player.wavenum
+                Player.player.score += self.wavetimeInt * Player.player.wavenum
+                GUI_Kivy.gui.myDispatcher.Score = str(Player.player.score)
                 EventFunctions.nextWave()
                 Player.player.next_wave = False
 
@@ -126,20 +129,13 @@ class Game(Widget):
             ##check for keyboard/Mouse input and take action based on those inputs
             MainFunctions.workShots()
 
-            #MainFunctions.updateGUI(self.wavetime)
-            selected = None
-
-            ##if an icon is selected then display the tower + circle around it where the mouse is located
-            if Player.player.towerSelected is not None:
-                selected = Player.player.towerSelected
-            ##if a tower is selected then display the circle around it
-            if selected and Towers.Tower in selected.__class__.__bases__:
-                MainFunctions.selectedTower(selected)
-
             if Player.player.wavenum > 0:
                 self.wavetime -= Player.player.frametime
+                self.wavetimeInt = int(self.wavetime)
+                GUI_Kivy.gui.myDispatcher.Timer = str(self.wavetimeInt)
 
             if self.wavetime < .05:
+                GUI_Kivy.gui.myDispatcher.Timer = str(Map.waveseconds)
                 self.wavetime = Map.waveseconds
                 Player.player.next_wave=True
 
@@ -148,7 +144,7 @@ class Game(Widget):
 class Main(App):
     #instantiate required classes and variables
     def build(self):
-        pygame.init()
+        #pygame.init()
         game = Game()
 
         #general appearance updates
@@ -163,9 +159,9 @@ class Main(App):
 
         #create toolbars
         game.topBar = GUI_Kivy.gui.createTopBar()
-        background.add_widget(game.topBar)
-        background.add_widget(GUI_Kivy.gui.createTopSideBar())
-        background.add_widget(GUI_Kivy.gui.createBottomSideBar())
+        map.add_widget(game.topBar)
+        #map.add_widget(GUI_Kivy.gui.createTopSideBar())
+        #map.add_widget(GUI_Kivy.gui.createBottomSideBar())
 
         ##update path at start
         if Map.mapvar.updatePath == True:

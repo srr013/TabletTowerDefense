@@ -46,6 +46,7 @@ class Shot():
         if self.attacktype == "slow":
             self.enemy.slowtimers.append(self.enemy)
             self.enemy.slowtime = 60
+        print (self.damage)
         self.enemy.health -= max(self.damage - self.enemy.armor, 0)
         self.enemy.checkHealth()
         localdefs.shotlist.remove(self)

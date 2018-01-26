@@ -48,8 +48,8 @@ def wavegen():
             else:
                 isBoss = False
 
-            wave = {'wavenum':waveNum, 'setnum':setNum, 'numenemies':numEnemies, 'enemyhealth':healthEnemies, 'enemyspeed':speedEnemies,
-             'enemytype':enemyType, 'enemyarmor': armorEnemies, 'enemymods':enemyModList[setNum-1], 'enemyreward':rewardEnemies, 'isBoss':isBoss}
+            wave = {'wavenum':waveNum, 'setnum':setNum, 'enemynum':numEnemies, 'enemyhealth':healthEnemies, 'enemyspeed':speedEnemies,
+             'enemytype':enemyType, 'enemyarmor': armorEnemies, 'enemymods':enemyModList[setNum-1], 'enemyreward':rewardEnemies, 'isboss':isBoss}
             waveList.append(wave)
             waveNum += 1
         setNum += 1
