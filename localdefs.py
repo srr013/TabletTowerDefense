@@ -12,7 +12,7 @@ timerlist = list()
 shotlist = list()
 alertQueue = list()
 towerabilitylist = list()
-towerGroupDict = {'Archer':[], 'Fighter':[]}
+towerGroupDict = {'Life':[], 'Fire':[]}
 topBar_ElementList = [("Wave: ", "Wave", Player.player.wavenum,"iconimgs/default.png"),
                                     ("Score: ", "Score", Player.player.score, "iconimgs/100.png"),
                                     ("Money: ", "Money", Player.player.money,"iconimgs/coin20x24.png"),
