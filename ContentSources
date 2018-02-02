@@ -1,18 +1,12 @@
 Artwork:
-Bird A,B,C,D
-https://opengameart.org/content/game-characters-flying-birds-attack-sprite-sheets
 
 Simple Tower Defense base code:
+Provided a starting point for enemy movement and building placement.
 https://sourceforge.net/projects/ppgtd/
-
 
 Code:
 Grid pathfinding code:
 https://www.redblobgames.com/pathfinding/grids/algorithms.html
-
-Animation code adapted from here:
-https://github.com/Mekire
-
 
 Emoji icons:
 Emoji icons provided free by EmojiOne: https://www.emojione.com/download#attribution
