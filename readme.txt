@@ -25,23 +25,24 @@ Text files:
     under an open source license
 
 Game files(.py):
-    These files are new or have been heavily modified from the legacy code. If you are reviewing the entire game this list
-    is organized for a top-down review:
-
-    towerdefense - contains the game's main loop and instantiates basic classes and variables
+    main - contains the game's main loop and instantiates basic classes and variables
     MainFunctions - contains most of the basic functions required by the main loop
-    localclasses - contains the Tower, Enemy, Timer, and Shot classes used in the game
+    Tower - contains tower classes and functions
+    TowerGroup - groups and trackers towers of like types
+    Shot - handles shot mechanics after firing
+    ShotCloud - handles cloud-like shot appearances
+    Enemy - contains enemy classes and functions
+    Map - creates the playing field including path bitting. Contains major game variables.
+    Playfield - movable element handling touch input
+    TowerAbilities - actions taken on a tower like selling and upgrades
     localdefs - contains the Path, Map, and Player classes. Also contains many "global" variables and lists, and functions used for
     animation, enemy movement, and pausing the game.
     EventFunctions - handles keyboard and mouse input
     pathfinding - implements the a* pathfinding algorithm. Functions return a list of movement for enemies.
-    Animation - contains the Animation class for generating a dict of images associated with movement directions
     GUI - handles the creation and updates of top and bottom bars and the rightside panels
-    wavegen - not fully implemented. Will generate a dict of enemy waves for the Sender class
-
-    Legacy files:
-    TowerAbilities - manages tower upgrades and selling. Upcoming revamp of the Tower class will merge this into a new file with Tower.
     SenderClass - manages creation of enemies
+    Wavegen - generates a random wave dict for the Sender
+    Utilities - game-wide functions
 
 Artwork:
     All artwork is my own unless specified in the ContentSources.txt file
