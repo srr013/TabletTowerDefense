@@ -2,15 +2,17 @@
 Scott's Tower Defence Game ReadMe:
 ========================================
 Version .1
-Note: This game is playable without issue or error, but it's not very fun yet and portions of the right panels are not implemented.
-This version is intended as a proof of work to date. Version .2 will include a fully balanced game.
+Note: This game is playable without issue or error, but it's not very fun yet and this version cannot be run on a mobile
+device or browser. Version 1 will be ported to the Kivy library and ready to play on a tablet. Publication date
+on the Google Play store is targeted for May 2018.
 
 ----------------
 In Order To Run:
 ----------------
-Install Python: Written and tested with version 2.7
+Install Python: Written and tested with version 2.7. Version 3.6 is running in test versions of v1.0
 Install PyGame: http://www.pygame.org
 Install Thorpy (for buttons and menus): http://www.thorpy.org/index.html
+(Thorpy is not in use in v1.0 as it has been replaced by Kivy)
 
 Run towerdefense.py
 
