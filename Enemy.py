@@ -19,7 +19,7 @@ class Enemy(Widget):
             #self.animation = Animation.Animate(folder = os.path.join("enemyimgs", "Bird A"))
             #self.image = self.animation.adjust_images("right")
         self.specialSend = kwargs['specialSend']
-        self.size = (20, 20)
+        self.size = (30, 30)
         if not self.specialSend:
             self.curnode = 0
             self.rect = Utilities.createRect(self.movelist[self.curnode], self.size, instance=self)
@@ -30,13 +30,15 @@ class Enemy(Widget):
         self.starthealth = self.health
         self.startspeed = self.speed
         self.slowtimers = list()
-        self.slowpercent = .2
+        self.slowpercent = .8
         self.slowtime = 0
         self.poisontimer = None
         self.distBase = self.distToBase()
         self.explosionlength = 1
         self.isair = False
         self.isAlive = True
+        self.pushed = [0,0]
+        self.recovering = False
 
         with self.canvas: #draw health bars
             Color(0,0,0,.6)
@@ -59,6 +61,7 @@ class Enemy(Widget):
             st.slowtime -= Player.player.frametime
             if st.slowtime<=0:
                 self.slowtimers.remove(st)
+                self.image.color=[1,1,1,1]
 
     def distToBase(self):
         '''Determine distance to the end point using hypotenuse of xs and ys. Returns the distance.'''
@@ -72,11 +75,41 @@ class Enemy(Widget):
         #if self.letter=='a':
         #    self.movelist = Map.mapvar.pointmovelists[0]
         if self.slowtime > 0:
-            moveamt_x = round(self.slowpercent*Player.player.frametime*self.speed,2)
-            moveamt_y = round(self.slowpercent*Player.player.frametime*self.speed,2)
+            self.moveamt_x = round(self.slowpercent*Player.player.frametime*self.speed,2)
+            self.moveamt_y = round(self.slowpercent*Player.player.frametime*self.speed,2)
+
         else:
-            moveamt_x = round(self.speed*Player.player.frametime,2)
-            moveamt_y = round(self.speed*Player.player.frametime,2)
+            self.moveamt_x = round(self.speed*Player.player.frametime,2)
+            self.moveamt_y = round(self.speed*Player.player.frametime,2)
+
+        #move enemy x and y based on the moveamt calculated above
+        distToNode = (abs(self.movelist[self.curnode][0] - self.pos[0]), abs(self.movelist[self.curnode][1]-self.pos[1]))
+        if distToNode[0] < self.moveamt_x and distToNode[1] < self.moveamt_y:
+            self.curnode+=1
+            self.moveamt_x = distToNode[0]
+            self.moveamt_y = distToNode[1]
+
+        if self.pushed[0] != 0 or self.pushed[1] != 0:
+            if self.recovering:
+                pass
+
+            else:
+                self.recovering = True
+                self.moveamt_x -=self.pushed[0]
+                self.moveamt_y -=self.pushed[1]
+
+                self.pushed[0] -=self.speed*Player.player.frametime
+                self.pushed[1] -= self.speed * Player.player.frametime
+                print ("pushed",self.pushed)
+                if self.pushed[0] < 0:
+                    print ("pushed <0", self.pushed)
+                    self.pushed[0] = 0
+                    self.recovering = False
+                if self.pushed[1] < 0:
+                    self.pushed[1] = 0
+                    self.recovering = False
+
+
 
         ##Check to see if the enemy hits the Base and remove enemy and decrement player health
         #for i in range(int(self.speed*30)):
@@ -89,26 +122,19 @@ class Enemy(Widget):
                     Player.player.die()
                 return
 
-        #move enemy x and y based on the moveamt calculated above
-        distToNode = (abs(self.movelist[self.curnode][0] - self.pos[0]), abs(self.movelist[self.curnode][1]-self.pos[1]))
-        if distToNode[0] < moveamt_x and distToNode[1] < moveamt_y:
-            self.curnode+=1
-            moveamt_x = distToNode[0]
-            moveamt_y = distToNode[1]
-
         #print ("pos,movelist", self.pos, self.movelist[self.curnode+1])
         if self.movelist[self.curnode][0]>self.pos[0]:
             #print ("moving right:", self.rect_centerx, self.movelist[self.curnode+1][0])
-            self.rect_centerx+=moveamt_x
+            self.rect_centerx+=self.moveamt_x
             #self.image = self.animation.adjust_images("right")
         elif self.movelist[self.curnode][0]<self.pos[0]:
-            self.rect_centerx-=moveamt_x
+            self.rect_centerx-=self.moveamt_x
             #self.image = self.animation.adjust_images("left")
         if self.movelist[self.curnode][1]>self.pos[1]:
-            self.rect_centery+=moveamt_y
+            self.rect_centery+=self.moveamt_y
             #self.image = self.animation.adjust_images("down")
         elif self.movelist[self.curnode][1]<self.pos[1]:
-            self.rect_centery-=moveamt_y
+            self.rect_centery-=self.moveamt_y
             #self.image = self.animation.adjust_images("up")
         self.pos = (self.rect_centerx,self.rect_centery)
         self.image.pos = self.pos
@@ -128,6 +154,8 @@ class Enemy(Widget):
         self.isAlive = False
         self.remove_widget(self.image)
         Map.mapvar.enemycontainer.remove_widget(self)
+        if self.isair == True:
+            localdefs.flyinglist.remove(self)
         Player.player.money += self.reward
         Player.player.score += self.points
         GUI_Kivy.gui.myDispatcher.Money = str(Player.player.money)
@@ -163,7 +191,7 @@ class Standard(Enemy):
     armor = 0
     reward = 5
     points = 10
-    imagesrc = os.path.join("enemyimgs","explosion.png")
+    imagesrc = os.path.join("enemyimgs","medbox.png")
 
     def __init__(self,**kwargs):
         self.type = 'Standard'
@@ -202,11 +230,12 @@ class Airborn(Enemy):
         self.points = Airborn.points  # points granted per kill
         self.imagesrc = Airborn.imagesrc
         self.image = Utilities.imgLoad(self.imagesrc)
-        self.isair = True
         self.movelistNum = 1
         self.isBoss = False
         self.movelist = Map.mapvar.pointmovelists[self.movelistNum]  # 0 for ground, 1 for air
         super(Airborn, self).__init__(**kwargs)
+        self.isair = True
+        localdefs.flyinglist.append(self)
 
 
 class Splinter(Enemy):
@@ -217,7 +246,7 @@ class Splinter(Enemy):
     armor = 5
     reward = 10
     points = 20
-    imagesrc = os.path.join("enemyimgs", "explosion.png")
+    imagesrc = os.path.join("enemyimgs", "largebox.png")
     def __init__(self, **kwargs):
         self.type = 'Splinter'
         self.defaultNum = Splinter.defaultNum  # 10 enemies per wave
@@ -248,7 +277,7 @@ class Strong(Enemy):
     armor = 10
     reward = 10
     points = 20
-    imagesrc = os.path.join("enemyimgs", "explosion.png")
+    imagesrc = os.path.join("enemyimgs", "largebox.png")
     def __init__(self,**kwargs):
         self.type = 'Strong'
         self.defaultNum = Strong.defaultNum
@@ -273,7 +302,7 @@ class Crowd (Enemy):
     armor = 0
     reward = 3
     points = 6
-    imagesrc = os.path.join("enemyimgs","explosion.png")
+    imagesrc = os.path.join("enemyimgs","smallbox.png")
     def __init__(self,**kwargs):
         self.type = 'Crowd'
         self.defaultNum = Crowd.deploySpeed

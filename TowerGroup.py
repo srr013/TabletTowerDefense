@@ -1,7 +1,3 @@
-#Tower will point to the group it is part of. This happens on tower creation
-##towerGroup points to all towers it is part of via towerList
-#tower inherits modifiers from the group
-
 import localdefs
 
 class TowerGroup():
@@ -12,6 +8,7 @@ class TowerGroup():
         self.dmgModifier = 1
         self.reloadModifier = 1
         self.rangeModifier = 1
+        self.pushModifier = 1
 
     def updateTowerGroup(self):
         self.updateList()
@@ -29,6 +26,9 @@ class TowerGroup():
 
     def updateModifiers(self):
         self.dmgModifier = 1 + (len(self.towerSet)-1) * .05
+        self.reloadModifier = 1 + (len(self.towerSet)-1) * .05
+        self.rangeModifier = 1 + (len(self.towerSet)-1) * .05
+        self.pushModifier = 1 + (len(self.towerSet)-1) * .05
 
         for tower in self.towerSet:
             tower.updateModifiers()

@@ -41,13 +41,12 @@ def workTowers():
 def updateFlyingList():
     '''Update movelist for flying enemies'''
     # only border walls for flying list. Flying list to be index 1.
-    Map.newPath.walls = Map.path.border_walls
-    Map.newPath.weights = {}
-    came_from, cost_so_far = pathfinding.get_path(Map.newPath, Map.mapvar.startpoint, Map.mapvar.basepoint)
+    Map.flyPath.walls = Map.path.border_walls
+    Map.flyPath.weights = {}
+    came_from, cost_so_far = pathfinding.get_path(Map.flyPath, Map.mapvar.startpoint, Map.mapvar.basepoint)
     Map.mapvar.movelists.append(pathfinding.reconstruct_path(came_from, Map.mapvar.startpoint, Map.mapvar.basepoint))
     Map.mapvar.genmovelists()
 
-##mywork
 def updatePath(openPath):
     '''Update the path using A* algorithm
     openPath = Boolean indicating if path is set or fluid'''
@@ -76,7 +75,6 @@ def workShots():
     '''Update the shot location and hit the enemy'''
     for shot in localdefs.shotlist:
         shot.takeTurn()
-        #Player.player.screen.blit(shot.image, shot.rect)
 
 def dispText():
     '''Display any alerts in the queue, then remove them'''
@@ -85,7 +83,6 @@ def dispText():
             localdefs.alertQueue.pop(0)
         else:
             pass
-            #Player.player.screen.blit(alert[0], alert[1])
 
 def dispExplosions():
     for explosion in localdefs.explosions:

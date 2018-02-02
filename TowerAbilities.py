@@ -60,3 +60,4 @@ class Upgrade(TowerAbility):
             tower.upgrades.append(cls)
             return True
         return False
+

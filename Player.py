@@ -73,7 +73,7 @@ class Player():
 
         self.modDict['towerAbilities'] = set()
         self.modDict['towerSellMod'] = 0
-        self.modDict['towerAccess'] = list(('Fire','Life','Gravity','Water',"Wind"))
+        self.modDict['towerAccess'] = list(('Fire','Life','Gravity','Ice',"Wind"))
 
         self.modDict['towerAbilities'].add("Sell")
         self.modDict['towerAbilities'].add("AddFighter")

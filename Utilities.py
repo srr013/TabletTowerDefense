@@ -2,6 +2,7 @@ from kivy.uix.image import Image
 from kivy.uix.widget import Widget
 
 import os
+import math
 import Map
 
 def imgLoad(source, pos=(0,0)):
@@ -71,6 +72,19 @@ def getPos(point):
     pos = [x - x%Map.squsize, y - y%Map.squsize]
     return pos
 
+def get_rotation(obj, enemy):
+    '''Rotates an image to face the enemy
+    obj is an object to be rotated
+    '''
+    #distance between the image and the enemy. this is "A" and "B" in the arctan equation
+    x = obj.image.pos[0] - enemy.rect_centerx
+    y = obj.image.pos[1] - enemy.rect_centery
+    #calculates the rotation of the image.
+    rotation = math.degrees(math.atan2(y, x))
+    new_angle = rotation if rotation > 0 else 360 + rotation
+    #print ("rotation:", rotation, "current angle:", obj.currentPointerAngle)
+    angle= new_angle - obj.currentPointerAngle
+    return angle
 
 ##Use this if the sprite comes in a single PNG
 def split_sheet(sheet, size, columns, rows):

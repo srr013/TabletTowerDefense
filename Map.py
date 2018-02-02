@@ -11,11 +11,11 @@ scrwid = winwid #Playable screen width.
 scrhei = winhei #Playable screen height.
 squsize = 30
 mapoffset = (0,0) #offset of the playing field(including walls) in tiles
-squwid = int(scrwid/squsize + mapoffset[0]) #playable field is 33 squ wide (including border)
-squhei = int(scrhei/squsize + mapoffset[1]) #playable field is 24 squ high
 border = 60
 squborder = border/squsize
 waveseconds = 20
+squwid = int(scrwid/squsize + mapoffset[0])+squborder*2 #playable field is 33 squ wide (including border)
+squhei = int(scrhei/squsize + mapoffset[1])+squborder #playable field is 24 squ high
 
 
 wallrectlist = list()
@@ -74,11 +74,6 @@ class Map():
             pointmovelist = list([(point[0]*squsize,point[1]*squsize) for point in movelist])
             ##create a rect for each set of points to connect the path from one point to another
             pathrectlist = list([Utilities.createRect(pointmovelist[ind],(pointmovelist[ind+1][0]-pointmovelist[ind][0],pointmovelist[ind+1][1]-pointmovelist[ind][1])) for ind in range(len(pointmovelist)-2)])
-            #for rec in pathrectlist:
-                #if rec[2] < 0:
-                #    rec[2] = abs(rec[2])
-                #if rec[3] < 0:
-                #    rec[3] = abs(rec[3])
             self.pointmovelists.append(pointmovelist)
             self.pathrectlists.append(pathrectlist)
 
@@ -152,6 +147,9 @@ class Map():
         self.shotcontainer = Utilities.container()
         self.backgroundimg.add_widget(self.shotcontainer)
 
+        self.cloudcontainer = Utilities.container()
+        self.backgroundimg.add_widget(self.cloudcontainer)
+
         self.explosioncontainer = Utilities.container()
         self.backgroundimg.add_widget(self.explosioncontainer)
 
@@ -164,6 +162,8 @@ class Map():
         for pathnum in range(1 if len(self.movelists)==1 else len(self.movelists)-1):
             for square in self.pathrectlists[pathnum]:
                 image = Utilities.imgLoad(source=os.path.join('backgroundimgs','roadarrow.png'), pos=(square[0],square[1]))
+                if image.pos == [30,270] or image.pos == [60,270]:
+                    image.source = os.path.join('backgroundimgs','redroadarrow.png')
                 image.size = (30,30)
                 #print ("roadpos:", image.pos)
                 self.roadcontainer.add_widget(image)
@@ -222,4 +222,5 @@ class Path():
 
 
 path = Path()
-newPath = pathfinding.GridWithWeights(squwid, squhei, squborder)
+newPath = pathfinding.GridWithWeights(squwid, squhei, squborder,(29,9))
+flyPath = pathfinding.GridWithWeights(squwid, squhei, squborder,(29,9))

@@ -39,7 +39,7 @@ def a_star_search(graph, start, goal):
 def get_path(map, start, goal):
     '''This is the main function call in Pathfinding.py. See a_star_search for info.'''
     came_from, cost_so_far = a_star_search(map, start, goal)
-    #draw_grid(map, width=3, point_to=came_from, start=start, goal=goal)
+    #draw_grid(map, width=1, point_to=came_from, start=start, goal=goal)
     #draw_grid(map, width=1, number=cost_so_far, start=start, goal=goal)
     return came_from, cost_so_far
 
@@ -47,14 +47,16 @@ def reconstruct_path(came_from, start, goal):
     '''Takes the variables output by a_star_search and produces a movelist. See a_star_search for variable info'''
     current = goal
     path = []
+
     while current != start:
         path.append(current)
         try:
             current = came_from[current]
         except KeyError:
             return "Path Blocked"
-    path.append(start) # optional
-    path.reverse() # optional
+
+    path.append(start)
+    path.reverse()
     return path
 
 
@@ -66,6 +68,7 @@ class MapGrid():
         border: a list of points that are impassable'''
         self.width = width - (border*2)
         self.height = height - (border*2)
+        self.border = border
         self.walls = []
 
     def in_bounds(self, id):
@@ -80,7 +83,7 @@ class MapGrid():
     def neighbors(self, id):
         '''Find neighboring spaces that the unit can move to'''
         (x, y) = id
-        results = [(x + 1, y), (x, y - 1), (x - 1, y), (x, y + 1)] #, (x + 1,y + 1), (x + 1, y - 1), (x - 1,y - 1), (x - 1, y + 1)
+        results = [(x + 1, y), (x, y - 1), (x - 1, y), (x, y + 1)]#(x + 1,y + 1), (x + 1, y - 1), (x - 1,y - 1), (x - 1, y + 1)
         if (x + y) % 2 == 0: results.reverse()  # aesthetics
         results = filter(self.in_bounds, results)
         results = filter(self.passable, results)
@@ -88,9 +91,31 @@ class MapGrid():
 
 class GridWithWeights(MapGrid):
     '''Creates a MapGrid then adds weight to each square to indicate the best route'''
-    def __init__(self, width, height, border):
+    def __init__(self, width, height, border, goal):
         MapGrid.__init__(self,width, height, border)
-        self.weights = {}
+        self.goal=goal
+        self.weights = self.genWeights()
+
+
+    def genWeights(self):
+        weights = {}
+        y_weight = 0
+        x_weight = 0
+        #weighting prefers movement closer to the base X coord over Y coord.
+        for x in range(0,int(self.width)):
+            if x + 1 % self.goal[0] == 0:
+                x_weight = 0
+            else:
+                x_weight = abs(self.goal[0] - x)*.1
+
+            for y in range (0,int(self.height)):
+                if y+1 % self.goal[1] == 0:
+                    y_weight = 0
+                else:
+                    y_weight= abs(self.goal[1]- y)*.01
+                weights[x, y] = round(x_weight, 1) + round(y_weight, 1)
+        return weights
+
 
     def cost(self, from_node, to_node):
         '''Determines the best route based on grid weighting'''
@@ -117,9 +142,9 @@ def draw_tile(graph, id, style, width):
     return r
 
 def draw_grid(graph, width=1, **style):
-    for y in range(graph.height):
+    for y in range(int(graph.height)):
         xlist = list()
-        for x in range(graph.width):
+        for x in range(int(graph.width)):
             xlist.append("%%-%ds" % width % draw_tile(graph, (x, y), style, width))
         print (xlist)
 

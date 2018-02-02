@@ -2,6 +2,7 @@ import Player
 import Map
 
 enemylist = list()
+flyinglist = list()
 towerlist = list()
 bulletlist = list()
 iconlist = list()
@@ -12,7 +13,7 @@ timerlist = list()
 shotlist = list()
 alertQueue = list()
 towerabilitylist = list()
-towerGroupDict = {'Life':[], 'Fire':[]}
+towerGroupDict = {'Life':[], 'Fire':[], 'Ice':[], 'Gravity':[], 'Wind':[]}
 topBar_ElementList = [("Wave: ", "Wave", Player.player.wavenum,"iconimgs/default.png"),
                                     ("Score: ", "Score", Player.player.score, "iconimgs/100.png"),
                                     ("Money: ", "Money", Player.player.money,"iconimgs/coin20x24.png"),
