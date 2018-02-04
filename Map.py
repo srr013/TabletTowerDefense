@@ -13,7 +13,7 @@ squsize = 30
 mapoffset = (0,0) #offset of the playing field(including walls) in tiles
 border = 60
 squborder = border/squsize
-waveseconds = 20
+waveseconds = 20.5
 squwid = int(scrwid/squsize + mapoffset[0])+squborder*2 #playable field is 33 squ wide (including border)
 squhei = int(scrhei/squsize + mapoffset[1])+squborder #playable field is 24 squ high
 
@@ -58,6 +58,7 @@ class Map():
         self.mapdict = dict()
         self.pointmovelists = list()
         self.pathrectlists = list()
+        self.dirmovelists = list()
         self.total_waves = 0
         self.movelists = list()
         self.movelistnum = -1
@@ -69,13 +70,18 @@ class Map():
         ##zero out the lists to start fresh. Otherwise the append allows multiple lists.
         self.pointmovelists = []
         self.pathrectlists = []
+        self.dirmovelists = []
+
         for movelist in self.movelists:
             ##translate tiles to pixels. SQU represents a tile width or height
-            pointmovelist = list([(point[0]*squsize,point[1]*squsize) for point in movelist])
+            pointlist = list([(point[0]*squsize,point[1]*squsize) for point in movelist[0]])
+            enemymovelist = list([(point[0]*squsize,point[1]*squsize) for point in movelist[2]])
+            dirmovelist = movelist[1]
             ##create a rect for each set of points to connect the path from one point to another
-            pathrectlist = list([Utilities.createRect(pointmovelist[ind],(pointmovelist[ind+1][0]-pointmovelist[ind][0],pointmovelist[ind+1][1]-pointmovelist[ind][1])) for ind in range(len(pointmovelist)-2)])
-            self.pointmovelists.append(pointmovelist)
+            pathrectlist = list([Utilities.createRect(pointlist[ind],(pointlist[ind+1][0]-pointlist[ind][0],pointlist[ind+1][1]-pointlist[ind][1])) for ind in range(len(pointlist)-2)])
+            self.pointmovelists.append(enemymovelist)
             self.pathrectlists.append(pathrectlist)
+            self.dirmovelists.append(dirmovelist)
 
     def getmovelist(self):
         '''Get the mvoe list from file if it is a pre-set path'''
@@ -160,13 +166,29 @@ class Map():
         '''Generate the path and base and blit them'''
         #2 movelists are passed in currently. Only print tiles for the first, the ground move list. The flying move list should be the last list.
         for pathnum in range(1 if len(self.movelists)==1 else len(self.movelists)-1):
+
             for square in self.pathrectlists[pathnum]:
                 image = Utilities.imgLoad(source=os.path.join('backgroundimgs','roadarrow.png'), pos=(square[0],square[1]))
                 if image.pos == [30,270] or image.pos == [60,270]:
                     image.source = os.path.join('backgroundimgs','redroadarrow.png')
                 image.size = (30,30)
-                #print ("roadpos:", image.pos)
                 self.roadcontainer.add_widget(image)
+            x=-1
+            for square in self.roadcontainer.walk(restrict=True):
+                angle = 0
+                if self.dirmovelists[0][x] == 'u':
+                    angle = 90
+                if self.dirmovelists[0][x] == 'l':
+                    angle = 180
+                if self.dirmovelists[0][x] == 'd':
+                    angle = 270
+                if angle != 0:
+                    with square.canvas.before:
+                        PushMatrix()
+                        Rotate(axis=(0, 0, 1), origin=square.center, angle=angle)
+                    with square.canvas.after:
+                        PopMatrix()
+                x+=1
 
         self.baseimg = Utilities.imgLoad(source=os.path.join('backgroundimgs', 'Base.png'))
         self.baseimg.size = (90,90)

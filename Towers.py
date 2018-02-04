@@ -9,11 +9,12 @@ import Player
 import Map
 import Shot
 import TowerGroup
-import GUI_Kivy
+import GUI
 import ShotCloud
 
 from kivy.uix.widget import Widget
 from kivy.graphics import *
+from kivy.animation import Animation
 
 
 
@@ -21,9 +22,9 @@ class Tower(Widget):
     def __init__(self,pos,**kwargs):
         super(Tower, self).__init__(**kwargs)
         self.pos=pos
-        self.targetTimer= int(self.initreload)
+        self.targetTimer= 0
         Player.player.money-=self.cost
-        GUI_Kivy.gui.myDispatcher.Money = str(Player.player.money)
+        GUI.gui.myDispatcher.Money = str(Player.player.money)
         localdefs.towerlist.append(self)
         self.size = (Map.squsize*2-1, Map.squsize*2-1)
         self.rect = Utilities.createRect(self.pos, self.size, instance=self)
@@ -55,6 +56,8 @@ class Tower(Widget):
         self.updateModifiers()
         self.hasTurret = False
         self.shotcloud = None
+        self.shotcount = 0
+        self.allowedshots = 1
         #Update tower group dict so it's accurate based on new tower
         for towergroup in localdefs.towerGroupDict[self.type]:
             towergroup.updateTowerGroup()
@@ -274,67 +277,69 @@ class Tower(Widget):
         self.targetTimer -= Player.player.frametime
         ##if the rest period is up then shoot again
         if self.targetTimer<=0:
-            self.targetTimer = self.reload
             self.target()
 
     def target(self):
         '''Create a sorted list of enemies based on distance from the tower. If enemy is within tower range then hit enemy'''
-        tower=self
         sortedlist = sorted(Map.mapvar.enemycontainer.children, key=operator.attrgetter("distBase"))
-
-        numinrange = 0
+        in_range_air = 0
+        in_range_ground = 0
         for enemy in sortedlist:
             if math.sqrt((self.rect_centerx-enemy.rect_centerx)**2+(self.rect_centery-enemy.rect_centery)**2)<=self.range:
-                numinrange += 1
-                if enemy.isair and tower.attackair:
+                if enemy.isair and self.attackair:
+                    in_range_air +=1
                     if self.type == 'Wind':
                         if not self.active:
                             self.turret.source = os.path.join('towerimgs', self.type, "turret.gif")
-                        if self.shotcount < 1:
-                            self.shotcount += 1
-                            self.shot = Shot.Shot(tower, enemy)
+                        self.shotcount += 1
+                        Shot.Shot(self, enemy)
 
                     elif self.hasTurret:
                         self.moveTurret(enemy)
-                        Shot.Shot(tower, enemy)
-                        return
+                        self.shotcount +=1
+                        Shot.Shot(self, enemy)
 
+                    elif self.shotcloud:
+                        self.shotcloud.hitEnemy(enemy)
+                        self.shotcount +=1
+                        if not self.active:
+                            self.shotcloud.enable()
 
-                if not enemy.isair and tower.attackground:
-                    #create a shot and add it to the Shotlist for tracking
+                if not enemy.isair and self.attackground:
+                    in_range_ground +=1
                     if self.hasTurret:
                         self.moveTurret(enemy)
-                        Shot.Shot(tower, enemy)
-                        return
+                        self.shotcount +=1
+                        Shot.Shot(self, enemy)
                     if self.shotcloud:
                         self.shotcloud.hitEnemy(enemy)
                         if not self.active:
                             self.shotcloud.enable()
+                if self.shotcount > 0:
+                    self.targetTimer = self.reload
 
-        if numinrange == 0:
-            if self.shotcloud:
-                if self.active:
-                    self.shotcloud.disable()
-            if self.type == 'Wind':
-                self.active = False
-                self.image.source = self.imagestr
+            if self.shotcount >= self.allowedshots:
+                return
 
-        return
+        if in_range_air == 0 and self.type == 'Wind' and self.active:
+            self.deactivateTower('Wind')
+        if in_range_ground == 0 and self.type == 'Ice' and self.active:
+            self.deactivateTower('Ice')
+
+
+    def deactivateTower(self, tower):
+        if tower == 'Ice':
+            if self.active:
+                self.shotcloud.disable()
+        if tower == "Wind":
+            self.active = False
+            self.turret.source = os.path.join('towerimgs', self.type, "turret.png")
 
     def moveTurret(self, enemy):
-        angle = Utilities.get_rotation(self, enemy)+180
-        self.currentPointerAngle = int(self.currentPointerAngle+angle)
-        if self.currentPointerAngle >360:
-             self.currentPointerAngle -= 360
-        # self.turretpointpos[0] = int(self.center[0] + (self.turret.size[0])*math.cos(self.currentPointerAngle-180))
-        # self.turretpointpos[1] = int(self.center[1] + (self.turret.size[1])*math.sin(self.currentPointerAngle-180))
-        # print(math.cos(self.currentPointerAngle), math.sin(self.currentPointerAngle), self.currentPointerAngle, self.turretpointpos)
-        if angle != 0 :
-            with self.turret.canvas.before:
-                PushMatrix()
-                self.rot = Rotate(axis=(0,0,1), origin=self.turret.center, angle = angle)
-            with self.turret.canvas.after:
-                PopMatrix()
+        angle = 180+ Utilities.get_rotation(self, enemy)
+        self.turret.anim = Animation(angle=angle, d=.1)
+        self.turret.anim.start(self.turret_rot)
+
 
     def loadTurret(self):
         self.turretstr = os.path.join('towerimgs',self.type, 'turret.png')
@@ -342,6 +347,15 @@ class Tower(Widget):
         self.turret.size = (30,30)
         self.turret.center = self.center
         self.add_widget(self.turret)
+        with self.turret.canvas.before:
+            PushMatrix()
+            self.turret_rot=Rotate()
+            self.turret_rot.origin=self.turret.center
+            self.turret_rot.axis=(0,0,1)
+            self.turret_rot.angle=0
+        with self.turret.canvas.after:
+            PopMatrix()
+
 
 
 class FireTower(Tower):
@@ -383,7 +397,7 @@ class LifeTower(Tower):
         self.type = LifeTower.type
         self.attacktype = 'single'
         self.attackair = True
-        self.shotimage = "cannonball.png"
+        self.shotimage = "arrow.png"
         self.hasTurret = True
         self.loadTurret()
 
@@ -430,16 +444,17 @@ class IceTower(Tower):
         self.attacktype = 'slow'
         self.shotcloud = ShotCloud.ShotCloud(self)
         self.active = False
+        self.allowedshots = 999
 
     #freezes and slows the enemy
 
 class WindTower(Tower):
     type = "Wind"
     cost = 20
-    initrange = 400
+    initrange = 200
     initdamage = 2
-    initreload = 2.5
-    initpush = 6
+    initreload = 5
+    initpush = 10
     imagestr = os.path.join('towerimgs', 'Wind', 'icon.png')
     def __init__(self,pos, **kwargs):
         Tower.__init__(self, pos, **kwargs)
@@ -449,13 +464,12 @@ class WindTower(Tower):
         self.initdamage = WindTower.initdamage
         self.initreload = WindTower.initreload
         self.initpush = WindTower.initpush
-        self.push = 6
+        self.push = 10
         self.type = WindTower.type
         self.attackair = True
         self.attackground = False
         self.attacktype = 'wind'
         self.shotimage = "gust.png"
-        self.shotcount = 0
         self.hasTurret = True
         self.loadTurret()
         self.active = False

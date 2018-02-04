@@ -2,7 +2,7 @@ import Player
 import localdefs
 import Map
 import Utilities
-import GUI_Kivy
+import GUI
 
 import os
 
@@ -33,7 +33,7 @@ class Sell(TowerAbility):
     def apply(cls,**kwargs):
         tower = Player.player.towerSelected
         Player.player.money+=(tower.totalspent)
-        GUI_Kivy.gui.myDispatcher.Money = str(Player.player.money)
+        GUI.gui.myDispatcher.Money = str(Player.player.money)
         localdefs.towerlist.remove(tower)
         Map.mapvar.towercontainer.remove_widget(tower)
         Player.player.towerSelected = None

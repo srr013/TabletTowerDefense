@@ -40,7 +40,11 @@ class ShotCloud(Widget):
 
     def disable(self):
         self.tower.active = False
-        self.animation.bind(on_complete= self.animation.cancel(self.color))
+        self.animation.repeat = False
+        self.animation.bind(on_complete=self.setAlpha)
+
+    def setAlpha(self,*args):
+        self.color.a=0
 
     def hitEnemy(self, enemy):
         '''Reduces enemy health by damage - armor'''

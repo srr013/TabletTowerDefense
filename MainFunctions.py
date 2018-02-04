@@ -1,9 +1,10 @@
-import localdefs, localclasses, Map, Towers, pathfinding, Utilities
+import localdefs, Map, Towers, pathfinding
 import pygame
 from pygame.locals import *
 import time
+import main
 import Player
-import GUI_Kivy
+import GUI
 import TowerAbilities
 
 black = (0,0,0)
@@ -47,27 +48,25 @@ def updateFlyingList():
     Map.mapvar.movelists.append(pathfinding.reconstruct_path(came_from, Map.mapvar.startpoint, Map.mapvar.basepoint))
     Map.mapvar.genmovelists()
 
-def updatePath(openPath):
-    '''Update the path using A* algorithm
-    openPath = Boolean indicating if path is set or fluid'''
-    if openPath == True:
-        Map.newPath.walls = Map.path.get_wall_list()
-        came_from, cost_so_far = pathfinding.get_path(Map.newPath, Map.mapvar.startpoint, Map.mapvar.basepoint)
-        if len(Map.mapvar.movelists) == 0:
-            Map.mapvar.movelists.append(pathfinding.reconstruct_path(came_from, Map.mapvar.startpoint, Map.mapvar.basepoint))
-        else:
-            Map.mapvar.movelists[0] = (pathfinding.reconstruct_path(came_from, Map.mapvar.startpoint, Map.mapvar.basepoint))
-        if Map.mapvar.movelists[0] == "Path Blocked":
-            addAlert("Path Blocked", 48, "center", (240, 0, 0))
-            return False
+def updatePath():
+    '''Update the path using A* algorithm'''
+    Map.newPath.walls = Map.path.get_wall_list()
+    came_from, cost_so_far = pathfinding.get_path(Map.newPath, Map.mapvar.startpoint, Map.mapvar.basepoint)
+    if len(Map.mapvar.movelists) == 0:
+        Map.mapvar.movelists.append(pathfinding.reconstruct_path(came_from, Map.mapvar.startpoint, Map.mapvar.basepoint))
+    else:
+        Map.mapvar.movelists[0] = (pathfinding.reconstruct_path(came_from, Map.mapvar.startpoint, Map.mapvar.basepoint))
+    if Map.mapvar.movelists[0] == "Path Blocked":
+        addAlert("Path Blocked", 48, "center", (240, 0, 0))
+        return False
 
-        if len(Map.mapvar.movelists) < 2:
-            updateFlyingList()
-        Map.mapvar.genmovelists()
-        Map.mapvar.updatePath = False
-        Player.player.newMoveList = True
+    if len(Map.mapvar.movelists) < 2:
+        updateFlyingList()
+    Map.mapvar.genmovelists()
+    Map.mapvar.updatePath = False
+    Player.player.newMoveList = True
 
-        Map.mapvar.roadGen()
+    Map.mapvar.roadGen()
 
 
 ##my work
@@ -123,7 +122,7 @@ def workEnemies():
         #    pygame.draw.line(Player.player.screen, (255,0,0), (enemy.rect_x,enemy.rect_y-2), (enemy.rect_x+(enemy.health*1.0/enemy.starthealth*1.0)*enemy.rect_w,enemy.rect_y-2), 3)
 
 def updateGUI(wavetime):
-    GUI_Kivy.gui.updateTopBar(wavetime)
+    GUI.gui.updateTopBar(wavetime)
 
 
 
@@ -143,7 +142,6 @@ def towerButtonPressed(selected):
 
 def pauseGame(*args):
     id = args[0].id
-    print (id)
     if Player.player.state == 'Playing':
         if id == 'pause':
             Player.player.state = 'Paused'
@@ -162,15 +160,25 @@ def resetGame():
         while i < len(list):
             list.pop()
 
-    Player.player.wavenum = 0
-    Player.player.wavestart = 999
-    Player.player.money = Player.playermoney
-    Player.player.health = Player.playerhealth
-    Player.player.kill_score = 0
-    Player.player.bonus_score = 0
-
     Map.mapvar.towercontainer.clear_widgets()
     Map.mapvar.enemycontainer.clear_widgets()
     Map.mapvar.explosioncontainer.clear_widgets()
     Map.mapvar.roadcontainer.clear_widgets()
+    Map.mapvar.shotcontainer.clear_widgets()
+    Map.mapvar.cloudcontainer.clear_widgets()
     Map.mapvar.towercontainer.clear_widgets()
+
+
+    Player.player.wavenum = 0
+    GUI.gui.myDispatcher.WaveNum = str(Player.player.wavenum)
+    GUI.gui.myDispatcher.Wave = str(Player.player.wavenum)
+    Player.player.wavetime = int(Map.waveseconds)
+    GUI.gui.myDispatcher.Timer = str(Player.player.wavetime)
+    Player.player.money = Player.playermoney
+    GUI.gui.myDispatcher.Money = str(Player.player.money)
+    Player.player.health = Player.playerhealth
+    GUI.gui.myDispatcher.Health = str(Player.player.health)
+    Player.player.score = 0
+    GUI.gui.myDispatcher.Score = str(Player.player.score)
+
+    updatePath()

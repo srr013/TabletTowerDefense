@@ -81,10 +81,7 @@ def get_rotation(obj, enemy):
     y = obj.image.pos[1] - enemy.rect_centery
     #calculates the rotation of the image.
     rotation = math.degrees(math.atan2(y, x))
-    new_angle = rotation if rotation > 0 else 360 + rotation
-    #print ("rotation:", rotation, "current angle:", obj.currentPointerAngle)
-    angle= new_angle - obj.currentPointerAngle
-    return angle
+    return rotation
 
 ##Use this if the sprite comes in a single PNG
 def split_sheet(sheet, size, columns, rows):

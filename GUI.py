@@ -296,7 +296,7 @@ class GUI():
         range = Player.player.towerSelected.range
         with Player.player.layout.canvas.before:
             Color(.5, 0, 0, .3)
-            circle = Ellipse(pos = (squarepos[0] - .75*range+Map.squsize, squarepos[1] - .75*range+Map.squsize), size= (1.5*range, 1.5*range))
+            circle = Ellipse(pos = (squarepos[0] - range+Map.squsize, squarepos[1] - range+Map.squsize), size= (2*range, 2*range))
 
 
         tbbuttonnum = len(localdefs.towerabilitylist)
