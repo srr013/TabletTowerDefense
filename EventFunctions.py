@@ -9,7 +9,7 @@ import Player
 import Towers
 # import Utilities
 import SenderClass
-import GUI_Kivy
+import GUI
 
 
 # def leftCheckSelect(event,selected):
@@ -57,7 +57,7 @@ def placeTower(*args):
         #place the tower if it's an open map and no wall is at that point
         #add the tower to the tower container after the if statement, otherwise it collides with itself
 
-        if MainFunctions.updatePath(Map.mapvar.openPath)== False:
+        if MainFunctions.updatePath()== False:
             i = 0
             while i < len(localdefs.towerlist[-1].towerwalls):
                 Map.path.wall_list.pop(-1)
@@ -85,64 +85,18 @@ def placeTower(*args):
         # MainFunctions.addAlert("Invalid Location".format(pos), 48, "center", (240, 0, 0))
         return towerselected,False
 
-# ##Checks to see if player has enough money to purchase the tower
-# ##called by leftAlreadySelected below. Calls PlaceTower
-# def leftSelectedIcon(event,selected):
-#     '''If an Icon was previously selected check for available money then call PlaceTower
-#     Event: Dict of user actions from keyboard/mouse
-#     Selected: tower or icon selected'''
-#     if event.dict['pos'][1]< Map.scrhei+Map.mapoffset[1]*Map.squsize and event.dict['pos'][1] > Map.mapoffset[1]*Map.squsize:
-#         if event.dict['pos'][0]< Map.scrwid+Map.mapoffset[0]*Map.squsize and event.dict['pos'][1] > Map.mapoffset[0]*Map.squsize:
-#             if Player.player.money>=eval("localclasses."+selected.type+"Tower").basecost*(1-Player.player.modDict[selected.type.lower()+"CostMod"])*(1-Player.player.modDict["towerCostMod"]):
-#                 return placeTower(event, selected)
-#             else:
-#                 Player.player.towerSelected = None
-#                 selected = None
-#                 MainFunctions.addAlert("Not Enough Money", 48, "center", (240, 0, 0))
-#         else:
-#             Player.player.towerSelected = None
-#             selected = None
-#             MainFunctions.addAlert("Invalid Location", 48, "center", (240, 0, 0))
-#     else:
-#         Player.player.towerSelected = None
-#         selected = None
-#         MainFunctions.addAlert("Invalid Location", 48, "center", (240, 0, 0))
-#     return selected,False
-#
-# ##Checks to see if something was selected with a previous action. If it's been selected is it an icon from tower menu or a tower already on the screen?
-# ##Called by mouseButtonUp if something hasn't been selected yet, which is checked via leftCheckSelect
-# def leftAlreadySelected(event,selected):
-#     '''Determine if a tower or icon is selected currently
-#     Event: Dict of user actions from keyboard/mouse
-#     Selected: tower or icon selected'''
-#     if selected.__class__ == localclasses.Icon:
-#         return leftSelectedIcon(event, selected)
-#     elif localclasses.Tower in selected.__class__.__bases__:
-#         if not leftSelectedTower(event, selected):
-#             return None,True
-#         else:
-#             return selected,False
-#
-# #called in MainFunctions when user releases mouse button. Calls above functions to determine appropriate action
-# def mouseButtonUp(event,selected):
-#     '''If mousebuttonUp event is detected determine next steps and call appropriate function
-#     Event: Dict of user actions from keyboard/mouse
-#     Selected: tower or icon selected'''
-#     print ("in MBup")
-#     if event.dict['button']==1:
-#         selected,lCSb = leftCheckSelect(event, selected)
-#         if not lCSb and selected:
-#             return leftAlreadySelected(event, selected)
-#         else: return selected,lCSb
-#     else:
-#         return None,(False if not selected else True)
-
 
 def nextWave(*args):
     '''Send the next enemy wave'''
+    Player.player.score += int(Player.player.wavetimeInt * Player.player.wavenum * .25)
+    GUI.gui.myDispatcher.Score = str(Player.player.score)
     Player.player.wavenum+=1
-    GUI_Kivy.gui.myDispatcher.WaveNum = Player.player.wavenum
-    GUI_Kivy.gui.myDispatcher.Wave = str(Player.player.wavenum)
+    GUI.gui.myDispatcher.WaveNum = Player.player.wavenum
+    GUI.gui.myDispatcher.Wave = str(Player.player.wavenum)
+    Player.player.wavetime = Map.waveseconds
+    Player.player.wavetimeInt = int(Map.waveseconds)
+    GUI.gui.myDispatcher.Timer = str(Player.player.wavetime)
+    Player.player.next_wave = False
     SenderClass.Sender(specialSend = False)
 
 

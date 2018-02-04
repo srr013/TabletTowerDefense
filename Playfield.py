@@ -1,5 +1,5 @@
 import Map
-import GUI_Kivy
+import GUI
 import Utilities
 import Player
 
@@ -46,7 +46,7 @@ class playField(ScatterLayout):
                if Player.player.tbbox != None:
                    self.removePopUp()
                Player.player.towerSelected = tower
-               GUI_Kivy.gui.towerMenu(tower.pos)
+               GUI.gui.towerMenu(tower.pos)
                return True
         for tower in Map.mapvar.towercontainer.walk(restrict=True):
             if tower.collide_point(squarepos[0]+30, squarepos[1]):
@@ -67,7 +67,7 @@ class playField(ScatterLayout):
             squarepos[1] += 30
         #create the tower creation menu and display
         if not Player.player.tbbox:
-            GUI_Kivy.gui.builderMenu(squarepos)
+            GUI.gui.builderMenu(squarepos)
             return True
         #remove a displayed menu if touch is outside the menu
         elif Player.player.tbbox and not Player.player.tbbox.collide_point(*squarepos):

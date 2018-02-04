@@ -1,20 +1,8 @@
 ##########################################################################
 # This code is the work of Scott Rossignol (srr0132@gmail.com)
-# It was adapted from an open source Tower Defense game, info below.
 # Additional credits for artwork and algorithms are in the Content Sources document
 #
-# License:
-# All code and work contained within this file and folder and package is open for
-# use, however please include at least a credit to me and any other coders working
-# on this project.
-
-#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/
-#Original source credit:
-# Base Coder: Austin Morgan (codenameduckfin@gmail.com)
-# Version: 0.8
-# Legacy code: https://sourceforge.net/projects/ppgtd/
-#
-#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/
+############################################################################
 
 import pygame
 import MainFunctions
@@ -23,7 +11,7 @@ import time
 import Map
 import Player
 import Towers
-import GUI_Kivy
+import GUI
 import Keyboard_Kivy
 
 
@@ -56,8 +44,7 @@ class Game(Widget):
         self._keyboard.bind(on_key_up=Keyboard_Kivy._on_keyboard_up)
         self.mainMenu = None
         self.pauseMenu = None
-        self.wavetime = Map.waveseconds
-        self.wavetimeInt = 0
+
 
     def menuFuncs(self, obj):
         if obj.text == 'Play':
@@ -75,7 +62,7 @@ class Game(Widget):
 
     def dispMainMenu(self):
         if self.mainMenu == None:
-            self.mainMenu = GUI_Kivy.mainMenu()
+            self.mainMenu = GUI.mainMenu()
             for button in self.mainMenu.walk(restrict=True):
                 button.bind(on_release=self.menuFuncs)
             self.add_widget(self.mainMenu)
@@ -84,7 +71,7 @@ class Game(Widget):
 
     def dispPauseMenu(self):
         if self.pauseMenu == None:
-            self.pauseMenu = GUI_Kivy.pauseMenu()
+            self.pauseMenu = GUI.pauseMenu()
             for button in self.pauseMenu.walk(restrict=True):
                 button.bind(on_release=self.menuFuncs)
             self.add_widget(self.pauseMenu)
@@ -95,13 +82,10 @@ class Game(Widget):
 
 
     def update(self, dt):
-        starttime = time.time()
         if Player.player.state == 'Menu':
             self.dispMainMenu()
-            #MainFunctions.updateGUI(self.wavetime)
         if Player.player.state == 'Paused':
             self.dispPauseMenu()
-            #MainFunctions.updateGUI(self.wavetime)
         if Player.player.state == 'Playing':
             Player.player.frametime = 5 / 60.0
             if Player.player.gameover:
@@ -111,32 +95,25 @@ class Game(Widget):
 
             ##update path when appropriate
             if Map.mapvar.updatePath:
-                MainFunctions.updatePath(Map.mapvar.openPath)
+                MainFunctions.updatePath()
 
             if Player.player.next_wave:
-                Player.player.score += self.wavetimeInt * Player.player.wavenum
-                GUI_Kivy.gui.myDispatcher.Score = str(Player.player.score)
                 EventFunctions.nextWave()
-                Player.player.next_wave = False
 
             MainFunctions.workSenders()
-            ##Check each tower and shoot at an enemy if one is in range
             MainFunctions.workTowers()
-            ##Display explosions from any enemies killed in during previous frame
             MainFunctions.dispExplosions()
-            ##Check if enemy is slowed and move the enemy
             MainFunctions.workEnemies()
-            ##check for keyboard/Mouse input and take action based on those inputs
             MainFunctions.workShots()
 
             if Player.player.wavenum > 0:
-                self.wavetime -= Player.player.frametime
-                self.wavetimeInt = int(self.wavetime)
-                GUI_Kivy.gui.myDispatcher.Timer = str(self.wavetimeInt)
+                Player.player.wavetime -= Player.player.frametime
+                Player.player.wavetimeInt = int(Player.player.wavetime)
+                GUI.gui.myDispatcher.Timer = str(Player.player.wavetimeInt)
 
-            if self.wavetime < .05:
-                GUI_Kivy.gui.myDispatcher.Timer = str(Map.waveseconds)
-                self.wavetime = Map.waveseconds
+            if Player.player.wavetime < .05:
+                Player.player.wavetime = int(Map.waveseconds)
+                GUI.gui.myDispatcher.Timer = str(Player.player.wavetime)
                 Player.player.next_wave=True
 
 
@@ -145,32 +122,32 @@ class Main(App):
     #instantiate required classes and variables
     def build(self):
         #pygame.init()
-        game = Game()
+        self.game = Game()
 
         #general appearance updates
         background = Background()
-        game.add_widget(background)
+        self.game.add_widget(background)
         map = Map.mapvar.loadMap("Pathfinding")
         background.add_widget(map)
 
-        ##create a list of available towers to add to the bottom tower buttons
+        ##create a list of available towers and icons for touch interaction
         MainFunctions.makeIcons()
         MainFunctions.makeUpgradeIcons()
 
         #create toolbars
-        game.topBar = GUI_Kivy.gui.createTopBar()
-        map.add_widget(game.topBar)
+        self.game.topBar = GUI.gui.createTopBar()
+        map.add_widget(self.game.topBar)
         #map.add_widget(GUI_Kivy.gui.createTopSideBar())
         #map.add_widget(GUI_Kivy.gui.createBottomSideBar())
 
         ##update path at start
         if Map.mapvar.updatePath == True:
-            MainFunctions.updatePath(Map.mapvar.openPath)
+            MainFunctions.updatePath()
 
         #this runs the game.update loop, which is used for handling the entire game
-        Clock.schedule_interval(game.update,5/60)
+        Clock.schedule_interval(self.game.update,5/60)
 
-        return game
+        return self.game
 
 if __name__ == '__main__':
     Window.size = (Map.winwid,Map.winhei)

@@ -28,7 +28,7 @@ class Sender():
     def tick(self):
         '''Sends an enemy each frame and maintains Senderlist'''
         self.enemycounter -= Player.player.frametime
-        if self.enemycounter<=0:
+        if self.enemycounter<=0 or self.enemiesDeployed == 0:
             if self.enemiesDeployed < self.numThisWave:
                 #print ("deploying enemy")
                 if self.enemytype == 'Crowd' and self.specialSend == True:

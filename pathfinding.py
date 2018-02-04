@@ -57,7 +57,38 @@ def reconstruct_path(came_from, start, goal):
 
     path.append(start)
     path.reverse()
-    return path
+
+    x = 0
+    direction = []
+    while x < len(path)-1:
+        if path[x][1] == path[x+1][1]:
+            if path[x][0] < path[x+1][0]:
+                direction.append('r')
+            else:
+                direction.append('l')
+        if path[x][0] == path[x+1][0]:
+            if path[x][1] < path [x+1][1]:
+                direction.append('u')
+            else:
+                direction.append('d')
+        x+=1
+    direction.append('r')#last square will always be right
+
+    y=0
+    move = []
+    move.append(path[y])
+    y+=1
+    while y < len(direction):
+        if y == len(direction)-1:
+            move.append(path[y])
+            break
+        if direction[y-1] == direction[y]:
+            pass
+        else:
+            move.append(path[y])
+        y+=1
+
+    return path, direction, move
 
 
 class MapGrid():
