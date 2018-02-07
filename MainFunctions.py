@@ -1,8 +1,5 @@
 import localdefs, Map, Towers, pathfinding
-import pygame
-from pygame.locals import *
 import time
-import main
 import Player
 import GUI
 import TowerAbilities
@@ -88,19 +85,20 @@ def dispExplosions():
         explosion[2].dispExplosions(explosion)
 
 def addAlert(message, fontsize, location, color, length = 2):
-    '''Add an alert to alertQueue
-    Message: the text to display
-    Fontsize: integer size of font
-    Location: string indicating location to display message. [center]
-    length: Default 2. Length of time to display message in seconds.'''
-    if location == "center":
-        location = (Map.scrwid+Map.mapoffset[0]/2, Map.scrhei+Map.mapoffset[1]/2)
-
-    font = pygame.font.Font(None, fontsize)
-    text = font.render(message, 1, color)
-    textpos = text.get_rect(center=location)
-    endtime = time.time() + length
-    localdefs.alertQueue.append([text,textpos, endtime])
+    pass
+#     '''Add an alert to alertQueue
+#     Message: the text to display
+#     Fontsize: integer size of font
+#     Location: string indicating location to display message. [center]
+#     length: Default 2. Length of time to display message in seconds.'''
+#     if location == "center":
+#         location = (Map.scrwid+Map.mapoffset[0]/2, Map.scrhei+Map.mapoffset[1]/2)
+#
+#     font = pygame.font.Font(None, fontsize)
+#     text = font.render(message, 1, color)
+#     textpos = text.get_rect(center=location)
+#     endtime = time.time() + length
+#     localdefs.alertQueue.append([text,textpos, endtime])
 
 
 def workEnemies():

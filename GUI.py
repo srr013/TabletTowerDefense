@@ -285,7 +285,7 @@ class GUI():
 
     def createTBBox(self, squarepos):
 
-        Player.player.tbbox = FloatLayout(size=(180, 180),
+        Player.player.tbbox = FloatLayout(size=(150, 150),
                                           pos=(squarepos[0] - Map.squsize * 2, squarepos[1] - Map.squsize * 2))
         Player.player.layout = BoxLayout(size=(Map.squsize * 2, Map.squsize * 2), pos=squarepos)
         Player.player.tbbox.add_widget(Player.player.layout)
@@ -295,8 +295,12 @@ class GUI():
         self.createTBBox(squarepos)
         range = Player.player.towerSelected.range
         with Player.player.layout.canvas.before:
-            Color(.5, 0, 0, .3)
-            circle = Ellipse(pos = (squarepos[0] - range+Map.squsize, squarepos[1] - range+Map.squsize), size= (2*range, 2*range))
+            Color(.5, .5, .5, .3)
+            square = Rectangle(pos = (squarepos[0] - range+Map.squsize, squarepos[1] - range+Map.squsize), size= (2*range, 2*range))
+            Color(0,0,0,1)
+            outline = Line(points=[squarepos[0] - range+Map.squsize, squarepos[1] - range+Map.squsize, squarepos[0] - range+Map.squsize, squarepos[1] + range+Map.squsize,
+                                squarepos[0] + range + Map.squsize, squarepos[1] + range + Map.squsize, squarepos[0] + range+Map.squsize, squarepos[1] - range+Map.squsize,
+                                squarepos[0] - range+Map.squsize, squarepos[1] - range+Map.squsize], width=.2)
 
 
         tbbuttonnum = len(localdefs.towerabilitylist)
@@ -318,23 +322,22 @@ class GUI():
     def builderMenu(self,squarepos):
         self.createTBBox(squarepos)
         with Player.player.layout.canvas.before:
-            Color(0, 0, 0, .3)
-            circle = Line(circle=(Player.player.layout.pos[0] + Map.squsize, Player.player.layout.pos[1] + Map.squsize, 80))
+            Color(0, 0, 0, 1)
+            outline = Line(points=[squarepos[0]-Map.squsize*2, squarepos[1]-Map.squsize*2, squarepos[0]-Map.squsize*2, squarepos[1]+Map.squsize*4,
+                                squarepos[0]+ Map.squsize*4, squarepos[1]+ Map.squsize*4, squarepos[0]+Map.squsize*4, squarepos[1]-Map.squsize*2,
+                                squarepos[0]-Map.squsize*2, squarepos[1]-Map.squsize*2], width=.2)
             Color(.1, .1, .1, .1)
             rect = Rectangle(size=Player.player.layout.size, pos=Player.player.layout.pos)
 
-        tbbuttonnum = len(localdefs.iconlist)
-        radius = 55
-        inddeg = (2.0 * math.pi) / tbbuttonnum
         for ind, button in enumerate(localdefs.iconlist):
             tmpbtn = MyButton()
             tmpbtn.instance = button
             tmpbtn.text=button.type
-            tmpbtn.size_hint=(.3, .3)
-            tmpbtn.size = (20,20)
+            tmpbtn.size_hint=(.4, .4)
+            tmpbtn.size = (60,60)
             tmpbtn.source = button.imgstr
             Player.player.tbbox.add_widget(tmpbtn)
-            tmpbtn.pos = (Player.player.layout.x + radius * math.cos((ind) * inddeg),(Player.player.layout.y - radius * math.sin((ind) * inddeg)))
+            tmpbtn.pos = Utilities.get_pos(Player.player.tbbox.pos,180,180, ind)
 
             #print(Player.player.tbbox.center, Player.player.tbbox.size, touchpos, "name:", tmpbtn.size, tmpbtn.text, tmpbtn.center)
 

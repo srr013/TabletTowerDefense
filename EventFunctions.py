@@ -1,38 +1,11 @@
 import localdefs
 import MainFunctions
-# import localclasses
-# import sys
-# import threading
-# import pygame
 import Map
 import Player
 import Towers
-# import Utilities
 import SenderClass
 import GUI
 
-
-# def leftCheckSelect(event,selected):
-#     '''Check to see if mouse position is over an object in tower and icon list. Returns object selected and a boolean indicating a if something was clicked.
-#     Event: Dict of user actions from keyboard/mouse
-#     Selected: tower or icon selected'''
-#     for object in (localdefs.towerlist+localdefs.iconlist):
-#         if object.rect.collidepoint(event.dict['pos']):
-#             return object,True
-#     return selected,False
-#
-# def leftSelectedTower(event,selected):
-#     '''Displays the tower menu if a tower was clicked.
-#     Event: Dict of user actions from keyboard/mouse
-#     Selected: tower or icon selected'''
-#     for text,rect,info,infopos,cb in selected.buttonlist:
-#         if rect.collidepoint(event.dict['pos']):
-#             cb(selected)
-#             return True
-#     return False
-
-##if a tower isn't already there, and the selected spot isn't on the path, return true.
-##called by leftSelectedIcon below
 
 def placeTower(*args):
     '''Places a tower at location of event (mouseclick)
@@ -65,25 +38,31 @@ def placeTower(*args):
             print("Path blocked!!")
             localdefs.towerlist.pop()
             Map.mapvar.towercontainer.remove_widget(newTower)
-            return towerselected, False
+
         else:
             Map.mapvar.towercontainer.add_widget(newTower)
             Player.player.towerSelected = None
-            return None, True
+            for enemy in Map.mapvar.enemycontainer.children:
+                enemy.anim.cancel_all(enemy)
+                enemy.movelist = Map.mapvar.pointmovelists[enemy.movelistNum]
+                enemy.curnode -=1
+                enemy.move()
+
+
 
     elif not Map.mapvar.openPath and not any(toweroverlap) and str(walloverlap) == 'set()':
         #place the tower if it's a closed path map, and no path
         Map.mapvar.towercontainer.add_widget(newTower)
         eval("Towers." + towerselected.type + towerselected.base)(pos)
         Player.player.towerSelected = None
-        return None,True
+
 
     else:
         print ("tower not placed")
         localdefs.towerlist.pop()
         Map.mapvar.towercontainer.remove_widget(newTower)
         # MainFunctions.addAlert("Invalid Location".format(pos), 48, "center", (240, 0, 0))
-        return towerselected,False
+
 
 
 def nextWave(*args):

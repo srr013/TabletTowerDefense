@@ -55,9 +55,8 @@ class Upgrade(TowerAbility):
         tower = Player.player.towerSelected
         if Player.player.money>=cls.cost(tower):
             Player.player.money-=cls.cost(tower)
-            tower.damageMod += 0.15*tower.basedamage
-            tower.reload()
-            tower.upgrades.append(cls)
+            tower.damage += 0.15*tower.initdamage
+            tower.level += 1
             return True
         return False
 

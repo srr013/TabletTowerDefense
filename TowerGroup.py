@@ -9,6 +9,9 @@ class TowerGroup():
         self.reloadModifier = 1
         self.rangeModifier = 1
         self.pushModifier = 1
+        self.slowTimeModifier = 1
+        self.slowPercentModifier = 1
+        self.stunTimeModifier = 1
 
     def updateTowerGroup(self):
         self.updateList()
@@ -29,6 +32,9 @@ class TowerGroup():
         self.reloadModifier = 1 + (len(self.towerSet)-1) * .05
         self.rangeModifier = 1 + (len(self.towerSet)-1) * .05
         self.pushModifier = 1 + (len(self.towerSet)-1) * .05
+        self.slowTimeModifier = 1 + (len(self.towerSet)-1) *.05
+        self.slowPercentModifier = 1 + (len(self.towerSet)-1) *.05
+        self.stunTimeModifier = 1 + (len(self.towerSet)-1) *.05
 
         for tower in self.towerSet:
             tower.updateModifiers()

@@ -1,10 +1,8 @@
 ##########################################################################
 # This code is the work of Scott Rossignol (srr0132@gmail.com)
 # Additional credits for artwork and algorithms are in the Content Sources document
-#
 ############################################################################
 
-import pygame
 import MainFunctions
 import EventFunctions
 import time
@@ -24,10 +22,10 @@ from kivy.core.window import Window, WindowBase
 from kivy.config import Config
 from kivy.properties import StringProperty
 
-Config.set('modules', 'touchring', '')
+#Config.set('modules', 'touchring', '')
 
-import cProfile
-import pstats
+# import cProfile
+# import pstats
 
 class Background(Widget):
     def __init__(self,**kwargs):
@@ -121,12 +119,11 @@ class Game(Widget):
 class Main(App):
     #instantiate required classes and variables
     def build(self):
-        #pygame.init()
-        self.game = Game()
+        game = Game()
 
         #general appearance updates
         background = Background()
-        self.game.add_widget(background)
+        game.add_widget(background)
         map = Map.mapvar.loadMap("Pathfinding")
         background.add_widget(map)
 
@@ -135,8 +132,8 @@ class Main(App):
         MainFunctions.makeUpgradeIcons()
 
         #create toolbars
-        self.game.topBar = GUI.gui.createTopBar()
-        map.add_widget(self.game.topBar)
+        game.topBar = GUI.gui.createTopBar()
+        map.add_widget(game.topBar)
         #map.add_widget(GUI_Kivy.gui.createTopSideBar())
         #map.add_widget(GUI_Kivy.gui.createBottomSideBar())
 
@@ -145,9 +142,9 @@ class Main(App):
             MainFunctions.updatePath()
 
         #this runs the game.update loop, which is used for handling the entire game
-        Clock.schedule_interval(self.game.update,5/60)
+        Clock.schedule_interval(game.update,5/60)
 
-        return self.game
+        return game
 
 if __name__ == '__main__':
     Window.size = (Map.winwid,Map.winhei)

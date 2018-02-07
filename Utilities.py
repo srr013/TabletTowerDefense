@@ -77,11 +77,27 @@ def get_rotation(obj, enemy):
     obj is an object to be rotated
     '''
     #distance between the image and the enemy. this is "A" and "B" in the arctan equation
-    x = obj.image.pos[0] - enemy.rect_centerx
-    y = obj.image.pos[1] - enemy.rect_centery
+    x = obj.image.center[0] - enemy.rect_centerx
+    y = obj.image.center[1] - enemy.rect_centery
     #calculates the rotation of the image.
     rotation = math.degrees(math.atan2(y, x))
     return rotation
+
+def in_range(tower, enemy):
+    return (enemy.right > tower.center[0] - tower.range and enemy.pos[0] < tower.center[0] + tower.range) and \
+            (enemy.top > tower.center[1] - tower.range and enemy.pos[1] < tower.center[1] + tower.range)
+
+def get_pos(pos,h,w,num):
+    if num == 0:
+        return pos
+    if num == 1:
+        return (pos[0], pos[1]+2*h/3)
+    if num == 2:
+        return (pos[0]+2*w/3, pos[1]+2*h/3)
+    if num == 3:
+        return (pos[0]+2*w/3, pos[1])
+    if num == 4:
+        return (pos[0]+w/3, pos[1]+h/3)
 
 ##Use this if the sprite comes in a single PNG
 def split_sheet(sheet, size, columns, rows):

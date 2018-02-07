@@ -1,7 +1,8 @@
 
 import os
 import localdefs
-import math, operator
+import math
+import operator
 import re
 
 import Utilities
@@ -58,6 +59,7 @@ class Tower(Widget):
         self.shotcloud = None
         self.shotcount = 0
         self.allowedshots = 1
+        self.level = 1
         #Update tower group dict so it's accurate based on new tower
         for towergroup in localdefs.towerGroupDict[self.type]:
             towergroup.updateTowerGroup()
@@ -239,7 +241,7 @@ class Tower(Widget):
                 PushMatrix()
                 self.rot = Rotate(axis=(0,0,1), origin=self.image.center, angle = rotation)
             with self.image.canvas.after:
-                PopMatrix()
+                PopMatrix()#tower positioning and rotation
 
 
     def updateModifiers(self):
@@ -248,6 +250,11 @@ class Tower(Widget):
         self.range = self.initrange * self.towerGroup.rangeModifier
         if self.type == 'Wind':
             self.push = self.initpush * self.towerGroup.pushModifier
+        if self.type == 'Ice':
+            self.slowtime = self.initslowtime * self.towerGroup.slowTimeModifier
+            self.slowpercent = self.initslowpercent * self.towerGroup.slowPercentModifier
+        if self.type == 'Gravity':
+            self.stuntime = self.initstuntime * self.towerGroup.stunTimeModifier
 
     def genWalls(self):
         '''Generating the rects for the tower used in collision and path generation'''
@@ -284,8 +291,9 @@ class Tower(Widget):
         sortedlist = sorted(Map.mapvar.enemycontainer.children, key=operator.attrgetter("distBase"))
         in_range_air = 0
         in_range_ground = 0
+
         for enemy in sortedlist:
-            if math.sqrt((self.rect_centerx-enemy.rect_centerx)**2+(self.rect_centery-enemy.rect_centery)**2)<=self.range:
+            if Utilities.in_range(self,enemy):
                 if enemy.isair and self.attackair:
                     in_range_air +=1
                     if self.type == 'Wind':
@@ -312,6 +320,7 @@ class Tower(Widget):
                         self.shotcount +=1
                         Shot.Shot(self, enemy)
                     if self.shotcloud:
+                        self.shotcount +=1
                         self.shotcloud.hitEnemy(enemy)
                         if not self.active:
                             self.shotcloud.enable()
@@ -322,21 +331,22 @@ class Tower(Widget):
                 return
 
         if in_range_air == 0 and self.type == 'Wind' and self.active:
-            self.deactivateTower('Wind')
-        if in_range_ground == 0 and self.type == 'Ice' and self.active:
-            self.deactivateTower('Ice')
+            self.deactivateTower()
+        if in_range_ground == 0 and in_range_air==0 and (self.type == 'Ice' or self.type == 'Gravity') and self.active:
+            self.deactivateTower()
 
 
-    def deactivateTower(self, tower):
-        if tower == 'Ice':
+    def deactivateTower(self):
+        if self.shotcloud:
             if self.active:
                 self.shotcloud.disable()
-        if tower == "Wind":
+        if self.type == "Wind":
             self.active = False
             self.turret.source = os.path.join('towerimgs', self.type, "turret.png")
 
     def moveTurret(self, enemy):
-        angle = 180+ Utilities.get_rotation(self, enemy)
+        angle = 180+Utilities.get_rotation(self, enemy)
+        #print ("angle:", angle)
         self.turret.anim = Animation(angle=angle, d=.1)
         self.turret.anim.start(self.turret_rot)
 
@@ -407,9 +417,11 @@ class LifeTower(Tower):
 class GravityTower(Tower):
     type = "Gravity"
     cost = 15
-    initrange = 90
-    initdamage = 4
-    initreload = 4
+    initrange = 60
+    initdamage = 10
+    initreload = 5
+    initstuntime = 1
+    initpush = 10
     imagestr = os.path.join('towerimgs', 'Gravity', 'icon.png')
     def __init__(self,pos,**kwargs):
         Tower.__init__(self, pos, **kwargs)
@@ -418,19 +430,27 @@ class GravityTower(Tower):
         self.initrange = GravityTower.initrange
         self.initdamage = GravityTower.initdamage
         self.initreload = GravityTower.initreload
+        self.initstuntime = GravityTower.initstuntime
+        self.initpush = GravityTower.initpush
         self.type = GravityTower.type
-        self.shotimage = "waves.png"
         self.attackair=True
         self.attacktype = "multi"
+        self.shotcloud = ShotCloud.ShotCloud(self)
+        self.active = False
+        self.allowedshots = 999
+        self.stuntime = 1
+        self.push = -10
 
     #Gravity tower pulls enemies towards it. On random occasions it can stun and pull strongly. Works on air.
 
 class IceTower(Tower):
     type = "Ice"
     cost = 20
-    initrange = 120
+    initrange = 60
     initdamage = 3
     initreload = 1
+    initslowtime = 3
+    initslowpercent = .8
     imagestr = os.path.join('towerimgs', 'Ice', 'icon.png')
     def __init__(self,pos, **kwargs):
         Tower.__init__(self, pos, **kwargs)
@@ -439,10 +459,15 @@ class IceTower(Tower):
         self.initrange = IceTower.initrange
         self.initdamage = IceTower.initdamage
         self.initreload = IceTower.initreload
+        self.initslowtime = IceTower.initslowtime
+        self.initslowpercent = IceTower.initslowpercent
         self.type = IceTower.type
-        self.attackair = False
+        self.slowtime = 3
+        self.slowpercent = .8
+        self.attackair = True
         self.attacktype = 'slow'
         self.shotcloud = ShotCloud.ShotCloud(self)
+
         self.active = False
         self.allowedshots = 999
 
@@ -474,7 +499,7 @@ class WindTower(Tower):
         self.loadTurret()
         self.active = False
 
-available_tower_list =[LifeTower, FireTower, IceTower, GravityTower, WindTower]
+available_tower_list =[FireTower, IceTower, GravityTower, WindTower, LifeTower]
 baseTowerList = [(tower.type, tower.cost, tower.initdamage, tower.initrange, tower.initreload, tower.imagestr) for tower in available_tower_list]
 
 
