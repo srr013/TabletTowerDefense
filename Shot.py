@@ -1,5 +1,6 @@
 import Utilities
-import os, math
+import os
+import math
 import localdefs
 import Map
 
@@ -106,7 +107,7 @@ class Shot(Widget):
     def rotate(self):
         self.angle = 180 + Utilities.get_rotation(self, self.enemy)
         self.rot.origin = self.center
-        self.rot.angle += self.angle
+        self.rot.angle = self.angle
         self.image.pos = self.pos
         self.image.size = self.size
 

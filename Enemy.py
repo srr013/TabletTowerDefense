@@ -1,5 +1,4 @@
 import os
-from pygame.locals import *
 import math
 
 import localdefs
@@ -30,10 +29,14 @@ class Enemy(Widget):
         Map.mapvar.enemycontainer.add_widget(self)
         self.starthealth = self.health
         self.startspeed = self.speed
+
         self.slowtimers = list()
-        self.slowpercent = .8
+        self.slowpercent = 1
         self.slowtime = 0
-        self.poisontimer = None
+        self.stuntimers = list()
+        self.stuntime = 0
+        #self.poisontimer = None
+
         self.distBase = self.distToBase()
         self.explosionlength = 1
         self.isair = False
@@ -63,6 +66,7 @@ class Enemy(Widget):
         '''Moves the enemy and adjusts any slow applied to it
         Frametime: the amount of time elapsed per frame'''
         self.workSlowTimers()
+        self.workStunTimers()
         if self.pushed[0] != 0 or self.pushed[1] != 0:
             self.pushMove()
             self.updateHealthBar()
@@ -80,6 +84,14 @@ class Enemy(Widget):
                 self.slowtimers.remove(st)
                 self.image.color=[1,1,1,1]
 
+    def workStunTimers(self):
+        for st in self.stuntimers:
+            st.stuntime -= Player.player.frametime
+            if st.stuntime <=0:
+                self.stuntimers.remove(st)
+                self.anim = self.move()
+
+
     def distToBase(self):
         '''Determine distance to the end point using hypotenuse of xs and ys. Returns the distance.'''
         return math.sqrt(math.pow(Map.mapvar.basepoint[0]*30-self.rect_centerx,2)+math.pow(Map.mapvar.basepoint[1]*30-self.rect_centery,2))
@@ -90,9 +102,13 @@ class Enemy(Widget):
         Frametime: the amount of time elapsed per frame'''
         # self.moveamt_x = round(self.speed * Player.player.frametime, 2)
         # self.moveamt_y = round(self.speed * Player.player.frametime, 2)
-        self.curnode+=1
+        if self.stuntime>0:
+            return
 
-        self.anim = Animation(pos=self.movelist[self.curnode], duration = 8, transition="linear")
+        self.curnode+=1
+        distToTravel = 30 #abs(self.pos[0] - self.movelist[self.curnode][0]+self.pos[1] - self.movelist[self.curnode][1])
+        duration = distToTravel/(self.speed*self.slowpercent)
+        self.anim = Animation(pos=self.movelist[self.curnode], duration = duration, transition="linear")
 
         if self.curnode >= len(self.movelist) - 1:
             self.anim.bind(on_complete=self.checkHit)
@@ -116,11 +132,14 @@ class Enemy(Widget):
 
     def pushMove(self):
         if self.recovering == False:
+            print ("pushed")
             self.anim.cancel(self)
+            self.curnode -=1
             self.pushAnimation = Animation(pos = (self.x-self.pushed[0], self.y-self.pushed[1]), duration = .4, t="linear")
             self.pushAnimation.start(self)
-            self.pushAnimation.start(self.image)
+            self.pushAnimation.bind(on_progress=self.imagepos)
             self.pushAnimation.bind(on_complete=self.move)
+            self.curnode -=1
             self.recovering = True
         self.pushtimer -= Player.player.frametime
         if self.pushtimer <= 0:
@@ -128,6 +147,8 @@ class Enemy(Widget):
             self.pushtimer = 1.0
             self.pushed = [0, 0]
             self.hit = False
+    def imagepos(self, *args):
+        self.image.pos = self.pos
 
     def checkHealth(self):
         '''Checks enemy health and kills the enemy if health <=0'''
@@ -144,6 +165,7 @@ class Enemy(Widget):
             localdefs.flyinglist.remove(self)
         #localdefs.explosions.append([(self.rect_centerx, self.rect_centery),self.explosionlength, self])
         self.isAlive = False
+        self.anim.cancel_all(self)
         self.remove_widget(self.image)
         Map.mapvar.enemycontainer.remove_widget(self)
         Player.player.money += self.reward

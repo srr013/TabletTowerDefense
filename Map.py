@@ -1,4 +1,6 @@
-import Utilities, localdefs, pathfinding
+import Utilities
+import localdefs
+import pathfinding
 import os
 import Playfield
 
@@ -75,7 +77,8 @@ class Map():
         for movelist in self.movelists:
             ##translate tiles to pixels. SQU represents a tile width or height
             pointlist = list([(point[0]*squsize,point[1]*squsize) for point in movelist[0]])
-            enemymovelist = list([(point[0]*squsize,point[1]*squsize) for point in movelist[2]])
+            #change movelist[0] to [2] for enemies to move along abbreviated list. Issues with enemy pathing when path changes if so.
+            enemymovelist = list([(point[0]*squsize,point[1]*squsize) for point in movelist[0]])
             dirmovelist = movelist[1]
             ##create a rect for each set of points to connect the path from one point to another
             pathrectlist = list([Utilities.createRect(pointlist[ind],(pointlist[ind+1][0]-pointlist[ind][0],pointlist[ind+1][1]-pointlist[ind][1])) for ind in range(len(pointlist)-2)])
