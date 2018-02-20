@@ -10,8 +10,8 @@ from kivy.core.window import Window, WindowBase
 from kivy.properties import ListProperty, StringProperty
 from kivy.graphics import *
 
-import localdefs
-import localclasses
+import Localdefs
+import EventDispatcher
 import Player
 import EventFunctions
 import MainFunctions
@@ -45,7 +45,7 @@ class MyButton(ButtonBehavior, Image):
             MainFunctions.pauseGame(button)
             return
         #tower abilities like upgrade and sell
-        elif button.instance  in localdefs.towerabilitylist:
+        elif button.instance  in Localdefs.towerabilitylist:
             func = "TowerAbilities."+button.instance.type +"."+ button.instance.func + "()"
             eval(func)
             return
@@ -181,7 +181,7 @@ class GUI():
     def __init__(self):
 
         self.topBar_Boxlist = []
-        self.myDispatcher = localclasses.EventDisp()
+        self.myDispatcher = EventDispatcher.EventDisp()
 
     def createTopBar(self):
         self.topBar=Bar(pos=(0,Window.height-45), size = (Window.width,45))
@@ -202,7 +202,7 @@ class GUI():
         self.topBar.layout.add_widget(self.pauseButton)
         self.topBar.layout.add_widget(self.nextwaveButton)
         self.topBar.layout.padding=[5]
-        for label,var,source,icon in localdefs.topBar_ElementList:
+        for label,var,source,icon in Localdefs.topBar_ElementList:
             topBarWidget(label,var,source, icon)
 
         return self.topBar
@@ -303,10 +303,10 @@ class GUI():
                                 squarepos[0] - range+Map.squsize, squarepos[1] - range+Map.squsize], width=.2)
 
 
-        tbbuttonnum = len(localdefs.towerabilitylist)
+        tbbuttonnum = len(Localdefs.towerabilitylist)
         radius = 55
         inddeg = (2.0 * math.pi) / tbbuttonnum
-        for ind,instance in enumerate(localdefs.towerabilitylist):
+        for ind,instance in enumerate(Localdefs.towerabilitylist):
             tmpbtn = MyButton()
             tmpbtn.instance = instance
             tmpbtn.text = instance.type
@@ -329,7 +329,7 @@ class GUI():
             Color(.1, .1, .1, .1)
             rect = Rectangle(size=Player.player.layout.size, pos=Player.player.layout.pos)
 
-        for ind, button in enumerate(localdefs.iconlist):
+        for ind, button in enumerate(Localdefs.iconlist):
             tmpbtn = MyButton()
             tmpbtn.instance = button
             tmpbtn.text=button.type

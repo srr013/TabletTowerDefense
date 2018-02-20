@@ -2,8 +2,8 @@ from kivy.uix.image import Image
 from kivy.uix.widget import Widget
 
 import os
-import math
 import Map
+import math
 
 def imgLoad(source, pos=(0,0)):
     '''Load an image via a kivy Image layout. By default does not size the widget containing the image.
@@ -13,12 +13,16 @@ def imgLoad(source, pos=(0,0)):
     image = Image(source=file, pos=pos)
     return image
 
-def createRect(*args, instance=None):
+def createRect( *args, **kwargs):
     '''
     :param args: x,y,w,h or a tuple or list (or kivy object) (x,y) and (w,h)
     :param instance: usually "self", or the instance being used in the function
     :return: tuple (x,y,w,h). If a class instance is passed in then it is updated with this data
     '''
+    instance = None
+    if kwargs:
+        instance = kwargs['instance']
+
     if 'tuple' in str(type(args[0])) or 'List' in str(type(args[0])):
         x = int(args[0][0])
         y = int(args[0][1])
@@ -99,17 +103,37 @@ def get_pos(pos,h,w,num):
     if num == 4:
         return (pos[0]+w/3, pos[1]+h/3)
 
+def adjacentRoadPos(pos):
+    list = []
+    y = int(pos[1] + 60)
+    x = int(pos[0] - 30)
+    list.append([x, y])
+
+    while x <= pos[0] + 30:
+        x += 30
+        list.append([x, y])
+    while y >= pos[1]:
+        y -= 30
+        list.append([x, y])
+    while x >= pos[0]:
+        x -= 30
+        list.append([x, y])
+    while y <= pos[1]:
+        y += 30
+        list.append([x, y])
+    return list
+
 ##Use this if the sprite comes in a single PNG
-def split_sheet(sheet, size, columns, rows):
-    '''Divide a loaded sprite sheet into subsurfaces.
-    Sheet = the sheet to load
-    Size = (w,h) of each frame
-    Columns and rows are the number of cells horizontally and vertically.'''
-    subsurfaces = []
-    for y in range(rows):
-        row = []
-        for x in range(columns):
-            rect = createRect((x * size[0], y * size[1]), size)
-            row.append(sheet.subsurface(rect))
-        subsurfaces.append(row)
-    return subsurfaces
+# def split_sheet(sheet, size, columns, rows):
+#     '''Divide a loaded sprite sheet into subsurfaces.
+#     Sheet = the sheet to load
+#     Size = (w,h) of each frame
+#     Columns and rows are the number of cells horizontally and vertically.'''
+#     subsurfaces = []
+#     for y in range(rows):
+#         row = []
+#         for x in range(columns):
+#             rect = createRect((x * size[0], y * size[1]), size)
+#             row.append(sheet.subsurface(rect))
+#         subsurfaces.append(row)
+#     return subsurfaces

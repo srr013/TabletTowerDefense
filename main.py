@@ -12,7 +12,6 @@ import Towers
 import GUI
 import Keyboard_Kivy
 
-
 from kivy.app import App
 from kivy.uix.widget import Widget
 
@@ -85,7 +84,7 @@ class Game(Widget):
         if Player.player.state == 'Paused':
             self.dispPauseMenu()
         if Player.player.state == 'Playing':
-            Player.player.frametime = 5 / 60.0
+            Player.player.frametime = 1 / 60.0
             if Player.player.gameover:
                 #need some sort of gameover screen. Wait on user to start new game.
                 MainFunctions.resetGame()
@@ -142,7 +141,7 @@ class Main(App):
             MainFunctions.updatePath()
 
         #this runs the game.update loop, which is used for handling the entire game
-        Clock.schedule_interval(game.update,5/60)
+        Clock.schedule_interval(game.update,1/60)
 
         return game
 

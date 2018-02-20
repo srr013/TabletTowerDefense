@@ -1,4 +1,4 @@
-import localdefs, Map, Towers, pathfinding
+import Localdefs, Map, Towers, Pathfinding
 import time
 import Player
 import GUI
@@ -27,32 +27,39 @@ def tickAndClear(clock,background):
 def workSenders(*args):
     '''Determines what enemys to create and where to place them.
     Frametime: the amount of time elapsed per frame'''
-    for sender in localdefs.senderlist:
+    for sender in Localdefs.senderlist:
         sender.tick()
 
 def workTowers():
     '''Towers target enemy(s) and create Shot instances
     Frametime: the amount of time elapsed per frame'''
-    for tower in localdefs.towerlist:
+    for tower in Localdefs.towerlist:
         tower.takeTurn()
+    for type in Localdefs.towerGroupDict.values():
+        if type:
+            for group in type:
+                if group.towerSet == set():
+                    group.removeTowerGroup()
+                else:
+                    group.takeTurn()
 
 def updateFlyingList():
     '''Update movelist for flying enemies'''
     # only border walls for flying list. Flying list to be index 1.
     Map.flyPath.walls = Map.path.border_walls
     Map.flyPath.weights = {}
-    came_from, cost_so_far = pathfinding.get_path(Map.flyPath, Map.mapvar.startpoint, Map.mapvar.basepoint)
-    Map.mapvar.movelists.append(pathfinding.reconstruct_path(came_from, Map.mapvar.startpoint, Map.mapvar.basepoint))
+    came_from, cost_so_far = Pathfinding.get_path(Map.flyPath, Map.mapvar.startpoint, Map.mapvar.basepoint)
+    Map.mapvar.movelists.append(Pathfinding.reconstruct_path(came_from, Map.mapvar.startpoint, Map.mapvar.basepoint))
     Map.mapvar.genmovelists()
 
 def updatePath():
     '''Update the path using A* algorithm'''
     Map.newPath.walls = Map.path.get_wall_list()
-    came_from, cost_so_far = pathfinding.get_path(Map.newPath, Map.mapvar.startpoint, Map.mapvar.basepoint)
+    came_from, cost_so_far = Pathfinding.get_path(Map.newPath, Map.mapvar.startpoint, Map.mapvar.basepoint)
     if len(Map.mapvar.movelists) == 0:
-        Map.mapvar.movelists.append(pathfinding.reconstruct_path(came_from, Map.mapvar.startpoint, Map.mapvar.basepoint))
+        Map.mapvar.movelists.append(Pathfinding.reconstruct_path(came_from, Map.mapvar.startpoint, Map.mapvar.basepoint))
     else:
-        Map.mapvar.movelists[0] = (pathfinding.reconstruct_path(came_from, Map.mapvar.startpoint, Map.mapvar.basepoint))
+        Map.mapvar.movelists[0] = (Pathfinding.reconstruct_path(came_from, Map.mapvar.startpoint, Map.mapvar.basepoint))
     if Map.mapvar.movelists[0] == "Path Blocked":
         addAlert("Path Blocked", 48, "center", (240, 0, 0))
         return False
@@ -62,26 +69,29 @@ def updatePath():
     Map.mapvar.genmovelists()
     Map.mapvar.updatePath = False
     Player.player.newMoveList = True
-
     Map.mapvar.roadGen()
+    updateIce()
+
+def updateIce():
+    for group in Localdefs.towerGroupDict['Ice']:
+        group.getAdjacentRoads()
 
 
-##my work
 def workShots():
     '''Update the shot location and hit the enemy'''
-    for shot in localdefs.shotlist:
+    for shot in Localdefs.shotlist:
         shot.takeTurn()
 
 def dispText():
     '''Display any alerts in the queue, then remove them'''
-    for alert in localdefs.alertQueue:
+    for alert in Localdefs.alertQueue:
         if alert[2] <= time.time():
-            localdefs.alertQueue.pop(0)
+            Localdefs.alertQueue.pop(0)
         else:
             pass
 
 def dispExplosions():
-    for explosion in localdefs.explosions:
+    for explosion in Localdefs.explosions:
         explosion[2].dispExplosions(explosion)
 
 def addAlert(message, fontsize, location, color, length = 2):
@@ -151,7 +161,7 @@ def pauseGame(*args):
 
 def resetGame():
     '''Resets game variables so player can restart the game quickly.'''
-    AllLists = [localdefs.towerlist, localdefs.bulletlist, localdefs.menulist, localdefs.explosions, localdefs.senderlist, localdefs.timerlist, localdefs.shotlist, localdefs.alertQueue]
+    AllLists = [Localdefs.towerlist, Localdefs.bulletlist, Localdefs.menulist, Localdefs.explosions, Localdefs.senderlist, Localdefs.timerlist, Localdefs.shotlist, Localdefs.alertQueue]
 
     i=0
     for list in AllLists:

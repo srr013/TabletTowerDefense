@@ -1,5 +1,5 @@
 import Map
-import wavegen
+import Wavegen
 
 
 from kivy.uix.image import Image
@@ -26,7 +26,7 @@ class Player():
         self.restart = False
         self.score = 0
         self.newMoveList = False
-        self.waveList = wavegen.wavegen() #[{'wavenum': 1, 'setnum': 1, 'enemytype': 'b', 'enemymods': []}, dict repeats]
+        self.waveList = Wavegen.wavegen() #[{'wavenum': 1, 'setnum': 1, 'enemytype': 'b', 'enemymods': []}, dict repeats]
         self.wavetime = Map.waveseconds
         self.wavetimeInt = int(Map.waveseconds)
 

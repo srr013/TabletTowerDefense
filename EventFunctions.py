@@ -1,4 +1,4 @@
-import localdefs
+import Localdefs
 import MainFunctions
 import Map
 import Player
@@ -24,29 +24,26 @@ def placeTower(*args):
         toweroverlap.append(newTower.collide_widget(tower))
 
     walloverlap = set(Map.path.wall_list).intersection(newTower.towerwalls)
-    #print (walloverlap, newTower.towerwalls)
 
-    if Map.mapvar.openPath and sufficient_funds and not any(toweroverlap) and str(walloverlap) == 'set()':
+    if Map.mapvar.openPath and sufficient_funds and not any(toweroverlap) and str(walloverlap) == 'set([])':
         #place the tower if it's an open map and no wall is at that point
         #add the tower to the tower container after the if statement, otherwise it collides with itself
-
+        Map.mapvar.towercontainer.add_widget(newTower)
         if MainFunctions.updatePath()== False:
             i = 0
-            while i < len(localdefs.towerlist[-1].towerwalls):
+            while i < len(Localdefs.towerlist[-1].towerwalls):
                 Map.path.wall_list.pop(-1)
                 i += 1
             print("Path blocked!!")
-            localdefs.towerlist.pop()
+            Localdefs.towerlist.pop()
             Map.mapvar.towercontainer.remove_widget(newTower)
 
         else:
-            Map.mapvar.towercontainer.add_widget(newTower)
             Player.player.towerSelected = None
             for enemy in Map.mapvar.enemycontainer.children:
                 enemy.anim.cancel_all(enemy)
                 enemy.movelist = Map.mapvar.pointmovelists[enemy.movelistNum]
-                enemy.curnode -=1
-                enemy.move()
+                enemy.getNearestNode()
 
 
 
@@ -59,7 +56,7 @@ def placeTower(*args):
 
     else:
         print ("tower not placed")
-        localdefs.towerlist.pop()
+        Localdefs.towerlist.pop()
         Map.mapvar.towercontainer.remove_widget(newTower)
         # MainFunctions.addAlert("Invalid Location".format(pos), 48, "center", (240, 0, 0))
 
