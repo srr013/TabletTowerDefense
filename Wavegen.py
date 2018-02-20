@@ -5,7 +5,7 @@ import Enemy
 maxSets = 6
 
 def genModList():
-    modifiers = ['speedInc', 'strInc', 'numInc', 'fireRes', 'waterRes', 'gravRes']
+    modifiers = ['speedInc', 'strInc', 'numInc', 'armInc', 'fireRes', 'waterRes','rewardInc']
     modList = []
 
     setNum = 1  # a set is counted every X waves
@@ -30,20 +30,20 @@ def wavegen():
     enemyModList = genModList()
     setNum = 1 # a set is counted every X waves
     wavesPerSet = 7
-    enemytypes = ['Standard', 'Airborn', 'Splinter', 'Strong', 'Crowd']
+    enemytypes =['Standard', 'Airborn', 'Splinter', 'Strong', 'Crowd']
     waveList = []
     waveNum = 1
 
     while setNum < maxSets:
-        while waveNum/wavesPerSet <= setNum:
+        while float(waveNum)/wavesPerSet <= setNum:
             enemyType  = enemytypes[random.randint(0, len(enemytypes)-1)]   #selects a random enemy type
-            numEnemies = int(eval("Enemy."+enemyType +".defaultNum") * (1+ (setNum/10)))    #include the following in new enemy build. 1 class per enemy, like towers.
-            healthEnemies = eval("Enemy."+enemyType +".health") * (1 + (setNum/10))
-            speedEnemies = eval("Enemy."+enemyType +".speed") * (1 + (setNum/10))
-            armorEnemies = eval("Enemy."+enemyType +".armor") * (1 + (setNum/10))
-            rewardEnemies = int(eval("Enemy."+enemyType +".reward") * (1 + (setNum/10)))
+            numEnemies = int(eval("Enemy."+enemyType +".defaultNum") * (1+ (setNum/10.0)))
+            healthEnemies = int(eval("Enemy."+enemyType +".health") * (1 + (setNum/10.0)))
+            speedEnemies = eval("Enemy."+enemyType +".speed") * (1 + (setNum/10.0))
+            armorEnemies = eval("Enemy."+enemyType +".armor") * (1 + (setNum/10.0))
+            rewardEnemies = int(eval("Enemy."+enemyType +".reward") * (1 + (setNum/10.0)))
 
-            if waveNum/wavesPerSet == setNum:
+            if float(waveNum)/wavesPerSet == setNum:
                 isBoss = True
             else:
                 isBoss = False

@@ -1,5 +1,5 @@
 import Player
-import localdefs
+import Localdefs
 import Map
 import Utilities
 import GUI
@@ -13,7 +13,7 @@ class TowerAbility:
         self.type = ability['type']
         self.cost = ability['cost']
         self.func = ability['func']
-        localdefs.towerabilitylist.append(self)
+        Localdefs.towerabilitylist.append(self)
         try:
             self.img = Utilities.imgLoad(os.path.join('iconimgs',self.type+'.png'))
             self.imgstr = str(os.path.join('iconimgs',self.type+'.png'))
@@ -34,7 +34,8 @@ class Sell(TowerAbility):
         tower = Player.player.towerSelected
         Player.player.money+=(tower.totalspent)
         GUI.gui.myDispatcher.Money = str(Player.player.money)
-        localdefs.towerlist.remove(tower)
+        tower.towerGroup.towerSet.remove(tower)
+        Localdefs.towerlist.remove(tower)
         Map.mapvar.towercontainer.remove_widget(tower)
         Player.player.towerSelected = None
         Map.mapvar.updatePath = True
@@ -57,6 +58,6 @@ class Upgrade(TowerAbility):
             Player.player.money-=cls.cost(tower)
             tower.damage += 0.15*tower.initdamage
             tower.level += 1
-            return True
+            tower.upgrade()
         return False
 

@@ -1,4 +1,4 @@
-import queue as Queue
+import Queue
 
 
 def heuristic(a, b):

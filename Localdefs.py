@@ -13,6 +13,8 @@ timerlist = list()
 shotlist = list()
 alertQueue = list()
 towerabilitylist = list()
+roadlist = list()
+activeiceroadlist = list()
 towerGroupDict = {'Life':[], 'Fire':[], 'Ice':[], 'Gravity':[], 'Wind':[]}
 topBar_ElementList = [("Wave: ", "Wave", Player.player.wavenum,"iconimgs/smallbox.png"),
                                     ("Score: ", "Score", int(Player.player.score), "iconimgs/100.png"),

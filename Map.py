@@ -1,8 +1,9 @@
 import Utilities
-import localdefs
-import pathfinding
+import Localdefs
+import Pathfinding
 import os
 import Playfield
+import Road
 
 from kivy.uix.image import Image
 from kivy.graphics import *
@@ -166,16 +167,13 @@ class Map():
 
     def roadGen(self):
         self.roadcontainer.clear_widgets()
+        Localdefs.roadlist = list()
         '''Generate the path and base and blit them'''
         #2 movelists are passed in currently. Only print tiles for the first, the ground move list. The flying move list should be the last list.
         for pathnum in range(1 if len(self.movelists)==1 else len(self.movelists)-1):
 
             for square in self.pathrectlists[pathnum]:
-                image = Utilities.imgLoad(source=os.path.join('backgroundimgs','roadarrow.png'), pos=(square[0],square[1]))
-                if image.pos == [30,270] or image.pos == [60,270]:
-                    image.source = os.path.join('backgroundimgs','redroadarrow.png')
-                image.size = (30,30)
-                self.roadcontainer.add_widget(image)
+                Road.Road(square)
             x=-1
             for square in self.roadcontainer.walk(restrict=True):
                 angle = 0
@@ -199,9 +197,6 @@ class Map():
         self.backgroundimg.add_widget(self.baseimg)
         #Kivy hierarchy: background (scatter and float layouts)> backgroundimg (on float) > containers
 
-        ##offsetting base and rect to make it seem like the mobs are going into the base at the end.
-        #self.baserect = self.baseimg.get_rect(center=(self.basepoint[0]*squsize + 45,self.basepoint[1]*squsize + .5*90/squsize))
-        #self.baseimg = pygame.transform.rotate(self.baseimg, -120)
 
     def loadMap(self,mapname):
         '''Load a particular map
@@ -228,7 +223,7 @@ class Path():
     def get_wall_list(self):
         '''Combines border walls and walls from towers placed on the map'''
         self.wall_list = list(self.border_walls)
-        for tower in localdefs.towerlist:
+        for tower in Localdefs.towerlist:
             for wall in tower.towerwalls:
                 self.wall_list.append(wall)
         #print (self.wall_list)
@@ -247,5 +242,5 @@ class Path():
 
 
 path = Path()
-newPath = pathfinding.GridWithWeights(squwid, squhei, squborder,(29,9))
-flyPath = pathfinding.GridWithWeights(squwid, squhei, squborder,(29,9))
+newPath = Pathfinding.GridWithWeights(squwid, squhei, squborder, (29, 9))
+flyPath = Pathfinding.GridWithWeights(squwid, squhei, squborder, (29, 9))
