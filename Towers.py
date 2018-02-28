@@ -13,12 +13,19 @@ import GUI
 
 from kivy.uix.widget import Widget
 from kivy.uix.image import Image
+from kivy.uix.label import Label
 from kivy.graphics import *
 from kivy.animation import Animation
+from kivy.properties import NumericProperty
 
 
 
 class Tower(Widget):
+    level = NumericProperty(1)
+    def on_level(self, instance, value):
+        print instance, value
+        self.levelLabel.text = str(int(value))
+
     def __init__(self,pos,**kwargs):
         super(Tower, self).__init__(**kwargs)
         self.pos=pos
@@ -61,11 +68,17 @@ class Tower(Widget):
         # self.shotcloud = None
         self.shotcount = 0
         self.allowedshots = 1
-        self.level = 1
 
         self.totalUpgradeTime = 0
         self.upgradeTimeElapsed = 0
         self.percentComplete = 0
+
+        self.levelLabel = Label(text=str(self.level), color=[1,.72,.07,1], font_size=(16), bold=True)
+        self.levelLabel.size_hint = (None,None)
+        self.levelLabel.size = (7,7)
+        self.levelLabel.pos = (self.image.pos[0]+6, self.image.pos[1]+6)
+        self.add_widget(self.levelLabel)
+
 
         #Update tower group dict so it's accurate based on new tower
         for towergroup in Localdefs.towerGroupDict[self.type]:
@@ -249,7 +262,6 @@ class Tower(Widget):
             with self.image.canvas.after:
                 PopMatrix()#tower positioning and rotation
 
-
     def updateModifiers(self):
         self.damage = self.initdamage * self.towerGroup.dmgModifier
         self.reload = self.initreload * self.towerGroup.reloadModifier
@@ -286,7 +298,8 @@ class Tower(Widget):
 
     def upgrade(self):
         self.priorimage = str(self.image.source)
-        self.remove_widget(self.turret)
+        if self.hasTurret:
+            self.remove_widget(self.turret)
         #self.image.source = os.path.join('iconimgs','Upgrade.png')
         with self.image.canvas: #draw upgrade bars
             Color(1,1,1,1)
@@ -296,15 +309,18 @@ class Tower(Widget):
         self.upgradeTimeElapsed = 0
         self.totalUpgradeTime = self.level*5
 
+
     def updateUpgradeStatusBar(self):
         self.percentComplete = self.upgradeTimeElapsed/self.totalUpgradeTime
         if self.percentComplete >= 1:
+            self.level+=1
+            ###FUNCTION HERE to handle upgrade to tower
+            #GUI.gui.myDispatcher.TowerLvl = str(self.level)
             self.image.canvas.remove(self.remainingtime)
             self.image.canvas.remove(self.statusbar)
-            self.totalUpgradeTime = 0
-            self.upgradeTimeElapsed = 0
-            self.percentComplete = 0
-            self.add_widget(self.turret)
+            self.totalUpgradeTime = self.upgradeTimeElapsed = self.percentComplete = 0
+            if self.hasTurret:
+                self.add_widget(self.turret)
             return
         self.remainingtime.points = [self.x+8, self.y+6, self.x+(self.width-8)*self.percentComplete, self.y+6]
 
@@ -443,6 +459,7 @@ class GravityTower(Tower):
         self.allowedshots = 999
         self.stuntime = self.initstuntime
         self.push = -10
+        self.hasTurret=False
         with self.canvas:
             self.color = Color(0, 0, 0, 1)
             self.rect = Image(source=os.path.join('towerimgs', 'Gravity', "attack.png"), size=(45, 45),
@@ -476,6 +493,7 @@ class IceTower(Tower):
         self.attacktype = 'multi'
         self.active = False
         self.allowedshots = 999
+        self.hasTurret=False
 
     #freezes and slows the enemy
 
@@ -529,3 +547,5 @@ class Icon():
             self.imgstr = str(os.path.join('towerimgs','0.png'))
             self.img = Utilities.imgLoad(self.imgstr)
         self.rect = Utilities.createRect(self.img.pos, self.img.size, self)
+
+

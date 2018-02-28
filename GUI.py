@@ -5,10 +5,13 @@ from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.stacklayout import StackLayout
 from kivy.uix.image import Image
 from kivy.core.window import Window, WindowBase
-from kivy.properties import ListProperty, StringProperty
+from kivy.properties import ListProperty, StringProperty, NumericProperty
 from kivy.graphics import *
+from kivy.uix.tabbedpanel import TabbedPanel, TabbedPanelContent, TabbedPanelHeader
+from kivy.lang import Builder
 
 import Localdefs
 import EventDispatcher
@@ -17,6 +20,7 @@ import EventFunctions
 import MainFunctions
 import Map
 import Utilities
+import Enemy
 import TowerAbilities
 
 import math
@@ -28,7 +32,6 @@ import operator
 class MyButton(ButtonBehavior, Image):
     def __init__(self, **kwargs):
         super(MyButton, self).__init__(**kwargs)
-
     pressed = ListProperty()
 
     def on_touch_down(self, touch):
@@ -44,6 +47,46 @@ class MyButton(ButtonBehavior, Image):
         if button.id == 'unpause':
             MainFunctions.pauseGame(button)
             return
+        if button.id == 'enemyinfo':
+            gui.toggleEnemyPanel()
+        #tower abilities like upgrade and sell
+        elif button.instance  in Localdefs.towerabilitylist:
+            func = "TowerAbilities."+button.instance.type +"."+ button.instance.func + "()"
+            eval(func)
+            return
+        else:
+            Map.mapvar.background.popUpOpen = None
+            EventFunctions.placeTower(button)
+        #print('pressed at {pos}'.format(pos=pos))
+
+class ButtonWithImage(Button, Image):
+    pressed = ListProperty()
+    def __init__(self, **kwargs):
+        super(ButtonWithImage, self).__init__(**kwargs)
+        self.image = Image(text = " ")
+        self.add_widget(self.image)
+        self.image.size = self.size
+        self.image.pos = self.pos
+        self.bind(pos=self.on_pos)
+        self.label = Label(text=' ', size_hint=(None,None), pos=(self.x, self.pos[1]), size=(50,20), color=[1,1,1,1], halign='center')
+        self.image.add_widget(self.label)
+
+
+    def on_touch_down(self, touch):
+        if self.collide_point(*touch.pos):
+            self.pressed = touch.pos
+            Map.mapvar.backgroundimg.remove_widget(Player.player.tbbox)
+            Player.player.tbbox = None
+            Player.player.layout = None
+            return True
+
+
+    def on_pressed(self, button, pos):
+        if button.id == 'unpause':
+            MainFunctions.pauseGame(button)
+            return
+        if button.id == 'enemyinfo':
+            gui.toggleEnemyPanel()
         #tower abilities like upgrade and sell
         elif button.instance  in Localdefs.towerabilitylist:
             func = "TowerAbilities."+button.instance.type +"."+ button.instance.func + "()"
@@ -51,8 +94,12 @@ class MyButton(ButtonBehavior, Image):
             return
         else:
             EventFunctions.placeTower(button)
+            Map.mapvar.background.popUpOpen = None
         #print('pressed at {pos}'.format(pos=pos))
-
+    def on_pos(self, *args):
+        self.image.pos = self.pos
+        self.image.size = self.size
+        self.label.pos = self.pos
 
 class MyLabel(Label):
     def __init__(self,**kwargs):
@@ -160,7 +207,6 @@ class topBarWidget():
 
         self.Variable = MyLabel(text=str(source), halign='right')
         gui.myDispatcher.fbind(var, self.set_value, var)
-
         self.Icon = Utilities.imgLoad(icon)
         self.Icon.size_hint_x = None
         self.Icon.size = (30, 30)
@@ -183,14 +229,24 @@ class GUI():
         self.topBar_Boxlist = []
         self.myDispatcher = EventDispatcher.EventDisp()
 
+    def rightSideButtons(self):
+        self.rightSideButtons_layout=StackLayout(size_hint=(None,None), size=(50,70), pos=(Map.scrwid-55, 40))
+        self.enemyInfoButton = ButtonWithImage(text=" ",id='enemyinfo', size_hint=(None,None), width=50, height=50)
+        self.enemyInfoButton.image.source = "enemyimgs/Standard.png"
+        self.enemyInfoButton.label.text = 'Info'
+        #self.enemyInfoButton.bind(on_release=self.openEnemyPanel)
+        self.rightSideButtons_layout.add_widget(self.enemyInfoButton)
+        return self.rightSideButtons_layout
+    def toggleEnemyPanel(self):
+        if not Map.mapvar.enemypanel.parent:
+            Map.mapvar.backgroundimg.add_widget(Map.mapvar.enemypanel)
+            Map.mapvar.enemypanel.switch_to(Map.mapvar.enemypanel.getDefaultTab())
+            Map.mapvar.background.popUpOpen = Map.mapvar.enemypanel
+        else:
+            Map.mapvar.backgroundimg.remove_widget(Map.mapvar.enemypanel)
+
     def createTopBar(self):
         self.topBar=Bar(pos=(0,Window.height-45), size = (Window.width,45))
-
-        #with self.topBar.layout.canvas.before:
-            #Color(.4,.4,.4,.8)
-            #self.rect=Rectangle(size=self.topBar.size, pos=self.topBar.pos)
-        #icon should be .png in the iconimgs folder with name "icon"
-
         self.menuButton = Button(text='Menu', id='menu', size_hint=(None,None), width=50, height=30)
         self.menuButton.bind(on_release = MainFunctions.pauseGame)
         self.pauseButton = Button(text='Pause', id ='pause', size_hint=(None,None), width=50, height=30)
@@ -270,7 +326,6 @@ class GUI():
         enemyType = wavedict[i]['enemytype']
         self.bottomSideBar_header.text = str(enemyType)
         imgSrc= eval(("Enemy."+enemyType +".imagesrc"))
-        print (imgSrc)
         self.bottomSideBar_image.source = imgSrc
         self.bottomSideBar_image.color = (1,1,1,1)
         self.bottomSideBar_enemyinfo_numEnemies.text = "Number: " + str(wavedict[i]['enemynum'])
@@ -289,6 +344,7 @@ class GUI():
                                           pos=(squarepos[0] - Map.squsize * 2, squarepos[1] - Map.squsize * 2))
         Player.player.layout = BoxLayout(size=(Map.squsize * 2, Map.squsize * 2), pos=squarepos)
         Player.player.tbbox.add_widget(Player.player.layout)
+        Map.mapvar.background.popUpOpen = Player.player.tbbox
 
 
     def towerMenu(self, squarepos):
@@ -297,22 +353,22 @@ class GUI():
         with Player.player.layout.canvas.before:
             Color(.5, .5, .5, .3)
             square = Rectangle(pos = (squarepos[0] - range+Map.squsize, squarepos[1] - range+Map.squsize), size= (2*range, 2*range))
-            Color(0,0,0,1)
-            outline = Line(points=[squarepos[0] - range+Map.squsize, squarepos[1] - range+Map.squsize, squarepos[0] - range+Map.squsize, squarepos[1] + range+Map.squsize,
-                                squarepos[0] + range + Map.squsize, squarepos[1] + range + Map.squsize, squarepos[0] + range+Map.squsize, squarepos[1] - range+Map.squsize,
-                                squarepos[0] - range+Map.squsize, squarepos[1] - range+Map.squsize], width=.2)
+            # Color(0,0,0,1)
+            # outline = Line(points=[squarepos[0] - range+Map.squsize, squarepos[1] - range+Map.squsize, squarepos[0] - range+Map.squsize, squarepos[1] + range+Map.squsize,
+            #                     squarepos[0] + range + Map.squsize, squarepos[1] + range + Map.squsize, squarepos[0] + range+Map.squsize, squarepos[1] - range+Map.squsize,
+            #                     squarepos[0] - range+Map.squsize, squarepos[1] - range+Map.squsize], width=.2)
 
 
         tbbuttonnum = len(Localdefs.towerabilitylist)
         radius = 55
         inddeg = (2.0 * math.pi) / tbbuttonnum
         for ind,instance in enumerate(Localdefs.towerabilitylist):
-            tmpbtn = MyButton()
+            tmpbtn = ButtonWithImage()
             tmpbtn.instance = instance
-            tmpbtn.text = instance.type
+            #tmpbtn.text = instance.type
             tmpbtn.size_hint = (.3, .3)
             tmpbtn.size = (20, 20)
-            tmpbtn.source = instance.imgstr
+            tmpbtn.image.source = instance.imgstr
             Player.player.tbbox.add_widget(tmpbtn)
             tmpbtn.pos = (Player.player.layout.x + radius * math.cos((ind) * inddeg), (Player.player.layout.y - radius * math.sin((ind) * inddeg)))
             #print(Player.player.tbbox.center, Player.player.tbbox.size, squarepos, "name:", tmpbtn.size, tmpbtn.text, tmpbtn.center)
@@ -345,6 +401,86 @@ class GUI():
         Map.mapvar.backgroundimg.add_widget(Player.player.tbbox)
 
 gui = GUI()
+
+class EnemyPanel(TabbedPanel):
+    #currently instantiating in MAp
+    CurrentWave = StringProperty()
+    def on_CurrentWave(self, instance, value):
+        #here we should update the variables whena  new wave starts (show next wave)
+        self.switch_to(self.getDefaultTab())
+        wavemod = (1 + (int(self.CurrentWave) / 70.0))
+        x=0
+        for tab in self.tab_list:
+            tab.enemyPanel_numEnemies.text="Number: " + str(int(eval("Enemy." + self.enemytypelist[x] + ".defaultNum") * wavemod))
+            tab.enemyPanel_enemyHealth.text="HP: " + str(int(eval("Enemy." + self.enemytypelist[x] + ".health") * wavemod))
+            tab.enemyPanel_enemySpeed.text="Speed: " + str(int(eval("Enemy." + self.enemytypelist[x] + ".speed") * wavemod))
+            tab.enemyPanel_enemyArmor.text="Armor: " + str(int(eval("Enemy." + self.enemytypelist[x] + ".armor") * wavemod))
+            tab.enemyPanel_enemyReward.text="Reward: " + str(int(eval("Enemy." + self.enemytypelist[x] + ".reward") * wavemod))
+            x+=1
+
+    def __init__(self,**kwargs):
+        super(EnemyPanel,self).__init__(**kwargs)
+        self.tab_pos = 'right_top'
+        self.tab_height= 40
+        self.tab_width=40
+        self.size_hint = (1,1)
+        self.size = (275,220)
+        self.pos = (Window.width - 330, 10)
+        self.background_color=[.1,.1,.1,.6]
+        self.border = [1,1,1,1]
+        self.do_default_tab = False
+        self.bind(CurrentWave=self.on_CurrentWave)
+
+        with self.canvas:
+            Color(1,1,1,1)
+        self.enemytypelist = ['Standard', 'Airborn', 'Splinter', 'Strong', 'Crowd']
+        for enemy in self.enemytypelist:
+            th = panelHeader(pos=self.pos, size=self.size)
+            th.id = enemy
+            th.background_normal="enemyimgs/"+enemy+".png"
+            th.background_down = "enemyimgs/"+enemy+".png"
+            self.add_widget(th)
+            th.content = th.createEnemyPanelContent(enemy)
+
+    def getDefaultTab(self, *args):
+        enemy = Player.player.waveList[Player.player.wavenum]['enemytype']
+        for tab in self.tab_list:
+            if tab.id == enemy:
+                return tab
+
+
+class panelHeader(TabbedPanelHeader):
+    def __init__(self, **kwargs):
+        super(panelHeader,self).__init__(**kwargs)
+        self.enemyPanelLayout = StackLayout(size_hint=(1, 1))
+        self.add_widget(self.enemyPanelLayout)
+        self.enemyPanelLayout.pos = self.pos
+        self.enemyPanelLayout.size = self.size
+
+    def createEnemyPanelContent(self,enemy):
+        waveNum=Player.player.wavenum
+        self.enemyPanel_header = Label(text=str(enemy), width=self.width-30, height= 40, size_hint=(None,None), font_size=24, text_size = (200,40), halign='center')
+        self.enemyPanel_enemyinfo = GridLayout(cols=1, col_force_default=True, row_force_default=True,
+                                                  row_default_height=30, col_default_width=self.width, size_hint=(None,None))
+        self.enemyPanel_numEnemies = Label(text="Number: "+str(int(eval("Enemy."+enemy +".defaultNum") * (1+ (waveNum/70.0)))), font_size=20, text_size = (260, 30))
+        self.enemyPanel_enemyHealth = Label(text="HP: "+str(int(eval("Enemy."+enemy +".health") * (1+ (waveNum/70.0)))),font_size=20, text_size = (260, 30))
+        self.enemyPanel_enemySpeed = Label(text="Speed: "+str(int(eval("Enemy."+enemy +".speed") * (1+ (waveNum/70.0)))),font_size=20, text_size = (260, 30))
+        self.enemyPanel_enemyArmor = Label(text="Armor: "+str(int(eval("Enemy."+enemy +".armor") * (1+ (waveNum/70.0)))),font_size=20, text_size = (260, 30))
+        self.enemyPanel_enemyReward = Label(text="Reward: "+str(int(eval("Enemy."+enemy +".reward") * (1+ (waveNum/70.0)))),font_size=20, text_size = (260, 30))
+        self.enemyPanel_disclaimer = Label(text="Numbers reflect enemy if sent next wave",font_size=10, text_size = (260, 30))
+        self.enemyPanel_enemyinfo.add_widget(self.enemyPanel_numEnemies)
+        self.enemyPanel_enemyinfo.add_widget(self.enemyPanel_enemyHealth)
+        self.enemyPanel_enemyinfo.add_widget(self.enemyPanel_enemySpeed)
+        self.enemyPanel_enemyinfo.add_widget(self.enemyPanel_enemyArmor)
+        self.enemyPanel_enemyinfo.add_widget(self.enemyPanel_enemyReward)
+        self.enemyPanel_enemyinfo.add_widget(self.enemyPanel_disclaimer)
+        self.enemyPanelLayout.add_widget(self.enemyPanel_header)
+        self.enemyPanelLayout.add_widget(self.enemyPanel_enemyinfo)
+
+
+        return self.enemyPanelLayout
+
+
 
 class Bar(SmartMenu):
     def __init__(self,**kwargs):

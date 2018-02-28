@@ -133,8 +133,10 @@ class Main(App):
         #create toolbars
         game.topBar = GUI.gui.createTopBar()
         map.add_widget(game.topBar)
-        #map.add_widget(GUI_Kivy.gui.createTopSideBar())
-        #map.add_widget(GUI_Kivy.gui.createBottomSideBar())
+        map.add_widget(GUI.gui.rightSideButtons())
+        #map.add_widget(GUI.gui.createTopSideBar())
+        #map.add_widget(GUI.gui.createBottomSideBar())
+
 
         ##update path at start
         if Map.mapvar.updatePath == True:

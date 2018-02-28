@@ -18,22 +18,31 @@ class playField(ScatterLayout):
         self.size = Map.scrwid,Map.scrhei
         self.pos = Map.mapoffset[0]*30,Map.mapoffset[1]*30
         self.do_collide_after_children = True
+        self.popUpOpen = None
+
 
     def on_touch_down(self, touch):
         squarepos = Utilities.getPos(touch.pos)
         #don't allow touches outside of play boundary if a menu isn't open
-        if squarepos[0] >= Map.scrwid-Map.squsize*2 and Player.player.tbbox == None :
-            self.removePopUp()
-            return super(playField, self).on_touch_down(touch)
-        if squarepos[1] >= Map.scrhei-Map.squsize*2 and Player.player.tbbox == None:
-            self.removePopUp()
-            return super(playField, self).on_touch_down(touch)
-        if squarepos[0] < Map.squsize*2 and Player.player.tbbox == None:
-            self.removePopUp()
-            return
-        if squarepos[1] < Map.squsize*2 and Player.player.tbbox == None:
-            self.removePopUp()
-            return
+        if self.popUpOpen:
+            if not self.popUpOpen.collide_point(*squarepos):
+                self.removePopUp()
+                return
+            else:
+                pass
+        if not self.popUpOpen:
+            if squarepos[0] >= Map.scrwid-Map.squsize*2:
+                self.removePopUp()
+                return super(playField, self).on_touch_down(touch)
+            if squarepos[1] >= Map.scrhei-Map.squsize*2:
+                self.removePopUp()
+                return super(playField, self).on_touch_down(touch)
+            if squarepos[0] < Map.squsize*2:
+                self.removePopUp()
+                return
+            if squarepos[1] < Map.squsize*2:
+                self.removePopUp()
+                return
         #do nothing in playfield if paused or menu
         if Player.player.state == 'Paused' or Player.player.state == 'Menu':
             return
@@ -66,19 +75,22 @@ class playField(ScatterLayout):
         elif squarepos[1] < Map.squsize * 2:
             squarepos[1] += 30
         #create the tower creation menu and display
-        if not Player.player.tbbox:
+        if not self.popUpOpen:
             GUI.gui.builderMenu(squarepos)
             return True
         #remove a displayed menu if touch is outside the menu
-        elif Player.player.tbbox and not Player.player.tbbox.collide_point(*squarepos):
-            self.removePopUp()
+        # elif self.popUpOpen and not Player.player.tbbox.collide_point(*squarepos):
+        #     self.removePopUp()
         #returning this super argument allows the touch to propogate to children.
         return super(playField, self).on_touch_down(touch)
 
     def removePopUp(self):
         Map.mapvar.backgroundimg.remove_widget(Player.player.tbbox)
+        if Map.mapvar.enemypanel.parent:
+            Map.mapvar.backgroundimg.remove_widget(Map.mapvar.enemypanel)
         Player.player.tbbox = None
         Player.player.layout = None
+        self.popUpOpen = None
 
     def on_pressed(self, instance, pos):
         print('pressed at {pos}'.format(pos=pos))

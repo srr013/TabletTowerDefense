@@ -9,7 +9,7 @@ playermoney = 5000
 
 class Player():
     def __init__(self):
-        self.name = "player"
+        #self.name = "player"
         self.health = playerhealth
         self.money = playermoney
         self.abilities = list()
@@ -19,8 +19,8 @@ class Player():
         self.tbbox = None
         self.wavestart = 999
         self.next_wave = False
-        self.game_speed = 3
-        self.screen = None
+        #self.game_speed = 3
+        #self.screen = None
         self.pausetime = 0
         self.state = "Menu"
         self.restart = False

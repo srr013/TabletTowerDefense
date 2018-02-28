@@ -1,5 +1,6 @@
 import random
 import Enemy
+import Localdefs
 
 
 maxSets = 6
@@ -30,7 +31,7 @@ def wavegen():
     enemyModList = genModList()
     setNum = 1 # a set is counted every X waves
     wavesPerSet = 7
-    enemytypes =['Standard', 'Airborn', 'Splinter', 'Strong', 'Crowd']
+    enemytypes = ['Standard', 'Airborn', 'Splinter', 'Strong', 'Crowd']
     waveList = []
     waveNum = 1
 
@@ -53,6 +54,7 @@ def wavegen():
             waveList.append(wave)
             waveNum += 1
         setNum += 1
+    print waveList
     return waveList
 
 

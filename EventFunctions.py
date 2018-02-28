@@ -41,7 +41,8 @@ def placeTower(*args):
         else:
             Player.player.towerSelected = None
             for enemy in Map.mapvar.enemycontainer.children:
-                enemy.anim.cancel_all(enemy)
+                if enemy.anim:
+                    enemy.anim.cancel_all(enemy)
                 enemy.movelist = Map.mapvar.pointmovelists[enemy.movelistNum]
                 enemy.getNearestNode()
 
@@ -67,8 +68,9 @@ def nextWave(*args):
     Player.player.score += int(Player.player.wavetimeInt * Player.player.wavenum * .25)
     GUI.gui.myDispatcher.Score = str(Player.player.score)
     Player.player.wavenum+=1
-    GUI.gui.myDispatcher.WaveNum = Player.player.wavenum
-    GUI.gui.myDispatcher.Wave = str(Player.player.wavenum)
+    GUI.gui.myDispatcher.WaveNum = str(Player.player.wavenum)
+    Map.mapvar.enemypanel.CurrentWave = str(Player.player.wavenum)
+    #GUI.gui.myDispatcher.Wave = str(Player.player.wavenum)
     Player.player.wavetime = Map.waveseconds
     Player.player.wavetimeInt = int(Map.waveseconds)
     GUI.gui.myDispatcher.Timer = str(Player.player.wavetime)

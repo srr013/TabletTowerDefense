@@ -52,12 +52,10 @@ class Upgrade(TowerAbility):
         return (cls not in tower.upgrades)
     @classmethod
     def apply(cls,**kwargs):
-        print ("applying Upgrade")
         tower = Player.player.towerSelected
         if Player.player.money>=cls.cost(tower):
             Player.player.money-=cls.cost(tower)
-            tower.damage += 0.15*tower.initdamage
-            tower.level += 1
+            GUI.gui.myDispatcher.Money = str(Player.player.money)
             tower.upgrade()
         return False
 

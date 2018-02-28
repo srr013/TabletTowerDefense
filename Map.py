@@ -4,6 +4,7 @@ import Pathfinding
 import os
 import Playfield
 import Road
+import GUI
 
 from kivy.uix.image import Image
 from kivy.graphics import *
@@ -136,6 +137,7 @@ class Map():
         self.background = Playfield.playField()
         self.backgroundimg.size = self.background.size
         self.backgroundimg.pos = self.background.pos
+        self.enemypanel = GUI.EnemyPanel()
         with self.backgroundimg.canvas:
             Color(.05,.05,.05,.05)
             Rectangle(size=self.backgroundimg.size, pos=self.backgroundimg.pos)
