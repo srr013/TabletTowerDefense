@@ -20,11 +20,6 @@ class Enemy(Widget):
         self.size = (25, 25)
         if not self.specialSend:
             self.curnode = 0
-
-
-
-            ##when a splinter creates a crowd the crowd is possibly created during a different wave number and gets the wrong details below.
-
             self.rect = Utilities.createRect(self.movelist[self.curnode], self.size, instance=self)
             self.pos = self.movelist[self.curnode]
             self.pushed = [0, 0]
@@ -33,20 +28,19 @@ class Enemy(Widget):
             self.armor = Player.player.waveList[Player.player.wavenum]['enemyarmor']
             self.reward = Player.player.waveList[Player.player.wavenum]['enemyreward']
             self.mods = Player.player.waveList[Player.player.wavenum]['enemymods']
+            self.isBoss = Player.player.waveList[Player.player.wavenum]['isboss']
             #print "health, speed, armor, reward, mods", self.health, self.speed, self.armor, self.reward, self.mods
         else:
             if self.type == 'Crowd':
                 self.starthealth = self.health = Crowd.health * 1+(Player.player.wavenum/70)
-                self.speed = Crowd.speed * 1+(Player.player.wavenum/70)
-                self.armor = Crowd.armor * 1+(Player.player.wavenum/70)
-                self.reward = Crowd.reward * 1+(Player.player.wavenum/70)
-                self.mods = Player.player.waveList[Player.player.wavenum]['enemymods']
+                self.speed = Crowd.speed * 1+(self.curwave/70)
+                self.armor = Crowd.armor * 1+(self.curwave/70)
+                self.reward = Crowd.reward * 1+(self.curwave70)
+                self.mods = Player.player.waveList[self.curwave]['enemymods']
+                self.isBoss = Player.player.waveList[self.curwave]['isboss']
         self.image.size = self.size
         self.add_widget(self.image)
         Map.mapvar.enemycontainer.add_widget(self)
-
-
-        self.isBoss = Player.player.waveList[Player.player.wavenum]['isboss']
         if self.isBoss:
             self.size = (self.size[0]*1.3, self.size[1]*1.3)
             self.starthealth = self.health = self.health * 10
@@ -264,7 +258,7 @@ class Standard(Enemy):
     armor = 0
     reward = 5
     points = 10
-    imagesrc = os.path.join("enemyimgs","medbox.png")
+    imagesrc = os.path.join("enemyimgs","Standard.png")
 
     def __init__(self,**kwargs):
         self.type = 'Standard'
@@ -286,7 +280,7 @@ class Airborn(Enemy):
     armor = 0
     reward = 5
     points = 10
-    imagesrc = os.path.join("enemyimgs", "airborn.png")
+    imagesrc = os.path.join("enemyimgs", "Airborn.png")
     def __init__(self, **kwargs):
         self.type = 'Airborn'
         self.defaultNum = Airborn.defaultNum  # 10 enemies per wave
@@ -309,7 +303,7 @@ class Splinter(Enemy):
     armor = 5
     reward = 10
     points = 20
-    imagesrc = os.path.join("enemyimgs", "splinter.png")
+    imagesrc = os.path.join("enemyimgs", "Splinter.png")
     def __init__(self, **kwargs):
         self.type = 'Splinter'
         self.defaultNum = Splinter.defaultNum  # 10 enemies per wave
@@ -319,12 +313,13 @@ class Splinter(Enemy):
         self.image = Utilities.imgLoad(self.imagesrc)
         self.movelistNum = 0
         self.movelist = Map.mapvar.pointmovelists[self.movelistNum]  # 0 for ground, 1 for air
+        self.curwave = Player.player.wavenum
         super(Splinter, self).__init__(**kwargs)
 
 
     #break the Splinter apart when it dies. 15 Crowd are released.
     def splinter(self):
-        SenderClass.Sender(specialSend = True, enemytype='Crowd', pos=self.pos, curnode = self.curnode, number=8, deploySpeed = 0)
+        SenderClass.Sender(specialSend = True, enemytype='Crowd', pos=self.pos, curnode = self.curnode, number=8, deploySpeed = 0, curwave=self.curwave)
 
 
 class Strong(Enemy):
@@ -335,7 +330,7 @@ class Strong(Enemy):
     armor = 10
     reward = 10
     points = 20
-    imagesrc = os.path.join("enemyimgs", "largebox.png")
+    imagesrc = os.path.join("enemyimgs", "Strong.png")
     def __init__(self,**kwargs):
         self.type = 'Strong'
         self.defaultNum = Strong.defaultNum
@@ -355,7 +350,7 @@ class Crowd (Enemy):
     armor = 0
     reward = 3
     points = 6
-    imagesrc = os.path.join("enemyimgs","smallbox.png")
+    imagesrc = os.path.join("enemyimgs","Crowd.png")
     def __init__(self,**kwargs):
         self.type = 'Crowd'
         self.defaultNum = Crowd.deploySpeed
@@ -369,6 +364,7 @@ class Crowd (Enemy):
         if kwargs['specialSend']:
             self.size = (20,20)
             self.pos = kwargs['pos']
+            self.curwave = kwargs['curwave']
             pushx = random.randint(-75,75)
             pushy = random.randint(-75,75)
             self.pushed = [pushx, pushy]

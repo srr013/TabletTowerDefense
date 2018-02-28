@@ -12,16 +12,16 @@ class Sender():
         if self.specialSend:
             self.enemytype = 'Crowd'
             self.pos = kwargs['pos']
-
+            self.curwave = kwargs['curwave']
             self.curnode = kwargs['curnode']
             self.numThisWave = kwargs['number']
             self.enemycounter = self.enemycounterinit = kwargs['deploySpeed']
         else:
-            self.enemytype = Player.player.waveList[Player.player.wavenum]['enemytype']
-            self.numThisWave = Player.player.waveList[Player.player.wavenum]['enemynum']
+            self.enemytype = Player.player.waveList[Player.player.wavenum-1]['enemytype']
+            self.numThisWave = Player.player.waveList[Player.player.wavenum-1]['enemynum']
             self.enemycounter = self.enemycounterinit = eval("Enemy." +self.enemytype+".deploySpeed")
         self.enemiesDeployed = 0
-        self.isBoss = Player.player.waveList[Player.player.wavenum]['isboss']
+        self.isBoss = Player.player.waveList[Player.player.wavenum-1]['isboss']
         Localdefs.senderlist.append(self)
         print (self.enemytype)
     def tick(self):
@@ -31,10 +31,10 @@ class Sender():
             if self.enemiesDeployed < self.numThisWave:
                 if self.enemytype == 'Crowd' and self.specialSend == True:
 
-                    f = operator.methodcaller(self.enemytype,isBoss=self.isBoss,specialSend=self.specialSend, pos=self.pos, curnode=self.curnode)
+                    f = operator.methodcaller(self.enemytype,isBoss=self.isBoss,specialSend=self.specialSend, pos=self.pos, curnode=self.curnode, wave=self.curwave)
                     f(Enemy)
                 else:
-                    f = operator.methodcaller(self.enemytype, isBoss=self.isBoss, specialSend=self.specialSend)
+                    f = operator.methodcaller(self.enemytype,isBoss=self.isBoss, specialSend=self.specialSend)
                     f(Enemy)
                 self.enemiesDeployed+=1
             else:
