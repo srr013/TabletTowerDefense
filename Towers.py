@@ -23,7 +23,6 @@ from kivy.properties import NumericProperty
 class Tower(Widget):
     level = NumericProperty(1)
     def on_level(self, instance, value):
-        print instance, value
         self.levelLabel.text = str(int(value))
 
     def __init__(self,pos,**kwargs):
@@ -33,7 +32,7 @@ class Tower(Widget):
         Player.player.money-=self.cost
         GUI.gui.myDispatcher.Money = str(Player.player.money)
         Localdefs.towerlist.append(self)
-        self.size = (Map.squsize*2-1, Map.squsize*2-1)
+        self.size = (Map.mapvar.squsize*2-1, Map.mapvar.squsize*2-1)
         self.rect = Utilities.createRect(self.pos, self.size, instance=self)
         self.squareheight = 2
         self.squarewidth = 2
@@ -43,6 +42,7 @@ class Tower(Widget):
         self.image = Utilities.imgLoad(self.imagestr)
         self.image.pos = self.pos
         self.image.size = self.size
+        self.image.allow_stretch = True
         self.currentRotation = 0
         self.add_widget(self.image)
         self.currentPointerAngle = 0
@@ -57,6 +57,7 @@ class Tower(Widget):
         self.adjacentRoads = list()
         self.adjacentRoadFlag = False
         self.totalspent = self.cost
+        self.refund = self.totalspent
         self.abilities = list()
         self.buttonlist = list()
         self.upgrades = list()
@@ -73,16 +74,19 @@ class Tower(Widget):
         self.upgradeTimeElapsed = 0
         self.percentComplete = 0
 
-        self.levelLabel = Label(text=str(self.level), color=[1,.72,.07,1], font_size=(16), bold=True)
-        self.levelLabel.size_hint = (None,None)
-        self.levelLabel.size = (7,7)
-        self.levelLabel.pos = (self.image.pos[0]+6, self.image.pos[1]+6)
+        self.levelLabel = Label(text=str(self.level), size_hint = (None,None), size = (7,7), pos = (self.image.pos[0]+6, self.image.pos[1]+6),
+                                color=[1,.72,.07,1], font_size=(16), bold=True)
         self.add_widget(self.levelLabel)
+        self.image.bind(size = self.bindings)
 
 
         #Update tower group dict so it's accurate based on new tower
         for towergroup in Localdefs.towerGroupDict[self.type]:
             towergroup.updateTowerGroup()
+
+    def bindings(self):
+        self.size = (Map.mapvar.squsize*2-1, Map.mapvar.squsize*2-1)
+        self.image.size = self.size
 
     def getNeighbors(self):
         neighbors = {}
@@ -90,52 +94,52 @@ class Tower(Widget):
         neighborlist = []
 
         for tower in Localdefs.towerlist:
-            if tower.rect_x == self.rect_x - 2 * Map.squsize and tower.rect_y == self.rect_y and (
+            if tower.rect_x == self.rect_x - 2 * Map.mapvar.squsize and tower.rect_y == self.rect_y and (
                     tower.type == self.type):
                 neighbors['l0'] = tower
                 neighborlist.append('l0')
-            elif tower.rect_x == self.rect_x + 2 * Map.squsize and tower.rect_y == self.rect_y and (
+            elif tower.rect_x == self.rect_x + 2 * Map.mapvar.squsize and tower.rect_y == self.rect_y and (
                     tower.type == self.type):
                 neighbors['r0'] = tower
                 neighborlist.append('r0')
-            elif tower.rect_y == self.rect_y + 2 * Map.squsize and tower.rect_x == self.rect_x and (
+            elif tower.rect_y == self.rect_y + 2 * Map.mapvar.squsize and tower.rect_x == self.rect_x and (
                     tower.type == self.type):
                 neighbors['u0'] = tower
                 neighborlist.append('u0')
-            elif tower.rect_y == self.rect_y - 2 * Map.squsize and tower.rect_x == self.rect_x and (
+            elif tower.rect_y == self.rect_y - 2 * Map.mapvar.squsize and tower.rect_x == self.rect_x and (
                     tower.type == self.type):
                 neighbors['d0'] = tower
                 neighborlist.append('d0')
-            elif tower.rect_x == self.rect_x - 2 * Map.squsize and \
+            elif tower.rect_x == self.rect_x - 2 * Map.mapvar.squsize and \
                     (tower.type == self.type):
-                if tower.rect_y == (self.rect_y + Map.squsize):
+                if tower.rect_y == (self.rect_y + Map.mapvar.squsize):
                     neighbors['l1'] = tower
                     neighborlist.append('l1')
-                elif tower.rect_y == (self.rect_y - Map.squsize):
+                elif tower.rect_y == (self.rect_y - Map.mapvar.squsize):
                     neighbors['l2'] = tower
                     neighborlist.append('l2')
-            elif tower.rect_x == self.rect_x + 2 * Map.squsize and \
+            elif tower.rect_x == self.rect_x + 2 * Map.mapvar.squsize and \
                     (tower.type == self.type):
-                if tower.rect_y == (self.rect_y + Map.squsize):
+                if tower.rect_y == (self.rect_y + Map.mapvar.squsize):
                     neighbors['r1'] = tower
                     neighborlist.append('r1')
-                elif tower.rect_y == (self.rect_y - Map.squsize):
+                elif tower.rect_y == (self.rect_y - Map.mapvar.squsize):
                     neighbors['r2'] = tower
                     neighborlist.append('r2')
-            elif tower.rect_y == self.rect_y + 2 * Map.squsize and \
+            elif tower.rect_y == self.rect_y + 2 * Map.mapvar.squsize and \
                     (tower.type == self.type):
-                if tower.rect_x == (self.rect_x - Map.squsize):
+                if tower.rect_x == (self.rect_x - Map.mapvar.squsize):
                     neighbors['u1'] = tower
                     neighborlist.append('u1')
-                elif tower.rect_x == (self.rect_x + Map.squsize):
+                elif tower.rect_x == (self.rect_x + Map.mapvar.squsize):
                     neighbors['u2'] = tower
                     neighborlist.append('u2')
-            elif tower.rect_y == self.rect_y - 2 * Map.squsize and \
+            elif tower.rect_y == self.rect_y - 2 * Map.mapvar.squsize and \
                     (tower.type == self.type):
-                if tower.rect_x == (self.rect_x - Map.squsize):
+                if tower.rect_x == (self.rect_x - Map.mapvar.squsize):
                     neighbors['d1'] = tower
                     neighborlist.append('d1')
-                elif tower.rect_x == (self.rect_x + Map.squsize):
+                elif tower.rect_x == (self.rect_x + Map.mapvar.squsize):
                     neighbors['d2'] = tower
                     neighborlist.append('d2')
 
@@ -283,7 +287,7 @@ class Tower(Widget):
             j = 0
             w = self.squarewidth
             while w > 0:
-                wall = (int((self.rect_x) / Map.squsize)+j, int((self.rect_y) / Map.squsize)+k)
+                wall = (int((self.rect_x) / Map.mapvar.squsize)+j, int((self.rect_y) / Map.mapvar.squsize)+k)
                 walls.append(wall)
                 w -= 1
                 j += 1
@@ -293,7 +297,7 @@ class Tower(Widget):
         for wall in walls:
             with self.canvas.before:
                 Color(0, 0, 0,.1)
-                Rectangle(size=(30,30), pos=(wall[0]*30, wall[1]*30))
+                Rectangle(size=(Map.mapvar.squsize,Map.mapvar.squsize), pos=(wall[0]*Map.mapvar.squsize, wall[1]*Map.mapvar.squsize))
         return walls
 
     def upgrade(self):
@@ -301,7 +305,7 @@ class Tower(Widget):
         if self.hasTurret:
             self.remove_widget(self.turret)
         #self.image.source = os.path.join('iconimgs','Upgrade.png')
-        with self.image.canvas: #draw upgrade bars
+        with self.canvas: #draw upgrade bars
             Color(1,1,1,1)
             self.statusbar = Line(points = [self.x+8, self.y+6, self.x+self.width-8, self.y+6], width = 4, cap='none')
             Color(0,0,0,1)
@@ -313,16 +317,41 @@ class Tower(Widget):
     def updateUpgradeStatusBar(self):
         self.percentComplete = self.upgradeTimeElapsed/self.totalUpgradeTime
         if self.percentComplete >= 1:
+            self.upgradeTowerStats()
             self.level+=1
-            ###FUNCTION HERE to handle upgrade to tower
-            #GUI.gui.myDispatcher.TowerLvl = str(self.level)
-            self.image.canvas.remove(self.remainingtime)
-            self.image.canvas.remove(self.statusbar)
+            self.canvas.remove(self.remainingtime)
+            self.canvas.remove(self.statusbar)
             self.totalUpgradeTime = self.upgradeTimeElapsed = self.percentComplete = 0
             if self.hasTurret:
                 self.add_widget(self.turret)
             return
         self.remainingtime.points = [self.x+8, self.y+6, self.x+(self.width-8)*self.percentComplete, self.y+6]
+
+    def upgradeTowerStats(self):
+        self.refund = self.totalspent *.8
+        self.range = self.range + self.range * self.upgradeDict['Range'][self.level - 1]
+        self.nextRange = round(self.upgradeDict['Range'][self.level] * self.range + self.range,1)
+        if self.type == 'Ice':
+            self.slowpercent = self.slowpercent+self.slowpercent*self.upgradeDict['Slow%'][self.level-1]
+            self.nextSlowPercent = round(self.upgradeDict['Slow%'][self.level] * self.slowpercent + self.slowpercent,2)
+            self.slowtime = self.slowtime+self.slowtime*self.upgradeDict['SlowTime'][self.level-1]
+            self.nextSlowTime = round(self.upgradeDict['SlowTime'][self.level] * self.slowtime + self.slowtime,1)
+        elif self.type == 'Wind':
+            self.push = self.push+self.push*self.upgradeDict['Push'][self.level-1]
+            self.nextPush = round(self.upgradeDict['Push'][self.level] * self.push + self.push,1)
+            self.reload = self.reload + self.reload * self.upgradeDict['Reload'][self.level - 1]
+            self.nextReload = round(self.upgradeDict['Reload'][self.level] * self.reload + self.reload,1)
+        else:
+            self.damage = self.damage+ self.damage*self.upgradeDict['Damage'][self.level-1]
+            self.nextDamage = round(self.upgradeDict['Damage'][self.level] * self.damage + self.damage,1)
+            self.reload = self.reload + self.reload * self.upgradeDict['Reload'][self.level - 1]
+            self.nextReload = round(self.upgradeDict['Reload'][self.level] * self.reload + self.reload,1)
+        self.setUpgradeData()
+
+    def setUpgradeData(self):
+        self.upgradeData = ['Dmg', self.damage, self.nextDamage,
+                            'Rld', self.reload, self.nextReload,
+                            'Rng', self.range, self.nextRange]
 
     def takeTurn(self):
         '''Maintain reload wait period and call target() once period is over
@@ -371,7 +400,7 @@ class Tower(Widget):
     def loadTurret(self):
         self.turretstr = os.path.join('towerimgs',self.type, 'turret.png')
         self.turret = Utilities.imgLoad(self.turretstr)
-        self.turret.size = (30,30)
+        self.turret.size = (Map.mapvar.squsize,Map.mapvar.squsize)
         self.turret.center = self.center
         self.add_widget(self.turret)
         with self.turret.canvas.before:
@@ -404,6 +433,11 @@ class FireTower(Tower):
         self.shotimage = "flame.png"
         self.hasTurret = True
         self.loadTurret()
+        self.upgradeDict = {'Damage':[.1,.1,.1,.1,.1,0],'Range':[0,0,0,0,.5,0], 'Reload':[0,0,0,0,-.2,0], 'Cost':[5,10,15,20,25,'NA']}
+        self.nextDamage = round(self.upgradeDict['Damage'][self.level - 1] * self.damage+self.damage,1)
+        self.nextReload = round(self.upgradeDict['Reload'][self.level - 1] * self.reload+self.reload,1)
+        self.nextRange = round(self.upgradeDict['Range'][self.level - 1] * self.range+self.range,1)
+        self.setUpgradeData()
 
     #Firetower attribute - flame spreads to enemies around doing small amount of damage over time.
     #fire and ice effects cancel each other
@@ -429,9 +463,13 @@ class LifeTower(Tower):
         self.hasTurret = True
         self.active = True
         self.loadTurret()
+        self.upgradeDict = {'Damage':[.1,.1,.1,.1,.1,0],'Range':[0,0,0,0,.5,0], 'Reload':[0,0,0,0,-.2,0], 'Cost':[5,10,15,20,25,'NA']}
+        self.nextDamage = round(self.upgradeDict['Damage'][self.level - 1] * self.damage + self.damage,1)
+        self.nextReload = round(self.upgradeDict['Reload'][self.level - 1] * self.reload + self.reload,1)
+        self.nextRange = round(self.upgradeDict['Range'][self.level - 1] * self.range + self.range,1)
+        self.setUpgradeData()
 
-    #Life has 2 attribute paths - damage and collaboration. Collaboration gives boosts to other towergroups.
-    #Damage path - machine gun and sniper paths?
+    #Life will have 2 attribute paths - damage and collaboration. Collaboration gives boosts to other towergroups.
 
 class GravityTower(Tower):
     type = "Gravity"
@@ -460,12 +498,20 @@ class GravityTower(Tower):
         self.stuntime = self.initstuntime
         self.push = -10
         self.hasTurret=False
+        self.upgradeDict = {'Damage':[.2,.2,.3,.3,.6,0],'Range':[.1,.1,.1,.1,.6,0], 'Reload':[-.05,-.05,-.05,-.05,-.2,0], 'Cost':[5,10,15,20,25,'NA']}
+        self.nextDamage = round(self.upgradeDict['Damage'][self.level - 1] * self.damage + self.damage,1)
+        self.nextReload = round(self.upgradeDict['Reload'][self.level - 1] * self.reload + self.reload,1)
+        self.nextRange = round(self.upgradeDict['Range'][self.level - 1] * self.range + self.range,1)
+        self.setUpgradeData()
+
         with self.canvas:
             self.color = Color(0, 0, 0, 1)
             self.rect = Image(source=os.path.join('towerimgs', 'Gravity', "attack.png"), size=(45, 45),
                               pos=(self.center[0] - 22, self.center[1] - 22))
         self.closeanimation = Animation(size=(45, 45), pos=(self.center[0] - 22, self.center[1] - 22),
                                      duration=.3)
+
+
             #Gravity tower pulls enemies towards it. On random occasions it can stun and pull strongly. Works on air.
 
 class IceTower(Tower):
@@ -494,7 +540,16 @@ class IceTower(Tower):
         self.active = False
         self.allowedshots = 999
         self.hasTurret=False
+        self.upgradeDict = {'Slow%':[-.1,-.1,-.1,-.1,-.2,0],'Range':[.1,.1,.1,.1,.5,0],'SlowTime':[.1,.1,.1,.1,.5,0], 'Cost':[5,10,15,20,25,'NA']}
+        self.nextSlowPercent = round(self.upgradeDict['Slow%'][self.level - 1] * self.slowpercent + self.slowpercent,2)
+        self.nextSlowTime = round(self.upgradeDict['SlowTime'][self.level - 1] * self.slowtime + self.slowtime,1)
+        self.nextRange = round(self.upgradeDict['Range'][self.level - 1] * self.range + self.range,1)
+        self.setUpgradeData()
 
+    def setUpgradeData(self):
+        self.upgradeData = ['Slow%', 1-self.slowpercent, 1-self.nextSlowPercent,
+                            'SlowTm', self.slowtime, self.nextSlowTime,
+                            'Rng', self.range, self.nextRange]
     #freezes and slows the enemy
 
 class WindTower(Tower):
@@ -525,6 +580,18 @@ class WindTower(Tower):
                 self.turret.source = os.path.join('towerimgs', self.type, "turret.gif")
         self.active = False
         self.allowedshots = 1
+
+        self.upgradeDict = {'Push':[.1,.1,.1,.1,.1,0],'Range':[0,0,.1,0,.5,0], 'Reload':[0,0,-.1,0,-.2,0], 'Cost':[5,10,15,20,25,'NA']}
+
+        self.nextPush = round(self.upgradeDict['Push'][self.level - 1] * self.push + self.push,1)
+        self.nextReload = round(self.upgradeDict['Reload'][self.level - 1] * self.reload + self.reload,1)
+        self.nextRange = round(self.upgradeDict['Range'][self.level - 1] * self.range + self.range,1)
+        self.setUpgradeData()
+
+    def setUpgradeData(self):
+        self.upgradeData = ['Push', self.push, self.nextPush,
+                            'Rld', self.reload, self.nextReload,
+                            'Rng', self.range, self.nextRange]
 
 available_tower_list =[FireTower, IceTower, GravityTower, WindTower, LifeTower]
 baseTowerList = [(tower.type, tower.cost, tower.initdamage, tower.initrange, tower.initreload, tower.imagestr) for tower in available_tower_list]
