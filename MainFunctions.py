@@ -4,10 +4,6 @@ import Player
 import GUI
 import TowerAbilities
 
-black = (0,0,0)
-white = (255,255,255)
-red = (255,0,0)
-
 def makeIcons():
     '''Creates an Icon from the class for each tower'''
     for tower in Towers.baseTowerList:
@@ -48,24 +44,30 @@ def updateFlyingList():
     # only border walls for flying list. Flying list to be index 1.
     Map.flyPath.walls = Map.path.border_walls
     Map.flyPath.weights = {}
-    came_from, cost_so_far = Pathfinding.get_path(Map.flyPath, Map.mapvar.startpoint, Map.mapvar.basepoint)
-    Map.mapvar.movelists.append(Pathfinding.reconstruct_path(came_from, Map.mapvar.startpoint, Map.mapvar.basepoint))
-    Map.mapvar.genmovelists()
+    for startpoint in Map.mapvar.startpoint:
+        came_from, cost_so_far = Pathfinding.get_path(Map.flyPath, startpoint, Map.mapvar.basepoint)
+        Map.mapvar.flymovelists.append(Pathfinding.reconstruct_path(came_from, startpoint, Map.mapvar.basepoint))
 
 def updatePath():
     '''Update the path using A* algorithm'''
-    Map.newPath.walls = Map.path.get_wall_list()
-    came_from, cost_so_far = Pathfinding.get_path(Map.newPath, Map.mapvar.startpoint, Map.mapvar.basepoint)
-    if len(Map.mapvar.movelists) == 0:
-        Map.mapvar.movelists.append(Pathfinding.reconstruct_path(came_from, Map.mapvar.startpoint, Map.mapvar.basepoint))
-    else:
-        Map.mapvar.movelists[0] = (Pathfinding.reconstruct_path(came_from, Map.mapvar.startpoint, Map.mapvar.basepoint))
-    if Map.mapvar.movelists[0] == "Path Blocked":
-        addAlert("Path Blocked", 48, "center", (240, 0, 0))
-        return False
 
-    if len(Map.mapvar.movelists) < 2:
+    Map.newPath.walls = Map.path.get_wall_list()
+    if len(Map.mapvar.flymovelists) == 0:
         updateFlyingList()
+
+    x=0
+    Map.mapvar.movelists = list()
+    for startpoint in Map.mapvar.startpoint:
+        came_from, cost_so_far = Pathfinding.get_path(Map.newPath, startpoint, Map.mapvar.basepoint)
+        Map.mapvar.movelists.append(Pathfinding.reconstruct_path(came_from, startpoint, Map.mapvar.basepoint))
+        # print Map.mapvar.movelists
+        if Map.mapvar.movelists[x] == "Path Blocked":
+            print "Path Blocked"
+            addAlert("Path Blocked", 48, "center", (240, 0, 0))
+            return False
+        x+=1
+
+
     Map.mapvar.genmovelists()
     Map.mapvar.updatePath = False
     Player.player.newMoveList = True
@@ -117,7 +119,10 @@ def workEnemies():
     for enemy in Map.mapvar.enemycontainer.children:
         enemy.distBase = enemy.distToBase()
         if Player.player.newMoveList:
-            enemy.movelist = Map.mapvar.pointmovelists[enemy.movelistNum]
+            if enemy.isair:
+                enemy.movelist = Map.mapvar.pointflymovelists[enemy.movelistNum]
+            else:
+                enemy.movelist = Map.mapvar.pointmovelists[enemy.movelistNum]
         enemy.takeTurn()
 
     Player.player.newMoveList = False

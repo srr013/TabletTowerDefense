@@ -1,11 +1,14 @@
 from kivy.uix.widget import Widget
 from kivy.uix.label import Label
 from kivy.uix.button import Button
+from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.stacklayout import StackLayout
+from kivy.uix.scatterlayout import Scatter
+from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.image import Image
 from kivy.core.window import Window, WindowBase
 from kivy.properties import ListProperty, StringProperty, NumericProperty
@@ -37,26 +40,25 @@ class MyButton(ButtonBehavior, Image):
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
             self.pressed = touch.pos
-            Map.mapvar.backgroundimg.remove_widget(Player.player.tbbox)
-            Player.player.tbbox = None
-            Player.player.layout = None
+            Map.mapvar.background.removePopUp()
             return True
 
 
     def on_pressed(self, button, pos):
-        if button.id == 'unpause':
-            MainFunctions.pauseGame(button)
-            return
-        if button.id == 'enemyinfo':
-            gui.toggleEnemyPanel()
-        #tower abilities like upgrade and sell
-        elif button.instance  in Localdefs.towerabilitylist:
-            func = "TowerAbilities."+button.instance.type +"."+ button.instance.func + "()"
-            eval(func)
-            return
-        else:
-            Map.mapvar.background.popUpOpen = None
-            EventFunctions.placeTower(button)
+        if button.disabled == False:
+            if button.id == 'unpause':
+                MainFunctions.pauseGame(button)
+                return
+            # # if button.id == 'enemyinfo':
+            # #     gui.toggleEnemyPanel()
+            # #tower abilities like upgrade and sell
+            # elif button.instance  in Localdefs.towerabilitylist:
+            #     func = "TowerAbilities."+button.instance.type +"."+ button.instance.func + "()"
+            #     eval(func)
+            #     return
+            # else:
+            #     Map.mapvar.background.popUpOpen = None
+            #     EventFunctions.placeTower(button)
         #print('pressed at {pos}'.format(pos=pos))
 
 class ButtonWithImage(Button, Image):
@@ -64,38 +66,42 @@ class ButtonWithImage(Button, Image):
     def __init__(self, **kwargs):
         super(ButtonWithImage, self).__init__(**kwargs)
         self.image = Image(text = " ")
+        self.image.pos_hint=(None,None)
         self.add_widget(self.image)
         self.image.size = self.size
         self.image.pos = self.pos
         self.bind(pos=self.on_pos)
-        self.label = Label(text=' ', size_hint=(None,None), pos=(self.x, self.pos[1]), size=(50,20), color=[1,1,1,1], halign='center')
-        self.image.add_widget(self.label)
-
+        self.label = Label(text=' ', size_hint=(None,None), pos = self.pos,color=[1,1,1,1], halign='center')
+        self.add_widget(self.label)
 
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
             self.pressed = touch.pos
-            Map.mapvar.backgroundimg.remove_widget(Player.player.tbbox)
-            Player.player.tbbox = None
-            Player.player.layout = None
+            if self.id == 'enemyinfo' or self.id =='rotate':
+                pass
+            else:
+                Map.mapvar.background.removePopUp()
             return True
 
-
     def on_pressed(self, button, pos):
-        if button.id == 'unpause':
-            MainFunctions.pauseGame(button)
-            return
-        if button.id == 'enemyinfo':
-            gui.toggleEnemyPanel()
-        #tower abilities like upgrade and sell
-        elif button.instance  in Localdefs.towerabilitylist:
-            func = "TowerAbilities."+button.instance.type +"."+ button.instance.func + "()"
-            eval(func)
-            return
-        else:
-            EventFunctions.placeTower(button)
-            Map.mapvar.background.popUpOpen = None
-        #print('pressed at {pos}'.format(pos=pos))
+        if button.disabled == False:
+            if button.id == 'unpause':
+                MainFunctions.pauseGame(button)
+                return
+            elif button.id == 'enemyinfo':
+                gui.toggleEnemyPanel()
+            #tower abilities like upgrade and sell
+            elif button.instance  in Localdefs.towerabilitylist:
+                func = "TowerAbilities."+button.instance.type +"."+ button.instance.func + "()"
+                eval(func)
+                if button.id == 'rotate':
+                    gui.removeTriangle()
+                    gui.drawTriangle()
+                return
+            else:
+                EventFunctions.placeTower(button)
+                Map.mapvar.background.popUpOpen = None
+            #print('pressed at {pos}'.format(pos=pos))
     def on_pos(self, *args):
         self.image.pos = self.pos
         self.image.size = self.size
@@ -167,8 +173,8 @@ class mainMenu(SmartMenu):
     def __init__(self, **kwargs):
         super(mainMenu, self).__init__(**kwargs)
 
-        self.layout = BoxLayout(orientation='vertical', size=(300,300))
-        self.layout.center = ((Map.scrwid-self.width)/2,(Map.scrhei-self.height)/2)
+        self.layout = GridLayout(rows=2, size=(500,400))
+        self.layout.center = ((Map.mapvar.scrwid-self.width)/2,(Map.mapvar.scrhei-self.height)/2)
         self.layout.padding = [20]
         self.layout.spacing = 20
         self.id ='mainmenu'
@@ -184,20 +190,39 @@ class mainMenu(SmartMenu):
             Rectangle(size = self.layout.size, pos=self.layout.pos)
         with self.canvas.before:
             Color(.2,.2,.2,.2)
-            Rectangle(size = (Map.scrwid, Map.scrhei), pos=(0,0))
+            Rectangle(size = (Map.mapvar.scrwid, Map.mapvar.scrhei), pos=(0,0))
+        self.configLayout = GridLayout(cols=2)
+        self.buttonLayout = GridLayout(cols=2)
+        self.gameplayButtons = BoxLayout(orientation = 'vertical',spacing = 10, padding = 20)
+        self.startButton = Button(text='Play/Resume', id = 'Play')
+        self.restartButton = Button(text='Restart', id='Restart')
+        self.gameplayButtons.add_widget(self.startButton)
+        self.gameplayButtons.add_widget(self.restartButton)
+        self.pathLayout = BoxLayout(orientation='vertical', spacing=10, padding=10)
+        self.pathLabel = Label(text = "# Enemy Paths:")
+        self.onePath = ToggleButton(text = 'One', id='onepath', group='path', state='down')
+        self.twoPath = ToggleButton(text = 'Two', id='twopath',group='path')
+        self.threePath = ToggleButton(text = 'Three', id='threepath',group='path')
+        self.pathLayout.add_widget(self.pathLabel)
+        self.pathLayout.add_widget(self.onePath)
+        self.pathLayout.add_widget(self.twoPath)
+        self.pathLayout.add_widget(self.threePath)
+        self.difficultyLayout = BoxLayout(orientation='vertical',spacing=10, padding=10)
+        self.difficultyLabel = Label(text="Enemy Difficulty:")
+        self.easy = ToggleButton(text='Easy', id='easy',group='difficulty', state='down')
+        self.medium = ToggleButton(text='Medium', id='medium',group='difficulty')
+        self.hard = ToggleButton(text='Hard', id='hard',group='difficulty')
+        self.difficultyLayout.add_widget(self.difficultyLabel)
+        self.difficultyLayout.add_widget(self.easy)
+        self.difficultyLayout.add_widget(self.medium)
+        self.difficultyLayout.add_widget(self.hard)
 
 
-        self.startButton = Button()
-        self.startButton.text='Play'
-        self.startButton.instance = None
-        #self.startButton.bind(on_release=MainFunctions.startGame)
-
-        self.restartButton = Button()
-        self.restartButton.text='Restart'
-        self.restartButton.instance = None
-
-        self.layout.add_widget(self.startButton)
-        self.layout.add_widget(self.restartButton)
+        self.buttonLayout.add_widget(self.gameplayButtons)
+        self.configLayout.add_widget(self.pathLayout)
+        self.configLayout.add_widget(self.difficultyLayout)
+        self.buttonLayout.add_widget(self.configLayout)
+        self.layout.add_widget(self.buttonLayout)
 
 class topBarWidget():
     def __init__(self, label, var,source,icon):
@@ -228,15 +253,25 @@ class GUI():
 
         self.topBar_Boxlist = []
         self.myDispatcher = EventDispatcher.EventDisp()
+        self.topBar = None
+
+    def bindings(self, *args):
+        if self.topBar:
+            self.topBar.pos=(0,Window.height-45)
+            self.topBar.layout.pos = self.topBar.pos
+            self.topBar.size = (Window.width,45)
+            self.topBar.layout.size = self.topBar.size
+        self.rightSideButtons_layout.pos = (Window.width-55, 2*Map.mapvar.squsize)
 
     def rightSideButtons(self):
-        self.rightSideButtons_layout=StackLayout(size_hint=(None,None), size=(50,70), pos=(Map.scrwid-55, 40))
+        self.rightSideButtons_layout=StackLayout(size_hint=(None,None), size=(50,70), pos=(Window.width-55, 2*Map.mapvar.squsize))
         self.enemyInfoButton = ButtonWithImage(text=" ",id='enemyinfo', size_hint=(None,None), width=50, height=50)
         self.enemyInfoButton.image.source = "enemyimgs/Standard.png"
         self.enemyInfoButton.label.text = 'Info'
-        #self.enemyInfoButton.bind(on_release=self.openEnemyPanel)
+        self.enemyInfoButton.label.size = (50,20)
         self.rightSideButtons_layout.add_widget(self.enemyInfoButton)
         return self.rightSideButtons_layout
+
     def toggleEnemyPanel(self):
         if not Map.mapvar.enemypanel.parent:
             Map.mapvar.backgroundimg.add_widget(Map.mapvar.enemypanel)
@@ -263,144 +298,148 @@ class GUI():
 
         return self.topBar
 
-    def createTopSideBar(self):
-        self.topSideBar=Bar(size=(270, (Window.height - 65)/2))
-        self.topSideBar.pos = (Window.width - self.topSideBar.width-5, (Window.height-55-self.topSideBar.height))
-        self.topSideBar.layout.pos = self.topSideBar.pos
-        self.topSideBar.layout.orientation = 'vertical'
-        with self.topSideBar.layout.canvas.before:
-            Color(1,1,1,.6)
-            Line(rounded_rectangle = (self.topSideBar.x, self.topSideBar.y, self.topSideBar.width, self.topSideBar.height, 20, 20, 20, 20, 100), width = 2)
-
-
-        self.topSideBar_header = MyLabel(text='')
-        self.topSideBar_image = Image(size = (60,60), pos = self.topSideBar.layout.center, color=(0,0,0,0))
-        self.topSideBar_towerinfo = MyLabel(text='', text_size = [150,120])
-        self.topSideBar.layout.add_widget(self.topSideBar_header)
-        self.topSideBar.layout.add_widget(self.topSideBar_image)
-        self.topSideBar.layout.add_widget(self.topSideBar_towerinfo)
-
-        return self.topSideBar
-
-    def createBottomSideBar(self):
-        self.bottomSideBar = Bar(size=(270, (Window.height - 65) / 2))
-        self.bottomSideBar.pos = (Window.width - self.topSideBar.width - 5, 5)
-        self.bottomSideBar.layout.pos = self.bottomSideBar.pos
-        self.bottomSideBar.layout.orientation = 'vertical'
-        with self.bottomSideBar.layout.canvas.before:
-            Color(1,1,1,.6)
-            Line(rounded_rectangle = (self.bottomSideBar.x, self.bottomSideBar.y, self.bottomSideBar.width, self.bottomSideBar.height, 20, 20, 20, 20, 100), width = 2)
-
-        self.bottomSideBar_header = MyLabel(text='')
-        self.bottomSideBar_image = Image(size=(60, 60), pos=self.topSideBar.layout.center, color=(0, 0, 0, 0))
-        self.bottomSideBar_nextEnemies = MyLabel(text='Next Enemies:', text_size = [150, 60])
-        self.bottomSideBar_enemyinfo = GridLayout(cols=2, col_force_default=True, row_force_default=True,
-                                                  row_default_height=30, col_default_width=90)
-        self.bottomSideBar_enemyinfo_numEnemies = MyLabel(text='')
-        self.bottomSideBar_enemyinfo_enemyHealth = MyLabel(text='')
-        self.bottomSideBar_enemyinfo_enemySpeed = MyLabel(text='')
-        self.bottomSideBar_enemyinfo_enemyArmor = MyLabel(text='')
-        self.bottomSideBar_enemyinfo_enemyMods = MyLabel(text='')
-        self.bottomSideBar_enemyinfo_enemyReward = MyLabel(text='')
-        self.bottomSideBar_enemyinfo_isBoss = MyLabel(text='')
-
-        self.myDispatcher.bind(WaveNum=self.setBottomBar)
-        self.bottomSideBar_enemyinfo.add_widget(self.bottomSideBar_enemyinfo_numEnemies)
-        self.bottomSideBar_enemyinfo.add_widget(self.bottomSideBar_enemyinfo_enemyHealth)
-        self.bottomSideBar_enemyinfo.add_widget(self.bottomSideBar_enemyinfo_enemySpeed)
-        self.bottomSideBar_enemyinfo.add_widget(self.bottomSideBar_enemyinfo_enemyArmor)
-        self.bottomSideBar_enemyinfo.add_widget(self.bottomSideBar_enemyinfo_enemyMods)
-        self.bottomSideBar_enemyinfo.add_widget(self.bottomSideBar_enemyinfo_enemyReward)
-        self.bottomSideBar_enemyinfo.add_widget(self.bottomSideBar_enemyinfo_isBoss)
-        self.bottomSideBar.layout.add_widget(self.bottomSideBar_header)
-        self.bottomSideBar.layout.add_widget(self.bottomSideBar_image)
-        self.bottomSideBar.layout.add_widget(self.bottomSideBar_enemyinfo)
-        self.bottomSideBar.layout.add_widget(self.bottomSideBar_nextEnemies)
-
-        return self.bottomSideBar
-
-    def setBottomBar(self, *args):
-        #see wavegen for dict creation
-        wavedict = Player.player.waveList
-        i = int(Player.player.wavenum)
-        enemyType = wavedict[i]['enemytype']
-        self.bottomSideBar_header.text = str(enemyType)
-        imgSrc= eval(("Enemy."+enemyType +".imagesrc"))
-        self.bottomSideBar_image.source = imgSrc
-        self.bottomSideBar_image.color = (1,1,1,1)
-        self.bottomSideBar_enemyinfo_numEnemies.text = "Number: " + str(wavedict[i]['enemynum'])
-        self.bottomSideBar_enemyinfo_enemyHealth.text = "HP: "+ str(int(wavedict[i]['enemyhealth']))
-        self.bottomSideBar_enemyinfo_enemySpeed.text = "Speed: "+ str(int(wavedict[i]['enemyspeed']))
-        self.bottomSideBar_enemyinfo_enemyArmor.text = "Armor: " + str(int(wavedict[i]['enemyarmor']))
-        self.bottomSideBar_enemyinfo_enemyMods.text = "Mods: " + str(wavedict[i]['enemymods'])
-        self.bottomSideBar_enemyinfo_enemyReward.text = "Reward: " + str(int(wavedict[i]['enemyreward']))
-        self.bottomSideBar_enemyinfo_isBoss.text = "Boss: "+ str(wavedict[i]['isboss'])
-
-        self.bottomSideBar_nextEnemies.text = "Next Enemies: " + wavedict[i+1]['enemytype']+", "+ wavedict[i+2]['enemytype']+", "+ wavedict[i+3]['enemytype']
-
-    def createTBBox(self, squarepos):
-
-        Player.player.tbbox = FloatLayout(size=(150, 150),
-                                          pos=(squarepos[0] - Map.squsize * 2, squarepos[1] - Map.squsize * 2))
-        Player.player.layout = BoxLayout(size=(Map.squsize * 2, Map.squsize * 2), pos=squarepos)
+    def createTBBox(self, squarepos, squwid, squhei):
+        Player.player.tbbox = Scatter(size=(Map.mapvar.squsize*squwid,Map.mapvar.squsize*squhei), pos=(squarepos[0]+2*Map.mapvar.squsize,squarepos[1]-Map.mapvar.squsize*2), do_resize=False, do_rotation=False)
+        Player.player.layout = GridLayout(size_hint=(None,None), size=Player.player.tbbox.size, pos=(0,0), cols=2)
+        with Player.player.tbbox.canvas:
+            Color(.1,.1,.1,.9)
+            Rectangle(pos=(0,0), size=Player.player.tbbox.size)
+        #print Player.player.layout.size, Player.player.layout.pos, Player.player.tbbox.size, Player.player.tbbox.pos
         Player.player.tbbox.add_widget(Player.player.layout)
         Map.mapvar.background.popUpOpen = Player.player.tbbox
 
-
     def towerMenu(self, squarepos):
-        self.createTBBox(squarepos)
+        self.createTBBox(squarepos,6,6)
         range = Player.player.towerSelected.range
-        with Player.player.layout.canvas.before:
-            Color(.5, .5, .5, .3)
-            square = Rectangle(pos = (squarepos[0] - range+Map.squsize, squarepos[1] - range+Map.squsize), size= (2*range, 2*range))
-            # Color(0,0,0,1)
-            # outline = Line(points=[squarepos[0] - range+Map.squsize, squarepos[1] - range+Map.squsize, squarepos[0] - range+Map.squsize, squarepos[1] + range+Map.squsize,
-            #                     squarepos[0] + range + Map.squsize, squarepos[1] + range + Map.squsize, squarepos[0] + range+Map.squsize, squarepos[1] - range+Map.squsize,
-            #                     squarepos[0] - range+Map.squsize, squarepos[1] - range+Map.squsize], width=.2)
+        #Player.player.tbbox.pos = (Player.player.tbbox.pos[0]+range, Player.player.tbbox.pos[1])
+        with Map.mapvar.backgroundimg.canvas:
+            Color(0,0,0,1)
+            Map.mapvar.towerRange = Line(points=[squarepos[0] - range+Map.mapvar.squsize, squarepos[1] - range+Map.mapvar.squsize, squarepos[0] - range+Map.mapvar.squsize, squarepos[1] + range+Map.mapvar.squsize,
+                                   squarepos[0] + range+Map.mapvar.squsize, squarepos[1] + range+Map.mapvar.squsize, squarepos[0] + range+Map.mapvar.squsize, squarepos[1] - range+Map.mapvar.squsize,
+                                   squarepos[0] - range+Map.mapvar.squsize, squarepos[1] - range+Map.mapvar.squsize], width=.2)
+        Player.player.layout.cols=1
+        #sell button
+        self.sellbtn = ButtonWithImage(text=' ', size_hint=(1, None), pos_hint = (1,1),height=40)
+        self.sellbtn.instance = Localdefs.towerabilitylist[0]
+        self.sellbtn.image.source = self.sellbtn.instance.imgstr
+        self.sellbtn.image.size_hint = (None, None)
+        self.sellbtn.image.size = (30, 30)
+        self.sellbtn.image.pos = self.sellbtn.pos
+        self.sellbtn.text = '              '+self.sellbtn.instance.type + ':  $' + str(int(Player.player.towerSelected.refund))
+        Player.player.layout.add_widget(self.sellbtn)
 
+        self.sellbtn.x = Player.player.tbbox.x
+        #upgrade data grid
+        dataLayout = GridLayout(size=(Map.mapvar.squsize*4,Map.mapvar.squsize*4), pos=(0,0), cols=3)
+        headers = [' ', 'Current', 'Next']
+        for h in headers:
+            lbl = Label(text=str(h))
+            dataLayout.add_widget(lbl)
+        for item in Player.player.towerSelected.upgradeData:
+            lbl = Label(text=str(item))
+            dataLayout.add_widget(lbl)
+        Player.player.layout.add_widget(dataLayout)
+        #upgrade button
+        self.upgbtn = ButtonWithImage(text=' ', size_hint=(1, None), height=40)
+        self.upgbtn.instance = Localdefs.towerabilitylist[1]
+        self.upgbtn.text = '              '+self.upgbtn.instance.type + ':  $'+ str(Player.player.towerSelected.upgradeDict['Cost'][Player.player.towerSelected.level-1])
+        self.upgbtn.image.source = self.upgbtn.instance.imgstr
+        Player.player.layout.add_widget(self.upgbtn)
+        self.toggleUpgBtn()
+        if Player.player.towerSelected.percentComplete > 0:
+            self.disableBtn(self.upgbtn)
+            self.disableBtn(self.sellbtn)
 
-        tbbuttonnum = len(Localdefs.towerabilitylist)
-        radius = 55
-        inddeg = (2.0 * math.pi) / tbbuttonnum
-        for ind,instance in enumerate(Localdefs.towerabilitylist):
-            tmpbtn = ButtonWithImage()
-            tmpbtn.instance = instance
-            #tmpbtn.text = instance.type
-            tmpbtn.size_hint = (.3, .3)
-            tmpbtn.size = (20, 20)
-            tmpbtn.image.source = instance.imgstr
-            Player.player.tbbox.add_widget(tmpbtn)
-            tmpbtn.pos = (Player.player.layout.x + radius * math.cos((ind) * inddeg), (Player.player.layout.y - radius * math.sin((ind) * inddeg)))
-            #print(Player.player.tbbox.center, Player.player.tbbox.size, squarepos, "name:", tmpbtn.size, tmpbtn.text, tmpbtn.center)
+        if Player.player.towerSelected.type == 'Wind':
+            self.rotatebtn = ButtonWithImage(text=' ', size_hint=(1, None), height=40)
+            self.rotatebtn.id = 'rotate'
+            self.rotatebtn.instance = Localdefs.towerabilitylist[2]
+            self.rotatebtn.text = '              '+self.rotatebtn.instance.type+" Group"
+            self.rotatebtn.image.source = self.rotatebtn.instance.imgstr
+            Player.player.tbbox.size =  (Map.mapvar.squsize * 6, Map.mapvar.squsize * 7)
+            Player.player.layout.height = Player.player.tbbox.height
+            Player.player.layout.add_widget(self.rotatebtn)
+            with Player.player.tbbox.canvas.before:
+                Color(.1, .1, .1, .9)
+                Rectangle(pos=(0, 0), size=Player.player.tbbox.size)
+            self.drawTriangle()
+
         Map.mapvar.backgroundimg.add_widget(Player.player.tbbox)
 
+    def drawTriangle(self):
+        with Map.mapvar.backgroundimg.canvas:
+            Color(0, 0, 0, 1)
+            if Player.player.towerSelected.towerGroup.facing == 'l':
+                Map.mapvar.triangle = self.getTriangle('l')
+            elif Player.player.towerSelected.towerGroup.facing == 'r':
+                Map.mapvar.triangle = self.getTriangle('r')
+            elif Player.player.towerSelected.towerGroup.facing == 'u':
+                Map.mapvar.triangle = self.getTriangle('u')
+            elif Player.player.towerSelected.towerGroup.facing == 'd':
+                Map.mapvar.triangle = self.getTriangle('d')
+
+    def removeTriangle(self):
+        if Map.mapvar.triangle:
+            Map.mapvar.backgroundimg.canvas.remove(Map.mapvar.triangle)
+            Map.mapvar.triangle = None
+
+    def getTriangle(self, dir):
+        # triangles for display around a tower indicating its direction
+        if dir == 'l':
+            return Triangle(points=(Player.player.towerSelected.pos[0] - Map.mapvar.squsize / 6,
+                                            Player.player.towerSelected.pos[1] + Map.mapvar.squsize / 6,
+                                            Player.player.towerSelected.pos[0] - Map.mapvar.squsize,
+                                            Player.player.towerSelected.pos[1] + Map.mapvar.squsize,
+                                            Player.player.towerSelected.pos[0] - Map.mapvar.squsize / 6,
+                                            Player.player.towerSelected.top - Map.mapvar.squsize / 6))
+        if dir == 'r':
+            return Triangle(points=(Player.player.towerSelected.right + Map.mapvar.squsize / 6,
+                                         Player.player.towerSelected.pos[1] + Map.mapvar.squsize / 6,
+                                         Player.player.towerSelected.right + Map.mapvar.squsize,
+                                         Player.player.towerSelected.pos[1] + Map.mapvar.squsize,
+                                         Player.player.towerSelected.right + Map.mapvar.squsize / 6,
+                                         Player.player.towerSelected.top - Map.mapvar.squsize / 6))
+        if dir == 'u':
+            return Triangle(points=(Player.player.towerSelected.pos[0] + Map.mapvar.squsize / 6,
+                                      Player.player.towerSelected.top + Map.mapvar.squsize / 6,
+                                      Player.player.towerSelected.pos[0] + Map.mapvar.squsize,
+                                      Player.player.towerSelected.top + Map.mapvar.squsize,
+                                      Player.player.towerSelected.right - Map.mapvar.squsize / 6,
+                                      Player.player.towerSelected.top + Map.mapvar.squsize / 6))
+        if dir == 'd':
+            return Triangle(points=(Player.player.towerSelected.pos[0] + Map.mapvar.squsize / 6,
+                                        Player.player.towerSelected.pos[1] - Map.mapvar.squsize / 6,
+                                        Player.player.towerSelected.pos[0] + Map.mapvar.squsize,
+                                        Player.player.towerSelected.pos[1] - Map.mapvar.squsize,
+                                        Player.player.towerSelected.right - Map.mapvar.squsize / 6,
+                                        Player.player.towerSelected.pos[1] - Map.mapvar.squsize / 6))
+
+    def toggleUpgBtn(self):
+        if Player.player.towerSelected and Player.player.money < Player.player.towerSelected.upgradeDict['Cost'][Player.player.towerSelected.level - 1]:
+            self.disableBtn(self.upgbtn)
+        else:
+            self.enableBtn(self.upgbtn)
+    def disableBtn(self, btn):
+        btn.disabled = True
+    def enableBtn(self,btn):
+        btn.disabled = False
 
     def builderMenu(self,squarepos):
-        self.createTBBox(squarepos)
-        with Player.player.layout.canvas.before:
-            Color(0, 0, 0, 1)
-            outline = Line(points=[squarepos[0]-Map.squsize*2, squarepos[1]-Map.squsize*2, squarepos[0]-Map.squsize*2, squarepos[1]+Map.squsize*4,
-                                squarepos[0]+ Map.squsize*4, squarepos[1]+ Map.squsize*4, squarepos[0]+Map.squsize*4, squarepos[1]-Map.squsize*2,
-                                squarepos[0]-Map.squsize*2, squarepos[1]-Map.squsize*2], width=.2)
-            Color(.1, .1, .1, .1)
-            rect = Rectangle(size=Player.player.layout.size, pos=Player.player.layout.pos)
+        self.createTBBox(squarepos,4,6)
 
-        for ind, button in enumerate(Localdefs.iconlist):
-            tmpbtn = MyButton()
+        for button in Localdefs.iconlist:
+            tmpbtn = ButtonWithImage(text=' ',size_hint=(None, None), size=(60,60))
             tmpbtn.instance = button
-            tmpbtn.text=button.type
-            tmpbtn.size_hint=(.4, .4)
-            tmpbtn.size = (60,60)
-            tmpbtn.source = button.imgstr
-            Player.player.tbbox.add_widget(tmpbtn)
-            tmpbtn.pos = Utilities.get_pos(Player.player.tbbox.pos,180,180, ind)
-
-            #print(Player.player.tbbox.center, Player.player.tbbox.size, touchpos, "name:", tmpbtn.size, tmpbtn.text, tmpbtn.center)
-
-
+            tmpbtn.image.source = button.imgstr
+            tmpbtn.label.text = " $"+str(button.cost)
+            tmpbtn.label.size = (30,18)
+            if button.cost > Player.player.money:
+                tmpbtn.disabled = True
+            Player.player.layout.add_widget(tmpbtn)
         Map.mapvar.backgroundimg.add_widget(Player.player.tbbox)
 
 gui = GUI()
+
 
 class EnemyPanel(TabbedPanel):
     #currently instantiating in MAp

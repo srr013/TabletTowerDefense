@@ -57,8 +57,8 @@ class container(Widget):
 def roundPoint(point):
     '''Takes the location of a mouse event (click) and rounds it to match the game grid
     Point = mouse position point (x,y)'''
-    x = Map.squsize*int(point[0]/Map.squsize)
-    y = Map.squsize*int(point[1]/Map.squsize)
+    x = Map.mapvar.squsize*int(point[0]/Map.mapvar.squsize)
+    y = Map.mapvar.squsize*int(point[1]/Map.mapvar.squsize)
     return (x,y)
 
 def roundRect(rect):
@@ -73,7 +73,7 @@ def getPos(point):
     x = point[0]
     y = point[1]
 
-    pos = [x - x%Map.squsize, y - y%Map.squsize]
+    pos = [x - x%Map.mapvar.squsize, y - y%Map.mapvar.squsize]
     return pos
 
 def get_rotation(obj, enemy):

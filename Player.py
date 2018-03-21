@@ -5,13 +5,14 @@ import Wavegen
 from kivy.uix.image import Image
 
 playerhealth = 20
-playermoney = 5000
+playermoney = 50
 
 class Player():
     def __init__(self):
         #self.name = "player"
         self.health = playerhealth
         self.money = playermoney
+        self.gems = 0
         self.abilities = list()
         self.wavenum = 0
         self.gameover = False
@@ -27,8 +28,8 @@ class Player():
         self.score = 0
         self.newMoveList = False
         self.waveList = Wavegen.wavegen() #[{'wavenum': 1, 'setnum': 1, 'enemytype': 'b', 'enemymods': []}, dict repeats]
-        self.wavetime = Map.waveseconds
-        self.wavetimeInt = int(Map.waveseconds)
+        self.wavetime = Map.mapvar.waveseconds
+        self.wavetimeInt = int(Map.mapvar.waveseconds)
 
 
     def die(self):

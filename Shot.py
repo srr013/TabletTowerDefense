@@ -81,11 +81,11 @@ class Shot(Widget):
                 dest[1] = self.tower.pos[1]
                 self.angle = 180
             elif self.facing == 'r':
-                dest[0] = Map.scrwid
+                dest[0] = Map.mapvar.scrwid
                 dest[1] = self.tower.pos[1]
             elif self.facing == 'u':
                 dest[0] = self.tower.pos[0]
-                dest[1] = Map.scrhei
+                dest[1] = Map.mapvar.scrhei
                 self.angle = 90
             elif self.facing == 'd':
                 dest[0] = self.tower.pos[0]

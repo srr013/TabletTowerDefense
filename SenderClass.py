@@ -31,7 +31,7 @@ class Sender():
             if self.enemiesDeployed < self.numThisWave:
                 if self.enemytype == 'Crowd' and self.specialSend == True:
 
-                    f = operator.methodcaller(self.enemytype,isBoss=self.isBoss,specialSend=self.specialSend, pos=self.pos, curnode=self.curnode, wave=self.curwave)
+                    f = operator.methodcaller(self.enemytype,isBoss=self.isBoss,specialSend=self.specialSend, pos=self.pos, curnode=self.curnode, curwave=self.curwave)
                     f(Enemy)
                 else:
                     f = operator.methodcaller(self.enemytype,isBoss=self.isBoss, specialSend=self.specialSend)

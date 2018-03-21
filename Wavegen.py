@@ -54,7 +54,7 @@ def wavegen():
             waveList.append(wave)
             waveNum += 1
         setNum += 1
-    print waveList
+    #print waveList
     return waveList
 
 

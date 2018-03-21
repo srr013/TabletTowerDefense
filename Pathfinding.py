@@ -33,7 +33,6 @@ def a_star_search(graph, start, goal):
                 priority = new_cost + heuristic(goal, next)
                 frontier.put(next, priority)
                 came_from[next] = current
-
     return came_from, cost_so_far
 
 def get_path(map, start, goal):
@@ -87,7 +86,6 @@ def reconstruct_path(came_from, start, goal):
         else:
             move.append(path[y])
         y+=1
-
     return path, direction, move
 
 
@@ -137,14 +135,15 @@ class GridWithWeights(MapGrid):
             if x + 1 % self.goal[0] == 0:
                 x_weight = 0
             else:
-                x_weight = abs(self.goal[0] - x)*.1
+                x_weight = abs(self.goal[0] - x)*.01
 
             for y in range (0,int(self.height)):
                 if y+1 % self.goal[1] == 0:
                     y_weight = 0
                 else:
-                    y_weight= abs(self.goal[1]- y)*.01
+                    y_weight= abs(self.goal[1]- y)*.1
                 weights[x, y] = round(x_weight, 1) + round(y_weight, 1)
+        #print weights
         return weights
 
 

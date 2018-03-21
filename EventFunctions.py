@@ -14,11 +14,11 @@ def placeTower(*args):
     #currently assume that all towers are 60x60. Need to add something to the Icon class to accomodate other sizes if that changes
     instance = args[0]
     #the conversion of pos on the line below must match (opposite) of the tbbox conversion in GUI_Kivy.builderMenu
-    pos = (instance.parent.pos[0]+Map.squsize*2, instance.parent.pos[1]+Map.squsize*2)
+    # pos = (instance.parent.pos[0]+Map.mapvar.squsize*2, instance.parent.pos[1]+Map.mapvar.squsize*2)
     towerselected = instance.instance
-    sufficient_funds = True if instance.instance.cost < Player.player.money else False
+    sufficient_funds = True if instance.instance.cost <= Player.player.money else False
     towerWidgetList = Map.mapvar.towercontainer.walk(restrict=True)
-    newTower = eval("Towers." + towerselected.type + towerselected.base)(pos)
+    newTower = eval("Towers." + towerselected.type + towerselected.base)(Map.mapvar.background.towerpos)
     toweroverlap = []
     for tower in towerWidgetList:
         toweroverlap.append(newTower.collide_widget(tower))
@@ -51,7 +51,7 @@ def placeTower(*args):
     elif not Map.mapvar.openPath and not any(toweroverlap) and str(walloverlap) == 'set()':
         #place the tower if it's a closed path map, and no path
         Map.mapvar.towercontainer.add_widget(newTower)
-        eval("Towers." + towerselected.type + towerselected.base)(pos)
+        eval("Towers." + towerselected.type + towerselected.base)(Map.mapvar.background.squarepos)
         Player.player.towerSelected = None
 
 
@@ -71,8 +71,8 @@ def nextWave(*args):
     GUI.gui.myDispatcher.WaveNum = str(Player.player.wavenum)
     Map.mapvar.enemypanel.CurrentWave = str(Player.player.wavenum)
     #GUI.gui.myDispatcher.Wave = str(Player.player.wavenum)
-    Player.player.wavetime = Map.waveseconds
-    Player.player.wavetimeInt = int(Map.waveseconds)
+    Player.player.wavetime = Map.mapvar.waveseconds
+    Player.player.wavetimeInt = int(Map.mapvar.waveseconds)
     GUI.gui.myDispatcher.Timer = str(Player.player.wavetime)
     Player.player.next_wave = False
     SenderClass.Sender(specialSend = False)
