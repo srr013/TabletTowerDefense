@@ -4,6 +4,7 @@ from kivy.uix.widget import Widget
 import os
 import Map
 import math
+import Wall
 
 def imgLoad(source, pos=(0,0)):
     '''Load an image via a kivy Image layout. By default does not size the widget containing the image.
@@ -67,6 +68,23 @@ def roundRect(rect):
     roundpos = roundPoint(rect.pos)
     new = createRect(roundpos, rect.size)
     return new
+
+def genWalls(pos,squarewidth,squareheight):
+    '''Generating the rects for the tower used in collision and path generation'''
+    walls = []
+    h = squareheight
+    k = 0
+    while h > 0:
+        j = 0
+        w = squarewidth
+        while w > 0:
+            wall = Wall.Wall(squpos=((pos[0]/Map.mapvar.squsize)+j, (pos[1]/Map.mapvar.squsize)+k))
+            walls.append(wall)
+            w -= 1
+            j += 1
+        k += 1
+        h -= 1
+    return walls
 
 def getPos(point):
     '''Returns the kivy pos (bottom left) of the square with a touchdown'''

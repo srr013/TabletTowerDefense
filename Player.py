@@ -27,14 +27,14 @@ class Player():
         self.restart = False
         self.score = 0
         self.newMoveList = False
-        self.waveList = Wavegen.wavegen() #[{'wavenum': 1, 'setnum': 1, 'enemytype': 'b', 'enemymods': []}, dict repeats]
         self.wavetime = Map.mapvar.waveseconds
         self.wavetimeInt = int(Map.mapvar.waveseconds)
-
 
     def die(self):
         '''Set gameover to True to reset the game'''
         self.gameover = True
 
+    def genWaveList(self):
+        self.waveList, self.waveTypeList = Wavegen.wavegen()  # [{'wavenum': 1, 'setnum': 1, 'enemytype': 'b', 'enemymods': []}, dict repeats]
 
 player = Player()

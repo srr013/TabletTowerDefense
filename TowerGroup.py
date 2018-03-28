@@ -30,6 +30,7 @@ class TowerGroup():
         self.active = False
         self.targetTimer=0
         self.facing = 'l'
+        self.towersNeedingAnim = []
 
     def updateTowerGroup(self):
         self.updateList()
@@ -82,21 +83,27 @@ class TowerGroup():
                 return
             for enemy in sortedlist:
                 if Utilities.in_range(tower,enemy):
-                    if not self.active:
-                        self.enable()
-                        return
                     if enemy.isair and tower.attackair:
                         self.in_range_air +=1
-                        self.hitEnemy(tower,enemy)
+                        if self.active:
+                            self.hitEnemy(tower,enemy)
+                        if not self.active:
+                            self.enable()
                         tower.shotcount +=1
 
                     if not enemy.isair and tower.attackground:
                         self.in_range_ground+=1
-                        self.hitEnemy(tower,enemy)
+                        if self.active:
+                            self.hitEnemy(tower,enemy)
+                        if not self.active:
+                            self.enable()
                         tower.shotcount +=1
 
                     if tower.shotcount > 0:
                         self.targetTimer = tower.reload
+                        if self.towersNeedingAnim:
+                            self.disable()
+                            self.towersNeedingAnim = []
 
                 if tower.shotcount >= tower.allowedshots:
                     break
@@ -122,8 +129,6 @@ class TowerGroup():
                 enemy.stuntime = tower.stuntime
                 enemy.anim.cancel_all(enemy)
                 enemy.addStunImage()
-
-
             dir = (enemy.pos[0] - tower.pos[0], enemy.pos[1] - tower.pos[1])
             pushx = pushy = 0
             if dir[0] <= 0:
@@ -134,7 +139,6 @@ class TowerGroup():
                 pushy = tower.push
             elif dir[1] > 0:
                 pushy = -tower.push
-
             enemy.pushed = [pushx, pushy]
             enemy.health -= max(tower.damage - enemy.armor, 0)
             enemy.checkHealth()
@@ -157,11 +161,11 @@ class TowerGroup():
                  tower.turret.source = os.path.join('towerimgs', self.towerType, "turret.gif")
 
     def animateGravity(self, tower):
-        tower.animation = Animation(size=(90, 90), pos=(tower.center[0] - 44, tower.center[1] - 44),
-                                    duration=tower.reload - .1) + Animation(size=(45, 45), pos=(
-            tower.center[0] - 22, tower.center[1] - 22), duration=.1)
+        tower.animation = Animation(size=(Map.mapvar.squsize*3, Map.mapvar.squsize*3), pos=(tower.center[0] - Map.mapvar.squsize*1.5, tower.center[1] - Map.mapvar.squsize*1.5),
+                                    duration=tower.reload - .1) + Animation(size=(Map.mapvar.squsize*1.5, Map.mapvar.squsize*1.5),
+                                    pos=(tower.center[0] - Map.mapvar.squsize*.74, tower.center[1] - Map.mapvar.squsize*.74), duration=.1)
         tower.animation.repeat = True
-        tower.animation.start(tower.rect)
+        tower.animation.start(tower.attackImage)
 
     def disable(self):
         self.active = False
@@ -171,8 +175,8 @@ class TowerGroup():
         if self.towerType=='Gravity':
             self.targetTimer = 0
             for tower in self.towerSet:
-                tower.animation.cancel_all(tower.rect)
-                tower.closeanimation.start(tower.rect)
+                tower.animation.cancel_all(tower.attackImage)
+                tower.closeanimation.start(tower.attackImage)
         if self.towerType=='Wind':
             self.targetTimer = 0
             for tower in self.towerSet:

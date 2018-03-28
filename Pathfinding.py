@@ -22,9 +22,12 @@ def a_star_search(graph, start, goal):
 
     while not frontier.empty():
         current = frontier.get()
-
         if current == goal:
             break
+
+        if not graph.neighbors(current):
+            came_from = 'Path Blocked'
+            cost_so_far = current
 
         for next in graph.neighbors(current):
             new_cost = cost_so_far[current] + graph.cost(current, next)
@@ -33,6 +36,10 @@ def a_star_search(graph, start, goal):
                 priority = new_cost + heuristic(goal, next)
                 frontier.put(next, priority)
                 came_from[next] = current
+        if frontier.qsize() == 0:
+            came_from = 'Path Blocked'
+            cost_so_far = current
+
     return came_from, cost_so_far
 
 def get_path(map, start, goal):
@@ -40,6 +47,7 @@ def get_path(map, start, goal):
     came_from, cost_so_far = a_star_search(map, start, goal)
     #draw_grid(map, width=1, point_to=came_from, start=start, goal=goal)
     #draw_grid(map, width=1, number=cost_so_far, start=start, goal=goal)
+    #print came_from
     return came_from, cost_so_far
 
 def reconstruct_path(came_from, start, goal):
@@ -52,7 +60,7 @@ def reconstruct_path(came_from, start, goal):
         try:
             current = came_from[current]
         except KeyError:
-            return "Path Blocked"
+            return "Path Blocked",current
 
     path.append(start)
     path.reverse()

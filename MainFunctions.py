@@ -3,6 +3,12 @@ import time
 import Player
 import GUI
 import TowerAbilities
+import EventFunctions
+import os
+
+from kivy.uix.label import Label
+from kivy.graphics import *
+from kivy.animation import Animation
 
 def makeIcons():
     '''Creates an Icon from the class for each tower'''
@@ -50,23 +56,23 @@ def updateFlyingList():
 
 def updatePath():
     '''Update the path using A* algorithm'''
-
     Map.newPath.walls = Map.path.get_wall_list()
+    #print "walls", Map.newPath.walls
     if len(Map.mapvar.flymovelists) == 0:
         updateFlyingList()
 
-    x=0
     Map.mapvar.movelists = list()
+    x=0
     for startpoint in Map.mapvar.startpoint:
         came_from, cost_so_far = Pathfinding.get_path(Map.newPath, startpoint, Map.mapvar.basepoint)
-        Map.mapvar.movelists.append(Pathfinding.reconstruct_path(came_from, startpoint, Map.mapvar.basepoint))
-        # print Map.mapvar.movelists
-        if Map.mapvar.movelists[x] == "Path Blocked":
-            print "Path Blocked"
-            addAlert("Path Blocked", 48, "center", (240, 0, 0))
+        if came_from == 'Path Blocked':
+            Map.mapvar.blockedSquare = cost_so_far
             return False
-        x+=1
-
+        Map.mapvar.movelists.append(Pathfinding.reconstruct_path(came_from, startpoint, Map.mapvar.basepoint))
+        # if Map.mapvar.movelists[x][0] == "Path Blocked":
+        #     Map.mapvar.blockedSquare = Map.mapvar.movelists[x][1]
+        #     return False
+        # x+=1
 
     Map.mapvar.genmovelists()
     Map.mapvar.updatePath = False
@@ -84,33 +90,38 @@ def workShots():
     for shot in Localdefs.shotlist:
         shot.takeTurn()
 
-def dispText():
+def dispMessage(*args):
     '''Display any alerts in the queue, then remove them'''
-    for alert in Localdefs.alertQueue:
-        if alert[2] <= time.time():
-            Localdefs.alertQueue.pop(0)
+    if GUI.gui.alertQueue and not GUI.gui.alertAnimation.have_properties_to_animate(GUI.gui.alertScroller):
+        GUI.gui.alertLabel.text = GUI.gui.alertQueue[0][0]
+        GUI.gui.alertAnimation.start(GUI.gui.alertScroller)
+
+def flashScreen(color, numframes):
+    with Map.mapvar.backgroundimg.canvas.after:
+        if color == 'red':
+            Color(1,0,0,.5)
         else:
-            pass
+            Color(0,0,0,.5)
+        GUI.gui.bgrect = Rectangle(size=(Map.mapvar.scrwid, Map.mapvar.scrhei), pos=(0, 0))
 
-def dispExplosions():
-    for explosion in Localdefs.explosions:
-        explosion[2].dispExplosions(explosion)
+    Map.mapvar.dispFlashCounter = 0
+    Map.mapvar.dispFlashLimit = numframes
 
-def addAlert(message, fontsize, location, color, length = 2):
-    pass
-#     '''Add an alert to alertQueue
-#     Message: the text to display
-#     Fontsize: integer size of font
-#     Location: string indicating location to display message. [center]
-#     length: Default 2. Length of time to display message in seconds.'''
-#     if location == "center":
-#         location = (Map.scrwid+Map.mapoffset[0]/2, Map.scrhei+Map.mapoffset[1]/2)
+def workDisp():
+    if GUI.gui.bgrect:
+        Map.mapvar.dispFlashCounter +=1
+        if Map.mapvar.dispFlashCounter >= Map.mapvar.dispFlashLimit:
+            print "removing bgrect from flash"
+            Map.mapvar.backgroundimg.canvas.after.remove(GUI.gui.bgrect)
+            GUI.gui.bgrect = None
+            Map.mapvar.dispFlashCounter = 0
+    dispMessage()
+
 #
-#     font = pygame.font.Font(None, fontsize)
-#     text = font.render(message, 1, color)
-#     textpos = text.get_rect(center=location)
-#     endtime = time.time() + length
-#     localdefs.alertQueue.append([text,textpos, endtime])
+# def dispExplosions():
+#     for explosion in Localdefs.explosions:
+#         print explosion
+#         explosion[2].dispExplosions(explosion)
 
 
 def workEnemies():
@@ -127,31 +138,24 @@ def workEnemies():
 
     Player.player.newMoveList = False
 
-
-            #(Player.player.screen, (0,0,0), (enemy.rect_x,enemy.rect_y-2), (enemy.rect_x+enemy.rect_w,enemy.rect_y-2), 3)
-        #if enemy.poisontimer:
-        #    pygame.draw.line(Player.player.screen, (0,255,0), (enemy.rect_x,enemy.rect_y-2), (enemy.rect_x+(enemy.health*1.0/enemy.starthealth*1.0)*enemy.rect_w,enemy.rect_y-2), 3)
-        #else:
-        #    pygame.draw.line(Player.player.screen, (255,0,0), (enemy.rect_x,enemy.rect_y-2), (enemy.rect_x+(enemy.health*1.0/enemy.starthealth*1.0)*enemy.rect_w,enemy.rect_y-2), 3)
-
 def updateGUI(wavetime):
     GUI.gui.updateTopBar(wavetime)
 
 
 
-def towerButtonPressed(selected):
-    '''receives a Button object from GUI_Kivy
-    Display the tower and a circle for tower range if a button is pressed'''
-
-    mouseat = Map.mapvar.background.touch_pos
-    if eval("Towers."+selected.type+"Tower").basecost*(1-Player.player.modDict[selected.type.lower()+"CostMod"])*(1-Player.player.modDict["towerCostMod"]) > Player.player.money:
-        addAlert("Not Enough Money", 48, "center", (240, 0, 0))
-        Player.player.towerSelected = None
-        selected = None
-        return selected
-
-    selected.img.pos = mouseat
-    Map.mapvar.background.add_widget(selected.img)
+# def towerButtonPressed(selected):
+#     '''receives a Button object from GUI_Kivy
+#     Display the tower and a circle for tower range if a button is pressed'''
+#
+#     mouseat = Map.mapvar.background.touch_pos
+#     if eval("Towers."+selected.type+"Tower").basecost*(1-Player.player.modDict[selected.type.lower()+"CostMod"])*(1-Player.player.modDict["towerCostMod"]) > Player.player.money:
+#         addAlert("Not Enough Money", 48, "center", (240, 0, 0))
+#         Player.player.towerSelected = None
+#         selected = None
+#         return selected
+#
+#     selected.img.pos = mouseat
+#     Map.mapvar.background.add_widget(selected.img)
 
 def pauseGame(*args):
     id = args[0].id
@@ -163,9 +167,40 @@ def pauseGame(*args):
     elif Player.player.state == 'Paused':
         Player.player.state = 'Playing'
 
+def stopAllAnimation():
+    for enemy in Map.mapvar.enemycontainer.children:
+        enemy.anim.cancel(enemy)
+        if enemy.pushAnimation:
+            enemy.pushAnimation.cancel(enemy)
+    for shot in Map.mapvar.shotcontainer.children:
+        shot.anim.cancel(shot)
+    for tower in Map.mapvar.towercontainer.children:
+        if tower.type == 'Gravity' and tower.animation:
+                tower.towerGroup.disable()
+        if tower.type == 'Wind':
+            tower.turret.source = os.path.join('towerimgs','Wind','turret.png')
+    GUI.gui.waveAnimation.cancel(GUI.gui.waveScroller)
+    if GUI.gui.catchUpWaveAnimation:
+        GUI.gui.catchUpWaveAnimation.cancel(GUI.gui.waveScroller)
+
+def startAllAnimation():
+    for enemy in Map.mapvar.enemycontainer.children:
+        enemy.anim.start(enemy)
+    for shot in Map.mapvar.shotcontainer.children:
+        shot.anim.start(shot)
+    for tower in Map.mapvar.towercontainer.children:
+        if tower.type == 'Wind' and tower.towerGroup.active:
+            tower.turret.source = os.path.join('towerimgs','Wind','turret.gif')
+    scroll = .25 - GUI.gui.waveScroller.scroll_x
+    GUI.gui.catchUpWaveAnimation = Animation(scroll_x=scroll, duration=Player.player.wavetimeInt)
+    GUI.gui.catchUpWaveAnimation.bind(on_complete=EventFunctions.updateAnim)
+    GUI.gui.catchUpWaveAnimation.start(GUI.gui.waveScroller)
 
 def resetGame():
     '''Resets game variables so player can restart the game quickly.'''
+    Map.mapvar.getStartPoints()
+    Map.mapvar.flylistgenerated = False
+    Map.mapvar.flymovelists = []
     AllLists = [Localdefs.towerlist, Localdefs.bulletlist, Localdefs.menulist, Localdefs.explosions, Localdefs.senderlist, Localdefs.timerlist, Localdefs.shotlist, Localdefs.alertQueue]
 
     i=0
@@ -173,19 +208,29 @@ def resetGame():
         while i < len(list):
             list.pop()
 
-    Map.mapvar.towercontainer.clear_widgets()
-    Map.mapvar.enemycontainer.clear_widgets()
-    Map.mapvar.explosioncontainer.clear_widgets()
-    Map.mapvar.roadcontainer.clear_widgets()
-    Map.mapvar.shotcontainer.clear_widgets()
-    Map.mapvar.cloudcontainer.clear_widgets()
+    for tower in Map.mapvar.towercontainer.children:
+        tower = 0
     Map.mapvar.towercontainer.clear_widgets()
 
+    for enemy in Map.mapvar.enemycontainer.children:
+        enemy.anim.cancel(enemy)
+        if enemy.pushAnimation:
+            enemy.pushAnimation.cancel(enemy)
+        enemy = 0
+    Map.mapvar.enemycontainer.clear_widgets()
+
+    for road in Map.mapvar.roadcontainer.children:
+        road.iceNeighbor = False
+        road = 0
+    Map.mapvar.roadcontainer.clear_widgets()
+
+    Map.mapvar.shotcontainer.clear_widgets()
+    Map.mapvar.wallcontainer.clear_widgets()
+    Map.mapvar.towerdragimagecontainer.clear_widgets()
 
     Player.player.wavenum = 0
-    GUI.gui.myDispatcher.WaveNum = str(Player.player.wavenum)
-    GUI.gui.myDispatcher.Wave = str(Player.player.wavenum)
-    Player.player.wavetime = int(Map.waveseconds)
+    GUI.gui.myDispatcher.WaveNum = GUI.gui.myDispatcher.Wave = str(Player.player.wavenum)
+    Player.player.wavetime = int(Map.mapvar.waveseconds)
     GUI.gui.myDispatcher.Timer = str(Player.player.wavetime)
     Player.player.money = Player.playermoney
     GUI.gui.myDispatcher.Money = str(Player.player.money)
@@ -193,5 +238,12 @@ def resetGame():
     GUI.gui.myDispatcher.Health = str(Player.player.health)
     Player.player.score = 0
     GUI.gui.myDispatcher.Score = str(Player.player.score)
+    GUI.gui.resetWaveStreamer()
+
+    GUI.gui.menuButton.disabled = False
+    GUI.gui.pauseButton.disabled = False
+    GUI.gui.nextwaveButton.disabled = False
+    GUI.gui.enemyInfoButton.disabled = False
 
     updatePath()
+    GUI.gui.addAlert("New Game", 'repeat')

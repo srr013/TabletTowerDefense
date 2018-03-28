@@ -5,63 +5,86 @@ import Player
 import Towers
 import SenderClass
 import GUI
+import Utilities
 
+from kivy.uix.widget import Widget
 
-def placeTower(*args):
-    '''Places a tower at location of event (mouseclick)
-    Event: Dict of user actions from keyboard/mouse
-    Selected: tower or icon selected'''
-    #currently assume that all towers are 60x60. Need to add something to the Icon class to accomodate other sizes if that changes
+def placeTowerFromList(*args):
+    list = Map.mapvar.background.dragger.towerposlist
     instance = args[0]
-    #the conversion of pos on the line below must match (opposite) of the tbbox conversion in GUI_Kivy.builderMenu
-    # pos = (instance.parent.pos[0]+Map.mapvar.squsize*2, instance.parent.pos[1]+Map.mapvar.squsize*2)
-    towerselected = instance.instance
-    sufficient_funds = True if instance.instance.cost <= Player.player.money else False
-    towerWidgetList = Map.mapvar.towercontainer.walk(restrict=True)
-    newTower = eval("Towers." + towerselected.type + towerselected.base)(Map.mapvar.background.towerpos)
-    toweroverlap = []
-    for tower in towerWidgetList:
-        toweroverlap.append(newTower.collide_widget(tower))
-
-    walloverlap = set(Map.path.wall_list).intersection(newTower.towerwalls)
-
-    if Map.mapvar.openPath and sufficient_funds and not any(toweroverlap) and str(walloverlap) == 'set([])':
-        #place the tower if it's an open map and no wall is at that point
-        #add the tower to the tower container after the if statement, otherwise it collides with itself
-        Map.mapvar.towercontainer.add_widget(newTower)
-        if MainFunctions.updatePath()== False:
-            i = 0
-            while i < len(Localdefs.towerlist[-1].towerwalls):
-                Map.path.wall_list.pop(-1)
-                i += 1
-            print("Path blocked!!")
-            Localdefs.towerlist.pop()
-            Map.mapvar.towercontainer.remove_widget(newTower)
-
+    createdTowers = []
+    for tower in list:
+        createdTowers.append(placeTower(instance, tower))
+    x=0
+    while MainFunctions.updatePath() == False:
+        if x==0:
+            checkBlockedPath(createdTowers)
+            x+=1
         else:
-            Player.player.towerSelected = None
-            for enemy in Map.mapvar.enemycontainer.children:
-                if enemy.anim:
-                    enemy.anim.cancel_all(enemy)
+            for tower in createdTowers:
+                tower.remove()
+                Player.player.money += tower.cost
+                GUI.gui.myDispatcher.Money = str(Player.player.money)
+    resetEnemyPaths()
+
+def resetEnemyPaths():
+    for enemy in Map.mapvar.enemycontainer.children:
+        if not enemy.isair:
+            if enemy.anim:
+                enemy.anim.cancel_all(enemy)
+            try:
                 enemy.movelist = Map.mapvar.pointmovelists[enemy.movelistNum]
                 enemy.getNearestNode()
+            except IndexError:
+                print "Indexerror", enemy.movelist, enemy.movelistNum, enemy.curnode
 
 
+def checkBlockedPath(createdTowers):
+    right = (Map.mapvar.blockedSquare[0] + 1, Map.mapvar.blockedSquare[1])
+    left = (Map.mapvar.blockedSquare[0] - 1, Map.mapvar.blockedSquare[1])
+    up = (Map.mapvar.blockedSquare[0], Map.mapvar.blockedSquare[1] + 1)
+    down = (Map.mapvar.blockedSquare[0], Map.mapvar.blockedSquare[1] - 1)
+    dirlist = [right,up,down,left]
 
-    elif not Map.mapvar.openPath and not any(toweroverlap) and str(walloverlap) == 'set()':
-        #place the tower if it's a closed path map, and no path
+    for tower in createdTowers:
+        for wall in tower.towerwalls:
+            for dir in dirlist:
+                #print wall.squpos, dir
+                if dir == wall.squpos:
+                    print "removing tower"
+                    tower.remove()
+                    Player.player.money += tower.cost
+                    GUI.gui.myDispatcher.Money = str(Player.player.money)
+                    return
+
+def placeTower(*args):
+    '''Places a tower at location of the touch'''
+    pos = args[1]
+    towerselected = args[0].instance
+    sufficient_funds = True if towerselected.cost <= Player.player.money else False
+    collide = False
+    towerWidget = Widget(pos = pos, size = (Map.mapvar.squsize*2-1, Map.mapvar.squsize*2-1))
+    for wall in Map.mapvar.wallcontainer.children:
+        if towerWidget.collide_widget(wall):
+            collide = True
+
+    if sufficient_funds and not collide:
+        newTower = eval("Towers." + towerselected.type + towerselected.base)(pos)
         Map.mapvar.towercontainer.add_widget(newTower)
-        eval("Towers." + towerselected.type + towerselected.base)(Map.mapvar.background.squarepos)
         Player.player.towerSelected = None
-
+        return newTower
 
     else:
-        print ("tower not placed")
-        Localdefs.towerlist.pop()
-        Map.mapvar.towercontainer.remove_widget(newTower)
+        print "tower not placed"
         # MainFunctions.addAlert("Invalid Location".format(pos), 48, "center", (240, 0, 0))
 
-
+def updateAnim(*args):
+    for child in GUI.gui.waveStreamerEnemyLayout.children:
+        if child.id == 'wave'+str(Player.player.wavenum-1):
+            GUI.gui.waveStreamerEnemyLayout.remove_widget(child)
+            break
+    GUI.gui.waveScroller.scroll_x = 0
+    GUI.gui.waveAnimation.start(GUI.gui.waveScroller)
 
 def nextWave(*args):
     '''Send the next enemy wave'''
@@ -73,8 +96,14 @@ def nextWave(*args):
     #GUI.gui.myDispatcher.Wave = str(Player.player.wavenum)
     Player.player.wavetime = Map.mapvar.waveseconds
     Player.player.wavetimeInt = int(Map.mapvar.waveseconds)
-    GUI.gui.myDispatcher.Timer = str(Player.player.wavetime)
+    GUI.gui.myDispatcher.Timer = str(Player.player.wavetimeInt)
     Player.player.next_wave = False
     SenderClass.Sender(specialSend = False)
+    GUI.gui.waveAnimation.start(GUI.gui.waveScroller)
+    if Player.player.waveList[Player.player.wavenum-1]['isboss']:
+        GUI.gui.addAlert('Boss Round. Wave ' + str(Player.player.wavenum) + ' starting', 'warning')
+    else:
+        GUI.gui.addAlert('Wave '+str(Player.player.wavenum)+' starting', 'warning')
+
 
 

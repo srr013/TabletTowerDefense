@@ -47,30 +47,47 @@ class Game(Widget):
         self.mainMenu = None
         self.pauseMenu = None
         self.size_hint=(1,1)
+        self.framecount=-1
+        Player.player.frametime = 1 / 60.0
 
     def bindings(self, *args):
         self.size=Window.size
         for child in self.children:
             child.size = Window.size
+        if Player.player.state == 'Menu':
+                 self.mainMenu.bindings()
+
+    def startFuncs(self):
+        if not Map.mapvar.startpoint:
+            Map.mapvar.getStartPoints()
+            Player.player.genWaveList()
+            GUI.gui.createWaveStreamer()
+            Map.path.createPath()
+            MainFunctions.updatePath()
+            GUI.gui.removeAlert()
+            GUI.gui.menuButton.disabled = False
+            GUI.gui.pauseButton.disabled = False
+            GUI.gui.nextwaveButton.disabled = False
+            GUI.gui.enemyInfoButton.disabled = False
 
     def menuFuncs(self, obj):
         if obj.id == 'Play':
             Player.player.state = 'Playing'
-            Map.mapvar.getStartPoints()
-            # self.add_widget(Map.mapvar.background)
-            # create toolbars
-            # self.topBar = GUI.gui.createTopBar()
-            # self.add_widget(self.topBar)
-            # self.add_widget(GUI.gui.rightSideButtons())
-            # print self.children
-            MainFunctions.updatePath()
+            if Player.player.wavenum == 0:
+                self.startFuncs()
+            else:
+                self.Clock.schedule_interval(self.update, 1/60)
+                MainFunctions.startAllAnimation()
             self.remove_widget(self.mainMenu)
         elif obj.id == 'Restart':
             MainFunctions.resetGame()
             Player.player.state = 'Playing'
+            self.Clock.schedule_interval(self.update, 1 / 60)
             self.remove_widget(self.mainMenu)
         elif obj.id == 'unpause':
             Player.player.state = 'Playing'
+            self.Clock.schedule_interval(self.update,1/60)
+            MainFunctions.startAllAnimation()
             self.remove_widget(self.pauseMenu)
         elif obj.id == 'onepath':
             Map.mapvar.numpaths = 1
@@ -84,15 +101,28 @@ class Game(Widget):
             Map.mapvar.difficulty = 'medium'
         elif obj.id == 'hard':
             Map.mapvar.difficulty = 'hard'
+        elif obj.id == 'standard':
+            Map.mapvar.waveOrder = 'standard'
+        elif obj.id == 'random':
+            Map.mapvar.waveOrder = 'random'
 
     def dispMainMenu(self):
+        GUI.gui.menuButton.disabled = True
+        GUI.gui.pauseButton.disabled = True
+        GUI.gui.nextwaveButton.disabled = True
+        GUI.gui.enemyInfoButton.disabled = True
         if self.mainMenu == None:
             self.mainMenu = GUI.mainMenu()
             for button in self.mainMenu.walk(restrict=True):
                 button.bind(on_release=self.menuFuncs)
+            self.mainMenu.restartButton.disabled = True
             self.add_widget(self.mainMenu)
         elif self.mainMenu.parent == None:
+            self.mainMenu.restartButton.disabled = False
+            self.mainMenu.restartButton.text = 'Start New'
+            self.mainMenu.startButton.text = 'Resume'
             self.add_widget(self.mainMenu)
+        MainFunctions.dispMessage()
 
     def dispPauseMenu(self):
         if self.pauseMenu == None:
@@ -104,14 +134,20 @@ class Game(Widget):
             self.add_widget(self.pauseMenu)
 
     def update(self, dt):
+        if self.framecount < 2 :
+            self.framecount += 1
         if Player.player.state == 'Menu':
+            if self.framecount == 0:
+                GUI.gui.addAlert("Welcome to Tablet TD!", 'repeat')
+            if Player.player.wavenum > 0:
+                self.Clock.unschedule(self.update)
+                MainFunctions.stopAllAnimation()
             self.dispMainMenu()
         elif Player.player.state == 'Paused':
             self.dispPauseMenu()
-        elif Player.player.state == 'Start':
-            pass
+            self.Clock.unschedule(self.update)
+            MainFunctions.stopAllAnimation()
         elif Player.player.state == 'Playing':
-            Player.player.frametime = 1 / 60.0
             if Player.player.gameover:
                 #need some sort of gameover screen. Wait on user to start new game.
                 MainFunctions.resetGame()
@@ -126,9 +162,10 @@ class Game(Widget):
 
             MainFunctions.workSenders()
             MainFunctions.workTowers()
-            MainFunctions.dispExplosions()
+            # MainFunctions.dispExplosions()
             MainFunctions.workEnemies()
             MainFunctions.workShots()
+            MainFunctions.workDisp()
 
             if Player.player.wavenum > 0:
                 Player.player.wavetime -= Player.player.frametime
@@ -168,8 +205,8 @@ class Main(App):
         game.add_widget(GUI.gui.rightSideButtons())
 
         #this runs the game.update loop, which is used for handling the entire game
-        Clock.schedule_interval(game.update,1/60)
-
+        game.Clock = Clock
+        game.Clock.schedule_interval(game.update,1/60)
         return game
 
 
