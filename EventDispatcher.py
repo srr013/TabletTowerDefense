@@ -9,6 +9,7 @@ class EventDisp(EventDispatcher):
     Money = StringProperty()
     Health = StringProperty()
     WaveNum = StringProperty()
+    Gems = StringProperty()
 
 
     def __init__(self,**kwargs):

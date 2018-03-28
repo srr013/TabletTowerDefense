@@ -3,6 +3,7 @@ import Localdefs
 import math
 import operator
 import re
+from functools import partial
 
 import Utilities
 import Player
@@ -10,6 +11,7 @@ import Map
 import Shot
 import TowerGroup
 import GUI
+import Wall
 
 from kivy.uix.widget import Widget
 from kivy.uix.image import Image
@@ -36,7 +38,7 @@ class Tower(Widget):
         self.rect = Utilities.createRect(self.pos, self.size, instance=self)
         self.squareheight = 2
         self.squarewidth = 2
-        self.towerwalls = self.genWalls()
+        self.towerwalls = Utilities.genWalls(self.pos, self.squarewidth,self.squareheight)
         self.imageNum = 0
         self.imagestr = os.path.join('towerimgs', self.type, str(self.imageNum) + '.png')
         self.image = Utilities.imgLoad(self.imagestr)
@@ -66,7 +68,6 @@ class Tower(Widget):
         self.attacktype = 'single'
         self.updateModifiers()
         self.hasTurret = False
-        # self.shotcloud = None
         self.shotcount = 0
         self.allowedshots = 1
 
@@ -87,6 +88,18 @@ class Tower(Widget):
     def bindings(self):
         self.size = (Map.mapvar.squsize*2-1, Map.mapvar.squsize*2-1)
         self.image.size = self.size
+        if self.turret:
+            self.turret.size = (Map.mapvar.squsize,Map.mapvar.squsize)
+        self.range = self.rangecalc
+
+    def remove(self):
+        for wall in self.towerwalls:
+            Map.mapvar.wallcontainer.remove_widget(wall)
+        if self in Localdefs.towerlist:
+            Localdefs.towerlist.remove(self)
+        Map.mapvar.towercontainer.remove_widget(self)
+        if self in self.towerGroup.towerSet:
+            self.towerGroup.towerSet.remove(self)
 
     def getNeighbors(self):
         neighbors = {}
@@ -278,32 +291,15 @@ class Tower(Widget):
         if self.type == 'Gravity':
             self.stuntime = self.initstuntime * self.towerGroup.stunTimeModifier
 
-    def genWalls(self):
-        '''Generating the rects for the tower used in collision and path generation'''
-        walls = []
-        h = self.squareheight
-        k = 0
-        while h > 0:
-            j = 0
-            w = self.squarewidth
-            while w > 0:
-                wall = (int((self.rect_x) / Map.mapvar.squsize)+j, int((self.rect_y) / Map.mapvar.squsize)+k)
-                walls.append(wall)
-                w -= 1
-                j += 1
-            k += 1
-            h -= 1
-        #not permanent. Just ensuring right location of walls
-        for wall in walls:
-            with self.canvas.before:
-                Color(0, 0, 0,.1)
-                Rectangle(size=(Map.mapvar.squsize,Map.mapvar.squsize), pos=(wall[0]*Map.mapvar.squsize, wall[1]*Map.mapvar.squsize))
-        return walls
-
     def upgrade(self):
         self.priorimage = str(self.image.source)
         if self.hasTurret:
             self.remove_widget(self.turret)
+        if self.type == 'Gravity':
+            if self.animation:
+                self.animation.cancel_all(self.attackImage)
+            with self.canvas:
+                self.attackImage.size=(0,0)
         #self.image.source = os.path.join('iconimgs','Upgrade.png')
         with self.canvas: #draw upgrade bars
             Color(1,1,1,1)
@@ -324,6 +320,12 @@ class Tower(Widget):
             self.totalUpgradeTime = self.upgradeTimeElapsed = self.percentComplete = 0
             if self.hasTurret:
                 self.add_widget(self.turret)
+            if self.type == 'Gravity':
+                self.attackImage.size = (Map.mapvar.squsize*1.5, Map.mapvar.squsize*1.5)
+                self.attackImage.pos = (self.center[0] - Map.mapvar.squsize * .74, self.center[1] - Map.mapvar.squsize * .74)
+                self.towerGroup.towersNeedingAnim.append(self)
+
+
             return
         self.remainingtime.points = [self.x+8, self.y+6, self.x+(self.width-8)*self.percentComplete, self.y+6]
 
@@ -362,6 +364,7 @@ class Tower(Widget):
             if self.targetTimer<=0:
                 self.target()
         if self.totalUpgradeTime > 0:
+            self.targetTimer = self.reload
             self.upgradeTimeElapsed+= Player.player.frametime
             self.updateUpgradeStatusBar()
 
@@ -400,6 +403,7 @@ class Tower(Widget):
     def loadTurret(self):
         self.turretstr = os.path.join('towerimgs',self.type, 'turret.png')
         self.turret = Utilities.imgLoad(self.turretstr)
+        self.turret.allow_stretch = True
         self.turret.size = (Map.mapvar.squsize,Map.mapvar.squsize)
         self.turret.center = self.center
         self.add_widget(self.turret)
@@ -422,6 +426,7 @@ class FireTower(Tower):
     def __init__(self,pos,**kwargs):
         Tower.__init__(self, pos, **kwargs)
         self.pos = pos
+        self.rangecalc = Map.mapvar.squsize*3.3
         self.cost = FireTower.cost
         self.initrange = FireTower.initrange
         self.initdamage = FireTower.initdamage
@@ -453,6 +458,7 @@ class LifeTower(Tower):
         Tower.__init__(self, pos, **kwargs)
         self.pos = pos
         self.cost = LifeTower.cost
+        self.rangecalc =Map.mapvar.squsize*5
         self.initrange = LifeTower.initrange
         self.initdamage = LifeTower.initdamage
         self.initreload = LifeTower.initreload
@@ -484,6 +490,7 @@ class GravityTower(Tower):
         Tower.__init__(self, pos, **kwargs)
         self.pos = pos
         self.cost = GravityTower.cost
+        self.rangecalc = Map.mapvar.squsize*2
         self.initrange = GravityTower.initrange
         self.initdamage = GravityTower.initdamage
         self.initreload = GravityTower.initreload
@@ -503,11 +510,13 @@ class GravityTower(Tower):
         self.nextReload = round(self.upgradeDict['Reload'][self.level - 1] * self.reload + self.reload,1)
         self.nextRange = round(self.upgradeDict['Range'][self.level - 1] * self.range + self.range,1)
         self.setUpgradeData()
+        self.attackImage = None
 
         with self.canvas:
             self.color = Color(0, 0, 0, 1)
-            self.rect = Image(source=os.path.join('towerimgs', 'Gravity', "attack.png"), size=(45, 45),
-                              pos=(self.center[0] - 22, self.center[1] - 22))
+            self.attackImage = Image(source=os.path.join('towerimgs', 'Gravity', "attack.png"), size=(Map.mapvar.squsize*1.5, Map.mapvar.squsize*1.5),
+                              pos=(self.center[0] - Map.mapvar.squsize*.74, self.center[1] - Map.mapvar.squsize*.74))
+        self.animation = None
         self.closeanimation = Animation(size=(45, 45), pos=(self.center[0] - 22, self.center[1] - 22),
                                      duration=.3)
 
@@ -527,6 +536,7 @@ class IceTower(Tower):
         Tower.__init__(self, pos, **kwargs)
         self.pos = pos
         self.cost = IceTower.cost
+        self.rangecalc = Map.mapvar.squsize*2
         self.initrange = IceTower.initrange
         self.initdamage = IceTower.initdamage
         self.initreload = IceTower.initreload
@@ -564,6 +574,7 @@ class WindTower(Tower):
         Tower.__init__(self, pos, **kwargs)
         self.pos = pos
         self.cost = WindTower.cost
+        self.rangecalc = Map.mapvar.squsize*6.3
         self.initrange = WindTower.initrange
         self.initdamage = WindTower.initdamage
         self.initreload = WindTower.initreload

@@ -14,7 +14,9 @@ from kivy.core.window import Window, WindowBase
 from kivy.properties import ListProperty, StringProperty, NumericProperty
 from kivy.graphics import *
 from kivy.uix.tabbedpanel import TabbedPanel, TabbedPanelContent, TabbedPanelHeader
-from kivy.lang import Builder
+from kivy.uix.scrollview import ScrollView
+from kivy.animation import Animation
+
 
 import Localdefs
 import EventDispatcher
@@ -40,7 +42,7 @@ class MyButton(ButtonBehavior, Image):
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
             self.pressed = touch.pos
-            Map.mapvar.background.removePopUp()
+            Map.mapvar.background.removeAll()
             return True
 
 
@@ -80,7 +82,8 @@ class ButtonWithImage(Button, Image):
             if self.id == 'enemyinfo' or self.id =='rotate':
                 pass
             else:
-                Map.mapvar.background.removePopUp()
+                pass
+                # Map.mapvar.background.removeAll()
             return True
 
     def on_pressed(self, button, pos):
@@ -99,8 +102,12 @@ class ButtonWithImage(Button, Image):
                     gui.drawTriangle()
                 return
             else:
-                EventFunctions.placeTower(button)
-                Map.mapvar.background.popUpOpen = None
+                if not button.disabled:
+                    EventFunctions.placeTowerFromList(button)
+                    Map.mapvar.background.popUpOpen = None
+                    Map.mapvar.background.removeAll()
+                else:
+                    return
             #print('pressed at {pos}'.format(pos=pos))
     def on_pos(self, *args):
         self.image.pos = self.pos
@@ -152,7 +159,7 @@ class pauseMenu(SmartMenu):
         super(pauseMenu, self).__init__(**kwargs)
         self.unpause = Button()
         self.unpause.size_hint=(None,None)
-        self.unpause.size = (Map.scrwid, Map.scrhei)
+        self.unpause.size = (Map.mapvar.scrwid, Map.mapvar.scrhei)
         self.unpause.pos = (0,0)
         self.unpause.id = 'unpause'
         #self.unpause.bind(on_release = MainFunctions.pauseGame)
@@ -173,33 +180,31 @@ class mainMenu(SmartMenu):
     def __init__(self, **kwargs):
         super(mainMenu, self).__init__(**kwargs)
 
-        self.layout = GridLayout(rows=2, size=(500,400))
-        self.layout.center = ((Map.mapvar.scrwid-self.width)/2,(Map.mapvar.scrhei-self.height)/2)
-        self.layout.padding = [20]
-        self.layout.spacing = 20
+        self.layout = GridLayout(rows=2, size=(700,400), padding=[20], spacing = 20)
+        self.layout.center = ((Map.mapvar.winwid/2),(Map.mapvar.winhei/2))
         self.id ='mainmenu'
         self.add_widget(self.layout)
 
         #use pos_hint to set the position relative to its parent by percentage.
         self.menulabel = Label(text='Main Menu')
         self.layout.add_widget(self.menulabel)
-        self.menulabel.font_size = Window.width*0.018
+        self.menulabel.font_size = Window.width*0.04
 
         with self.layout.canvas.before:
             Color(.3, .3, .3)
-            Rectangle(size = self.layout.size, pos=self.layout.pos)
+            self.menurect = Rectangle(size = self.layout.size, pos=self.layout.pos)
         with self.canvas.before:
             Color(.2,.2,.2,.2)
-            Rectangle(size = (Map.mapvar.scrwid, Map.mapvar.scrhei), pos=(0,0))
-        self.configLayout = GridLayout(cols=2)
+            self.bgrect = Rectangle(size = (Map.mapvar.scrwid, Map.mapvar.scrhei), pos=(0,0))
+        self.configLayout = GridLayout(cols=3)
         self.buttonLayout = GridLayout(cols=2)
         self.gameplayButtons = BoxLayout(orientation = 'vertical',spacing = 10, padding = 20)
-        self.startButton = Button(text='Play/Resume', id = 'Play')
-        self.restartButton = Button(text='Restart', id='Restart')
+        self.startButton = Button(text='Play', id = 'Play')
         self.gameplayButtons.add_widget(self.startButton)
+        self.restartButton = Button(text='Restart', id='Restart')
         self.gameplayButtons.add_widget(self.restartButton)
         self.pathLayout = BoxLayout(orientation='vertical', spacing=10, padding=10)
-        self.pathLabel = Label(text = "# Enemy Paths:")
+        self.pathLabel = Label(text = "# Paths:")
         self.onePath = ToggleButton(text = 'One', id='onepath', group='path', state='down')
         self.twoPath = ToggleButton(text = 'Two', id='twopath',group='path')
         self.threePath = ToggleButton(text = 'Three', id='threepath',group='path')
@@ -208,21 +213,34 @@ class mainMenu(SmartMenu):
         self.pathLayout.add_widget(self.twoPath)
         self.pathLayout.add_widget(self.threePath)
         self.difficultyLayout = BoxLayout(orientation='vertical',spacing=10, padding=10)
-        self.difficultyLabel = Label(text="Enemy Difficulty:")
+        self.difficultyLabel = Label(text="Difficulty:")
         self.easy = ToggleButton(text='Easy', id='easy',group='difficulty', state='down')
-        self.medium = ToggleButton(text='Medium', id='medium',group='difficulty')
+        self.medium = ToggleButton(text='Med', id='medium',group='difficulty')
         self.hard = ToggleButton(text='Hard', id='hard',group='difficulty')
         self.difficultyLayout.add_widget(self.difficultyLabel)
         self.difficultyLayout.add_widget(self.easy)
         self.difficultyLayout.add_widget(self.medium)
         self.difficultyLayout.add_widget(self.hard)
+        self.enemyOrderLayout = BoxLayout(orientation='vertical',spacing=10, padding=10)
+        self.enemyOrderLabel = Label(text="Order:")
+        self.standardOrder = ToggleButton(text='Std', id='standard',group='order', state='down')
+        self.randomOrder = ToggleButton(text='Rnd', id='random',group='order')
+        self.enemyOrderLayout.add_widget(self.enemyOrderLabel)
+        self.enemyOrderLayout.add_widget(self.standardOrder)
+        self.enemyOrderLayout.add_widget(self.randomOrder)
 
 
         self.buttonLayout.add_widget(self.gameplayButtons)
         self.configLayout.add_widget(self.pathLayout)
         self.configLayout.add_widget(self.difficultyLayout)
+        self.configLayout.add_widget(self.enemyOrderLayout)
         self.buttonLayout.add_widget(self.configLayout)
         self.layout.add_widget(self.buttonLayout)
+    def bindings(self):
+        self.layout.center = ((Map.mapvar.winwid / 2), (Map.mapvar.winhei / 2))
+        print self.layout.center
+        self.bgrect.size = self.size
+        self.menurect.pos = self.layout.pos
 
 class topBarWidget():
     def __init__(self, label, var,source,icon):
@@ -254,6 +272,7 @@ class GUI():
         self.topBar_Boxlist = []
         self.myDispatcher = EventDispatcher.EventDisp()
         self.topBar = None
+        self.bgrect = None
 
     def bindings(self, *args):
         if self.topBar:
@@ -262,6 +281,7 @@ class GUI():
             self.topBar.size = (Window.width,45)
             self.topBar.layout.size = self.topBar.size
         self.rightSideButtons_layout.pos = (Window.width-55, 2*Map.mapvar.squsize)
+
 
     def rightSideButtons(self):
         self.rightSideButtons_layout=StackLayout(size_hint=(None,None), size=(50,70), pos=(Window.width-55, 2*Map.mapvar.squsize))
@@ -287,7 +307,7 @@ class GUI():
         self.pauseButton = Button(text='Pause', id ='pause', size_hint=(None,None), width=50, height=30)
         self.pauseButton.bind(on_release=MainFunctions.pauseGame)
         self.nextwaveButton = Button(text = 'Next Wave', id = 'next', size_hint=(None,None), width=80, height=30)
-        self.nextwaveButton.bind(on_release=EventFunctions.nextWave)
+        self.nextwaveButton.bind(on_release=self.nextWave)
         self.nextwaveButton.valign = 'top'
         self.topBar.layout.add_widget(self.menuButton)
         self.topBar.layout.add_widget(self.pauseButton)
@@ -298,8 +318,93 @@ class GUI():
 
         return self.topBar
 
+    def nextWave(self, *args):
+        self.waveAnimation.stop(self.waveScroller)
+        EventFunctions.nextWave()
+
+    def createWaveStreamer(self):
+        self.waveStreamerLayout = StackLayout(orientation='lr-tb',pos=(Window.width/2, Window.height-Map.mapvar.squsize*3+3), size = (700,30))
+        self.waveStreamerLabel = Label(text="Next Waves:", size_hint= (None,None),size = (120,30), color=[0,0,0,1])
+        self.waveStreamerLayout.add_widget(self.waveStreamerLabel)
+        self.waveStreamerEnemyLayout = GridLayout(rows=1, size_hint=(None,1), size=(580,30))
+        x=0
+        for wave in Player.player.waveTypeList:
+            lbl = Label(size_hint=(None,None), text = wave[0], id='wave'+str(x), text_size=(None,None),size=(70,30), color=[0,0,0,1])
+            x+=1
+            if wave[1]:#if boss
+                lbl.bold = True
+                lbl.color = [1,0,0,1]
+            self.waveStreamerEnemyLayout.add_widget(lbl)
+        self.waveScroller = ScrollView(do_scroll_y=False, scroll_x=0, size_hint=(None,1), width=280, bar_color=[1,1,1,0], bar_inactive_color=[1,1,1,0])
+        self.waveScroller.add_widget(self.waveStreamerEnemyLayout)
+        self.waveStreamerLayout.add_widget(self.waveScroller)
+        self.topBar.add_widget(self.waveStreamerLayout)
+        self.waveAnimation = Animation(scroll_x=.25, duration=20.0)
+        self.waveAnimation.bind(on_complete=EventFunctions.updateAnim)
+        self.catchUpWaveAnimation = None
+
+    def resetWaveStreamer(self):
+        self.waveStreamerEnemyLayout.clear_widgets()
+        x=0
+        for wave in Player.player.waveTypeList:
+            lbl = Label(size_hint=(None,None), text = wave[0], id='wave'+str(x), text_size=(None,None),size=(70,30), color=[0,0,0,1])
+            x+=1
+            if wave[1]:#if boss
+                lbl.bold = True
+                lbl.color = [1,0,0,1]
+            self.waveStreamerEnemyLayout.add_widget(lbl)
+        self.waveScroller.scroll_x = 0
+
+    def createAlertStreamer(self):
+        self.alertQueue = []
+        self.alertStreamerLayout = BoxLayout(orientation='horizontal',pos=(5, 5), size = (Map.mapvar.scrwid-10,Map.mapvar.squsize*2-10))
+        self.alertScroller = ScrollView(do_scroll_y=False, scroll_x=1,size_hint=(None,1), width=Map.mapvar.scrwid-10,bar_color=[1,1,1,0], bar_inactive_color=[1,1,1,0])
+        self.alertLayout = GridLayout(rows=1, size_hint = (None,1), width=2400)
+        self.alertLabel = Label(text='', color=[0, 0, 0, 1], size_hint=(1, None),
+                                   font_size='24sp',
+                                   height=50)
+        self.alertLayout.add_widget((self.alertLabel))
+        self.alertScroller.add_widget(self.alertLayout)
+        self.alertStreamerLayout.add_widget(self.alertScroller)
+        self.alertAnimation=Animation(scroll_x=0, duration = 6.0)
+        self.alertAnimation.bind(on_complete=self.removeAlert)
+        return self.alertStreamerLayout
+
+    def removeAlert(self,*args):
+        if self.alertAnimation.have_properties_to_animate(self.alertScroller):
+            self.alertAnimation.cancel(self.alertScroller)
+        if self.alertQueue:
+            lastVars = self.alertQueue.pop(0)
+            if lastVars[1] == 'repeat':
+                self.alertAnimation.unbind(on_complete=self.repeatAlert)
+                self.alertAnimation.bind(on_complete=self.removeAlert)
+        self.alertLabel.text = ''
+        self.alertScroller.scroll_x=1
+
+    def addAlert(self,alert,level):
+        if self.alertQueue:
+            self.removeAlert()
+        self.alertQueue.append([alert,level])
+        if level == 'repeat':
+            self.alertLabel.color = [0,0,0,1]
+            self.alertAnimation.unbind(on_complete=self.removeAlert)
+            self.alertAnimation.bind(on_complete=self.repeatAlert)
+        if level == 'warning':
+            self.alertLabel.color=[1,0,0,1]
+        if not self.alertAnimation.have_properties_to_animate(self.alertScroller):
+            MainFunctions.dispMessage()
+
+    def repeatAlert(self, *args):
+        self.alertScroller.scroll_x=1
+        MainFunctions.dispMessage()
+
     def createTBBox(self, squarepos, squwid, squhei):
         Player.player.tbbox = Scatter(size=(Map.mapvar.squsize*squwid,Map.mapvar.squsize*squhei), pos=(squarepos[0]+2*Map.mapvar.squsize,squarepos[1]-Map.mapvar.squsize*2), do_resize=False, do_rotation=False)
+        if squarepos[0]+2*Map.mapvar.squsize + Map.mapvar.squsize*squwid > Map.mapvar.scrwid:
+            Player.player.tbbox.pos = (squarepos[0] - Map.mapvar.squsize*squwid, Player.player.tbbox.pos[1])
+        if squarepos[1] + Map.mapvar.squsize * .5* squhei > Map.mapvar.scrhei-3*Map.mapvar.squsize:
+            Player.player.tbbox.pos = (Player.player.tbbox.pos[0], squarepos[1] - Map.mapvar.squsize * .6*squhei)
+
         Player.player.layout = GridLayout(size_hint=(None,None), size=Player.player.tbbox.size, pos=(0,0), cols=2)
         with Player.player.tbbox.canvas:
             Color(.1,.1,.1,.9)

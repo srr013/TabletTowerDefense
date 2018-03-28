@@ -1,6 +1,7 @@
 import random
 import Enemy
 import Localdefs
+import Map
 
 
 maxSets = 6
@@ -31,17 +32,32 @@ def wavegen():
     enemyModList = genModList()
     setNum = 1 # a set is counted every X waves
     wavesPerSet = 7
-    enemytypes = ['Standard', 'Airborn', 'Splinter', 'Strong', 'Crowd']
+    enemytypes = ['Standard', 'Crowd', 'Strong', 'Splinter', 'Airborn']#['Airborn','Airborn','Airborn','Airborn','Airborn',]
     waveList = []
+    waveTypeList = []
     waveNum = 1
+    if Map.mapvar.difficulty == 'easy':
+        difficultyMod = 1
+    elif Map.mapvar.difficulty == 'medium':
+        difficultyMod = 1.2
+    if Map.mapvar.difficulty == 'hard':
+        difficultyMod = 1.6
+
 
     while setNum < maxSets:
+        counter = 0
         while float(waveNum)/wavesPerSet <= setNum:
-            enemyType  = enemytypes[random.randint(0, len(enemytypes)-1)]   #selects a random enemy type
-            numEnemies = int(eval("Enemy."+enemyType +".defaultNum") * (1+ (setNum/10.0)))
-            healthEnemies = int(eval("Enemy."+enemyType +".health") * (1 + (setNum/10.0)))
+            if Map.mapvar.waveOrder == 'standard':
+                enemyType = enemytypes[counter]
+                counter+=1
+                if counter>4:
+                    counter=0
+            else:
+                enemyType  = enemytypes[random.randint(0, len(enemytypes)-1)]   #selects a random enemy type
+            numEnemies = int(eval("Enemy."+enemyType +".defaultNum") * (1+ (setNum/10.0))*difficultyMod)
+            healthEnemies = int(eval("Enemy."+enemyType +".health") * (1 + (setNum/10.0))*difficultyMod)
             speedEnemies = eval("Enemy."+enemyType +".speed") * (1 + (setNum/10.0))
-            armorEnemies = eval("Enemy."+enemyType +".armor") * (1 + (setNum/10.0))
+            armorEnemies = eval("Enemy."+enemyType +".armor") * (1 + (setNum/10.0))*difficultyMod
             rewardEnemies = int(eval("Enemy."+enemyType +".reward") * (1 + (setNum/10.0)))
 
             if float(waveNum)/wavesPerSet == setNum:
@@ -52,9 +68,9 @@ def wavegen():
             wave = {'wavenum':waveNum, 'setnum':setNum, 'enemynum':numEnemies, 'enemyhealth':healthEnemies, 'enemyspeed':speedEnemies,
              'enemytype':enemyType, 'enemyarmor': armorEnemies, 'enemymods':enemyModList[setNum-1], 'enemyreward':rewardEnemies, 'isboss':isBoss}
             waveList.append(wave)
+            waveTypeList.append([enemyType,isBoss])
             waveNum += 1
         setNum += 1
-    #print waveList
-    return waveList
+    return waveList,waveTypeList
 
 

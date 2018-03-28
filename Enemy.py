@@ -8,6 +8,7 @@ import Player
 import Map
 import SenderClass
 import GUI
+import MainFunctions
 
 from kivy.graphics import *
 from kivy.uix.widget import Widget
@@ -55,6 +56,7 @@ class Enemy(Widget):
         self.slowtime = 0
         self.stuntimers = list()
         self.stuntime = 0
+        self.pushAnimation = None
         #self.poisontimer = None
 
         self.distBase = self.distToBase()
@@ -64,24 +66,26 @@ class Enemy(Widget):
         self.hit = False
         self.recovering = False
         self.pushtimer = .5
-        self.anim = self.move()
-        self.image.pos = self.pos
-        self.bind(pos = self.binding)
-
-
-        with self.canvas.before:
+        with self.image.canvas.before:
             PushMatrix()
             self.rot = Rotate()
             self.rot.axis = (0, 0, 1)
             self.rot.angle = 0
             self.rot.origin = self.center
-        with self.canvas: #draw health bars
-            Color(0,0,0,.6)
-            self.healthbar = Line(points = [self.x, self.y+self.height+2, self.x+self.width, self.y+self.height+2], width = 2, cap=None)
-            Color(1,1,1,1)
-            self.remaininghealth = Line(points = [self.x, self.y+self.height+2, self.x+self.width, self.y+self.height+2], width = 1.4, cap=None)
-        with self.canvas.after:
+        with self.canvas:  # draw health bars
+            Color(0, 0, 0, .6)
+            self.healthbar = Line(
+                points=[self.x, self.y + self.height + 2, self.x + self.width, self.y + self.height + 2], width=2,
+                cap=None)
+            Color(1, 1, 1, 1)
+            self.remaininghealth = Line(
+                points=[self.x, self.y + self.height + 2, self.x + self.width, self.y + self.height + 2], width=1.4,
+                cap=None)
+        with self.image.canvas.after:
             PopMatrix()
+        self.anim = self.move()
+        self.image.pos = self.pos
+        self.bind(pos = self.binding)
 
 
     def takeTurn(self):
@@ -140,6 +144,7 @@ class Enemy(Widget):
         duration = float(distToTravel)/(self.speed*self.slowpercent)
         self.anim = Animation(pos=self.movelist[self.curnode], duration = duration, transition="linear")
 
+
         if self.curnode >= len(self.movelist) - 1:
             self.anim.bind(on_complete=self.checkHit)
         else:
@@ -154,6 +159,7 @@ class Enemy(Widget):
             Player.player.health -= 1
             GUI.gui.myDispatcher.Health = str(Player.player.health)
             Map.mapvar.enemycontainer.remove_widget(self)
+            MainFunctions.flashScreen('red',1)
             if Player.player.health <= 0:
                 Player.player.die()
             return
@@ -211,6 +217,7 @@ class Enemy(Widget):
             if x<1:
                 self.gemImage = True
                 Player.player.gems +=1
+                GUI.gui.myDispatcher.Gems = str(Player.player.gems)
         if self.isAlive:
             self.startDeathAnim()
             self.isAlive = False
@@ -291,6 +298,7 @@ class Airborn(Enemy):
         self.image = Utilities.imgLoad(self.imagesrc)
         self.movelistNum = random.randint(0,Map.mapvar.numpaths-1)
         self.movelist = Map.mapvar.pointflymovelists[self.movelistNum]  # 0 for ground, 1 for air
+        self.dirlist = Map.mapvar.dirmovelists[self.movelistNum]
         super(Airborn, self).__init__(**kwargs)
         self.isair = True
         Localdefs.flyinglist.append(self)

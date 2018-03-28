@@ -33,9 +33,7 @@ class Sell(TowerAbility):
         tower = Player.player.towerSelected
         Player.player.money+=(tower.totalspent)
         GUI.gui.myDispatcher.Money = str(Player.player.money)
-        tower.towerGroup.towerSet.remove(tower)
-        Localdefs.towerlist.remove(tower)
-        Map.mapvar.towercontainer.remove_widget(tower)
+        tower.remove()
         Player.player.towerSelected = None
         Map.mapvar.updatePath = True
         return True
