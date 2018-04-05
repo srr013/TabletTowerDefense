@@ -1,13 +1,13 @@
-import Localdefs
+import MainFunctions
+from kivy.uix.widget import Widget
+
+import GUI
 import MainFunctions
 import Map
 import Player
-import Towers
 import SenderClass
-import GUI
-import Utilities
+import Towers
 
-from kivy.uix.widget import Widget
 
 def placeTowerFromList(*args):
     list = Map.mapvar.background.dragger.towerposlist
@@ -15,11 +15,11 @@ def placeTowerFromList(*args):
     createdTowers = []
     for tower in list:
         createdTowers.append(placeTower(instance, tower))
-    x=0
+    x = 0
     while MainFunctions.updatePath() == False:
-        if x==0:
+        if x == 0:
             checkBlockedPath(createdTowers)
-            x+=1
+            x += 1
         else:
             for tower in createdTowers:
                 tower.remove()
@@ -27,6 +27,7 @@ def placeTowerFromList(*args):
                 GUI.gui.myDispatcher.Money = str(Player.player.money)
     if createdTowers:
         resetEnemyPaths()
+
 
 def resetEnemyPaths():
     for enemy in Map.mapvar.enemycontainer.children:
@@ -45,18 +46,19 @@ def checkBlockedPath(createdTowers):
     left = (Map.mapvar.blockedSquare[0] - 1, Map.mapvar.blockedSquare[1])
     up = (Map.mapvar.blockedSquare[0], Map.mapvar.blockedSquare[1] + 1)
     down = (Map.mapvar.blockedSquare[0], Map.mapvar.blockedSquare[1] - 1)
-    dirlist = [right,up,down,left]
+    dirlist = [right, up, down, left]
 
     for tower in createdTowers:
         for wall in tower.towerwalls:
             for dir in dirlist:
-                #print wall.squpos, dir
+                # print wall.squpos, dir
                 if dir == wall.squpos:
                     print "removing tower"
                     tower.remove()
                     Player.player.money += tower.cost
                     GUI.gui.myDispatcher.Money = str(Player.player.money)
                     return
+
 
 def placeTower(*args):
     '''Places a tower at location of the touch'''
@@ -66,7 +68,7 @@ def placeTower(*args):
     if sufficient_funds == False:
         GUI.gui.createMessage("Not enough money")
     collide = None
-    towerWidget = Widget(pos = pos, size = (Map.mapvar.squsize*2-1, Map.mapvar.squsize*2-1))
+    towerWidget = Widget(pos=pos, size=(Map.mapvar.squsize * 2 - 1, Map.mapvar.squsize * 2 - 1))
     for wall in Map.mapvar.wallcontainer.children:
         if towerWidget.collide_widget(wall):
             collide = wall
@@ -82,32 +84,31 @@ def placeTower(*args):
         print "tower not placed", sufficient_funds, collide
         # MainFunctions.addAlert("Invalid Location".format(pos), 48, "center", (240, 0, 0))
 
+
 def updateAnim(*args):
     for child in GUI.gui.waveStreamerEnemyLayout.children:
-        if child.id == 'wave'+str(Player.player.wavenum-1):
+        if child.id == 'wave' + str(Player.player.wavenum - 1):
             GUI.gui.waveStreamerEnemyLayout.remove_widget(child)
             break
     GUI.gui.waveScroller.scroll_x = 0
     GUI.gui.waveAnimation.start(GUI.gui.waveScroller)
 
+
 def nextWave(*args):
     '''Send the next enemy wave'''
     Player.player.score += int(Player.player.wavetimeInt * Player.player.wavenum * .25)
     GUI.gui.myDispatcher.Score = str(Player.player.score)
-    Player.player.wavenum+=1
+    Player.player.wavenum += 1
     GUI.gui.myDispatcher.WaveNum = str(Player.player.wavenum)
     Map.mapvar.enemypanel.CurrentWave = str(Player.player.wavenum)
-    #GUI.gui.myDispatcher.Wave = str(Player.player.wavenum)
+    # GUI.gui.myDispatcher.Wave = str(Player.player.wavenum)
     Player.player.wavetime = Map.mapvar.waveseconds
     Player.player.wavetimeInt = int(Map.mapvar.waveseconds)
     GUI.gui.myDispatcher.Timer = str(Player.player.wavetimeInt)
     Player.player.next_wave = False
-    SenderClass.Sender(specialSend = False)
+    SenderClass.Sender(specialSend=False)
     GUI.gui.waveAnimation.start(GUI.gui.waveScroller)
-    if Player.player.waveList[Player.player.wavenum-1]['isboss']:
+    if Player.player.waveList[Player.player.wavenum - 1]['isboss']:
         GUI.gui.addAlert('Boss Round. Wave ' + str(Player.player.wavenum) + ' starting', 'warning')
     else:
-        GUI.gui.addAlert('Wave '+str(Player.player.wavenum)+' starting', 'warning')
-
-
-
+        GUI.gui.addAlert('Wave ' + str(Player.player.wavenum) + ' starting', 'warning')

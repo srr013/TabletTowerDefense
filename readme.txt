@@ -1,20 +1,27 @@
 ========================================
-Scott's Tower Defence Game ReadMe:
+Tablet Tower Defense ReadMe:
 ========================================
 Version .1
-Note: This game is playable without issue or error, but it's not very fun yet and this version cannot be run on a mobile
-device or browser. Version 1 will be ported to the Kivy library and ready to play on a tablet. Publication date
-on the Google Play store is targeted for May 2018.
+
+
+----------------
+Gameplay:
+----------------
+You're under attack! Build towers to keep the enemies from getting to your base. Upgrade your towers to counter the
+ever-increasing strenght of your enemies.
+
+You can build towers by touching anywhere on the playable area. Click Next Wave to send the enemies at your defenses and
+collect gold when they are destroyed.
 
 ----------------
 In Order To Run:
 ----------------
-Install Python: Written and tested with version 2.7. Version 3.6 is running in test versions of v1.0
-Install PyGame: http://www.pygame.org
-Install Thorpy (for buttons and menus): http://www.thorpy.org/index.html
-(Thorpy is not in use in v1.0 as it has been replaced by Kivy)
+You can download the game to an Android tablet from the Google Play store. See www.tablettowerdefense.com for more info.
 
-Run towerdefense.py
+To run on the computer:
+Install Python: Written and tested with version 2.7. Version 3.6 is possible with a few changes to the code.
+Install Kivy: https://kivy.org/docs/gettingstarted/intro.html
+Run main.py
 
 ---------------
 Files Included:
@@ -29,20 +36,23 @@ Game files(.py):
     MainFunctions - contains most of the basic functions required by the main loop
     Tower - contains tower classes and functions
     TowerGroup - groups and trackers towers of like types
+    TowerDragging - allows creation of multiple towers through a touch and drag motion
     Shot - handles shot mechanics after firing
-    ShotCloud - handles cloud-like shot appearances
     Enemy - contains enemy classes and functions
-    Map - creates the playing field including path bitting. Contains major game variables.
-    Playfield - movable element handling touch input
-    TowerAbilities - actions taken on a tower like selling and upgrades
-    localdefs - contains the Path, Map, and Player classes. Also contains many "global" variables and lists, and functions used for
-    animation, enemy movement, and pausing the game.
-    EventFunctions - handles keyboard and mouse input
-    pathfinding - implements the a* pathfinding algorithm. Functions return a list of movement for enemies.
-    GUI - handles the creation and updates of top and bottom bars and the rightside panels
+    Player - player-specific variables related to the game
+    Map - contains map-related game variables and sets up the game for play
+    Road - creates road images and handles their positioning
+    Wall - manages widgets used as barriers for enemies and tower placement so the playfield is defined
+    Playfield - movable element handling touch input. This is the surface the game is played on
+    TowerAbilities - actions taken on a tower like selling, rotation, and upgrades
+    localdefs - contains some local variables used across classes
+    EventFunctions - sends new enemy waves to SenderClass and handles placing towers.
+    Keyboard_Kivy - used for keyboard actions when played on a computer. N sends a new wave, esc to quit.
+    Pathfinding - implements the a* pathfinding algorithm. Functions return a list of movement for enemies.
+    GUI - handles the creation and updates of graphical elements such as buttons and menus
     SenderClass - manages creation of enemies
-    Wavegen - generates a random wave dict for the Sender
-    Utilities - game-wide functions
+    Wavegen - generates a wave dict for the Sender.
+    Utilities - game-wide functions and helpers.
 
 Artwork:
     All artwork is my own unless specified in the ContentSources.txt file

@@ -1,18 +1,18 @@
-import Utilities
-import Map
-import Localdefs
-
 import os
-
 from kivy.graphics import *
 
+import Localdefs
+import Map
+import Utilities
+
+
 class Road():
-    def __init__(self, pos,index,pathnum):
-        self.image = Utilities.imgLoad(source=os.path.join('backgroundimgs','roadarrow.png'), pos=(pos[0], pos[1]))
+    def __init__(self, pos, index, pathnum):
+        self.image = Utilities.imgLoad(source=os.path.join('backgroundimgs', 'roadarrow.png'), pos=(pos[0], pos[1]))
         self.image.active = False
-        self.image.allow_stretch=True
-        self.image.size = (Map.mapvar.squsize,Map.mapvar.squsize)
-        self.image.squpos = (self.image.pos[0]/Map.mapvar.squsize,self.image.pos[1]/Map.mapvar.squsize)
+        self.image.allow_stretch = True
+        self.image.size = (Map.mapvar.squsize, Map.mapvar.squsize)
+        self.image.squpos = (self.image.pos[0] / Map.mapvar.squsize, self.image.pos[1] / Map.mapvar.squsize)
         self.pos = self.image.pos
         self.size = self.image.size
         Map.mapvar.roadcontainer.add_widget(self.image)
@@ -23,7 +23,7 @@ class Road():
         self.image.source = self.imagestr
         self.image.bind(size=self.bindings)
         self.direction = Map.mapvar.dirmovelists[pathnum][index]
-        self.center = (self.pos[0]+.5*self.size[0],self.pos[1]+.5*self.size[1])
+        self.center = (self.pos[0] + .5 * self.size[0], self.pos[1] + .5 * self.size[1])
         self.setDirection()
 
     def getRoadColor(self):
@@ -31,7 +31,7 @@ class Road():
             return os.path.join('backgroundimgs', 'blueroadarrow.png')
         redlist = Map.mapvar.startpoint
         if self.image.squpos in redlist:
-           return os.path.join('backgroundimgs','redroadarrow.png')
+            return os.path.join('backgroundimgs', 'redroadarrow.png')
 
         else:
             return os.path.join('backgroundimgs', 'roadarrow.png')
@@ -47,7 +47,7 @@ class Road():
         self.image.size = (Map.mapvar.squsize, Map.mapvar.squsize)
         self.image.squpos = (self.image.pos[0] / Map.mapvar.squsize, self.image.pos[1] / Map.mapvar.squsize)
         self.size = self.image.size
-        self.center = (self.pos[0]+.5*self.size[0],self.pos[1]+.5*self.size[1])
+        self.center = (self.pos[0] + .5 * self.size[0], self.pos[1] + .5 * self.size[1])
 
     def setDirection(self):
         angle = 0

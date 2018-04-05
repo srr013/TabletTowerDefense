@@ -1,10 +1,11 @@
 from kivy.uix.widget import Widget
-from kivy.graphics import *
 
 import Map
 
 
 class Wall(Widget):
+    """Walls block the enemy from passing and help check if 2 towers are overlapping. Use the wall visualization to
+    see where walls exist in game."""
     def __init__(self,**kwargs):
         super(Wall,self).__init__(**kwargs)
         self.squpos = kwargs['squpos']

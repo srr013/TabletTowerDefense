@@ -1,11 +1,9 @@
-Artwork:
-
 Simple Tower Defense base code:
 Provided a starting point for enemy movement and building placement.
 https://sourceforge.net/projects/ppgtd/
 
 Code:
-Grid pathfinding code:
+A* pathfinding code:
 https://www.redblobgames.com/pathfinding/grids/algorithms.html
 
 Emoji icons:
