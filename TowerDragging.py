@@ -1,5 +1,6 @@
 import Map
 import Utilities
+import Player
 
 from kivy.uix.image import Image
 from kivy.uix.behaviors import DragBehavior
@@ -16,14 +17,15 @@ class TowerDragger(DragBehavior, Image):
         self.drag_distance= 1
         self.color = [1,1,1,.6]
         self.source = 'towerimgs/0.png'
-        self.size = (Map.mapvar.squsize * 2, Map.mapvar.squsize * 2)
+        self.allow_stretch = True
+        self.size = (Map.mapvar.squsize * 2-1, Map.mapvar.squsize * 2-1)
         self.pos = kwargs['pos']
+        print "towerdraggerpos", self.pos
         Map.mapvar.backgroundimg.add_widget(self)
         self.bind(on_touch_up = self.touch_up)
         self.lastpos = None
         self.placeholder = Map.mapvar.background.placeholder
         self.towerposlist = []
-        #self.towerposlist.append(self.placeholder.pos)
         self.framecount = 0
 
     def touch_up(self,obj,touch,*args):
@@ -34,6 +36,10 @@ class TowerDragger(DragBehavior, Image):
         self.pos = Map.mapvar.background.adjustInBounds(self.pos)
         if self.collide_widget(Map.mapvar.background.placeholder):
             self.pos = Map.mapvar.background.placeholder.pos
+        if self.pos[0] >= self.placeholder.pos[0]+Map.mapvar.squsize*2:
+            Player.player.tbbox.pos = (self.placeholder.pos[0]-Player.player.tbbox.size[0], Player.player.tbbox.pos[1])
+        elif self.pos[0] <= self.placeholder.pos[0] and Player.player.tbbox.pos[0] < self.placeholder.pos[0]:
+            Player.player.tbbox.pos = (self.placeholder.pos[0]+2*Map.mapvar.squsize, Player.player.tbbox.pos[1])
         delta_x, delta_y = (self.pos[0] - self.placeholder.pos[0], self.pos[1] - self.placeholder.pos[1])
         axis = self.genTowerPos(delta_x,delta_y)
         if axis == 'x':
@@ -96,7 +102,8 @@ class TowerPlaceholder(Image):
         self.source = 'towerimgs/0.png'
         self.initial = kwargs['initial']
         self.pos=kwargs['pos']
-        self.size = (Map.mapvar.squsize * 2, Map.mapvar.squsize * 2)
+        self.allow_stretch = True
+        self.size = (Map.mapvar.squsize * 2-1, Map.mapvar.squsize * 2-1)
         # with self.canvas:#add a border around the square
         #     Color(0,0,0,1)
         #     Line(rectangle=(self.pos[0],self.pos[1],self.size[0], self.size[1]))

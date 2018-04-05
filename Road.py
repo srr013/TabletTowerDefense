@@ -12,6 +12,7 @@ class Road():
         self.image.active = False
         self.image.allow_stretch=True
         self.image.size = (Map.mapvar.squsize,Map.mapvar.squsize)
+        self.image.squpos = (self.image.pos[0]/Map.mapvar.squsize,self.image.pos[1]/Map.mapvar.squsize)
         self.pos = self.image.pos
         self.size = self.image.size
         Map.mapvar.roadcontainer.add_widget(self.image)
@@ -28,9 +29,8 @@ class Road():
     def getRoadColor(self):
         if self.iceNeighbor:
             return os.path.join('backgroundimgs', 'blueroadarrow.png')
-
-        redlist = [[30,270],[60,270],[300,510],[300,540],[300,60],[300,30]]
-        if self.image.pos in redlist:
+        redlist = Map.mapvar.startpoint
+        if self.image.squpos in redlist:
            return os.path.join('backgroundimgs','redroadarrow.png')
 
         else:
@@ -39,13 +39,13 @@ class Road():
     def getIceNeighbor(self):
         for group in Localdefs.towerGroupDict['Ice']:
             if self in group.adjacentRoads:
-                print self, group.adjacentRoads
                 self.iceNeighbor = True
                 return
         self.iceNeighbor = False
 
     def bindings(self):
         self.image.size = (Map.mapvar.squsize, Map.mapvar.squsize)
+        self.image.squpos = (self.image.pos[0] / Map.mapvar.squsize, self.image.pos[1] / Map.mapvar.squsize)
         self.size = self.image.size
         self.center = (self.pos[0]+.5*self.size[0],self.pos[1]+.5*self.size[1])
 

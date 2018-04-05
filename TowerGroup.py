@@ -127,7 +127,8 @@ class TowerGroup():
             if rand == True:
                 enemy.stuntimers.append(enemy)
                 enemy.stuntime = tower.stuntime
-                enemy.anim.cancel_all(enemy)
+                if enemy.anim:
+                    enemy.anim.cancel_all(enemy)
                 enemy.addStunImage()
             dir = (enemy.pos[0] - tower.pos[0], enemy.pos[1] - tower.pos[1])
             pushx = pushy = 0

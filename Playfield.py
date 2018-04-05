@@ -18,7 +18,7 @@ class playField(ScatterLayout):
         self.scale_min = 1
         self.do_rotation=False
         self.do_translation = False
-        self.size = Map.mapvar.scrwid,Map.mapvar.scrhei
+        self.size = main.Window.size
         self.size_hint = (1,1)
         self.pos = (0,0)
         self.do_collide_after_children = True
@@ -27,12 +27,21 @@ class playField(ScatterLayout):
 
     def bindings(self, *args):
         self.size = main.Window.size
+        print "size", self.size
         for child in self.children:
             child.size = self.size
 
     def on_touch_down(self, touch):
         self.squarepos = Utilities.getPos(touch.pos)
         self.squarepos = self.adjustInBounds(self.squarepos)
+        print "squarepos", self.squarepos, Map.mapvar.squsize, Map.mapvar.scrhei
+
+        #move the selected square if a neighboring tower overlaps
+        self.adjustForNeighbor()
+
+        if self.dragger and self.dragger.collide_point(*touch.pos):
+            self.dragger.on_touch_down(touch)
+            return
 
         #don't allow touches outside of play boundary if a menu isn't open
         if self.popUpOpen:
@@ -42,13 +51,6 @@ class playField(ScatterLayout):
             else:
                 return super(playField, self).on_touch_down(touch)
 
-        #move the selected square if a neighboring tower overlaps
-        self.adjustForNeighbor()
-
-        if self.dragger and self.dragger.collide_point(*touch.pos):
-            self.dragger.on_touch_down(touch)
-            return
-
         if not self.popUpOpen:
             if self.outOfBounds(touch.pos):
                 self.removeAll()
@@ -57,8 +59,6 @@ class playField(ScatterLayout):
         if Player.player.state == 'Paused' or Player.player.state == 'Menu':
             return
         #tower selection buttons
-        # if Player.player.tbbox and Player.player.tbbox.collide_point(*self.squarepos):
-        #     return super(playField, self).on_touch_down(touch)
         self.towerSelected(touch)
         #create the tower creation menu and display
         self.openTowerBuilder()
@@ -75,10 +75,6 @@ class playField(ScatterLayout):
                return True
     def openTowerBuilder(self):
         if not self.popUpOpen:
-            # with Map.mapvar.backgroundimg.canvas.after:
-            #     # shaded square where tower will be located
-            #     Color(1, .7, .08, .3)
-            #     Map.mapvar.rect = Rectangle(size=(Map.mapvar.squsize * 2, Map.mapvar.squsize * 2), pos=self.squarepos)
             self.placeholder = TowerDragging.TowerPlaceholder(pos=self.squarepos, initial=True)
             self.dragger = TowerDragging.TowerDragger(pos=self.squarepos)
             GUI.gui.builderMenu(self.squarepos)
@@ -102,7 +98,7 @@ class playField(ScatterLayout):
                 self.squarepos[0]-=Map.mapvar.squsize
             if tower.collide_point(self.squarepos[0], self.squarepos[1]+Map.mapvar.squsize):
                 self.squarepos[1]-=Map.mapvar.squsize
-            if tower.collide_point(self.squarepos[0]+30, self.squarepos[1]+Map.mapvar.squsize):
+            if tower.collide_point(self.squarepos[0]+Map.mapvar.squsize, self.squarepos[1]+Map.mapvar.squsize):
                 self.squarepos[1]-=Map.mapvar.squsize
                 self.squarepos[0]-=Map.mapvar.squsize
 
@@ -120,9 +116,6 @@ class playField(ScatterLayout):
             Player.player.layout = None
         if Map.mapvar.enemypanel.parent:
             Map.mapvar.backgroundimg.remove_widget(Map.mapvar.enemypanel)
-        # if Map.mapvar.rect:
-        #     Map.mapvar.backgroundimg.canvas.after.remove(Map.mapvar.rect)
-        #     Map.mapvar.rect = None
         if Map.mapvar.triangle:
             Map.mapvar.backgroundimg.canvas.remove(Map.mapvar.triangle)
             Map.mapvar.triangle = None

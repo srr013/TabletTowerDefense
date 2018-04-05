@@ -40,6 +40,7 @@ class Enemy(Widget):
                 self.mods = Player.player.waveList[self.curwave]['enemymods']
                 self.isBoss = Player.player.waveList[self.curwave]['isboss']
         self.image.size = self.size
+        self.image.allow_stretch = True
         self.add_widget(self.image)
         Map.mapvar.enemycontainer.add_widget(self)
         if self.isBoss:
@@ -139,8 +140,10 @@ class Enemy(Widget):
         if self.stuntime>0:
             return
 
-        self.curnode+=1
+        if self.curnode < len(self.movelist)-1:
+            self.curnode+=1
         distToTravel = int(abs(self.pos[0] - self.movelist[self.curnode][0]+self.pos[1] - self.movelist[self.curnode][1]))
+
         duration = float(distToTravel)/(self.speed*self.slowpercent)
         self.anim = Animation(pos=self.movelist[self.curnode], duration = duration, transition="linear")
 
@@ -159,7 +162,7 @@ class Enemy(Widget):
             Player.player.health -= 1
             GUI.gui.myDispatcher.Health = str(Player.player.health)
             Map.mapvar.enemycontainer.remove_widget(self)
-            MainFunctions.flashScreen('red',1)
+            MainFunctions.flashScreen('red',5)
             if Player.player.health <= 0:
                 Player.player.die()
             return
@@ -187,7 +190,7 @@ class Enemy(Widget):
     def getNearestNode(self, *args):
         curnodedist = math.sqrt((self.center[0] - self.movelist[self.curnode][0])**2 + (self.center[1] - self.movelist[self.curnode][1])**2)
         x=0
-        for square in self.movelist:
+        for square in self.movelist[self.curnode:]:
             dist = math.sqrt((self.center[0] - square[0]) ** 2 + (
                         self.center[1] - square[1]) ** 2)
             if dist < curnodedist:

@@ -11,6 +11,7 @@ import Wall
 from kivy.uix.image import Image
 from kivy.uix.widget import Widget
 from kivy.graphics import *
+from kivy.core.window import Window
 
 wallrectlist = list()
 def gen_border_walls():
@@ -58,11 +59,9 @@ class Map():
         self.flylistgenerated = False
         self.movelistnum = -1
         self.blockedSquare = None
-        self.winwid = 1020  # window width
-        self.winhei = 630
-        self.scrwid = self.winwid  # Playable screen width.
-        self.scrhei = self.winhei  # Playable screen height.
-        self.squsize = self.winwid / 34
+        self.scrwid = Window.width
+        self.scrhei = Window.height  # Playable screen height.
+        self.squsize = self.scrwid / 34
         self.border = 2 * self.squsize
         self.squborder = self.border / self.squsize
         self.waveseconds = 20.5
@@ -93,6 +92,7 @@ class Map():
                 enemymovelist = list([(point[0]*self.squsize,point[1]*self.squsize) for point in movelist[0]])
                 self.pointflymovelists.append(enemymovelist)
                 self.flylistgenerated = True
+                self.flylistgenerated = True
 
     def backgroundInit(self):
         self.backgroundimg = Widget()
@@ -101,7 +101,6 @@ class Map():
         self.backgroundimg.pos = self.background.pos
         self.enemypanel = GUI.EnemyPanel()
         self.baseimg = None
-        self.rect = None
         self.triangle = None
         self.towerRange = None
         self.alertStreamer = GUI.gui.createAlertStreamer()
@@ -139,14 +138,15 @@ class Map():
 
         self.towerdragimagecontainer = Utilities.container()
         self.backgroundimg.add_widget(self.towerdragimagecontainer)
+        self.bindings()
         return self.background
 
     def bindings(self, *args):
         self.backgroundimg.size = self.background.size
         with self.backgroundimg.canvas.before:
             self.shaderRect = Rectangle(size=self.backgroundimg.size, pos=self.backgroundimg.pos)
-        self.scrhei = self.winhei = main.Window.height
-        self.scrwid = self.scrwid = main.Window.width
+        self.scrhei = main.Window.height
+        self.scrwid = main.Window.width
         self.squsize = self.scrwid/34
         self.border = 2*self.squsize
         self.squborder = self.border/self.squsize
@@ -212,9 +212,9 @@ class Map():
         if self.numpaths == 1:
             self.startpoint = [(1,9)]
         elif self.numpaths == 2:
-            self.startpoint = [(1,9), (10,18)]
+            self.startpoint = [(1,9), (10,16)]
         else:
-            self.startpoint = [(1,9), (10,18), (10,1)]
+            self.startpoint = [(1,9), (10,16), (10,1)]
         self.basepoint = (28,9) #update newPath/flyPath below too
 
 mapvar = Map()
