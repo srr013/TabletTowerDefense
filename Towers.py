@@ -90,7 +90,8 @@ class Tower(Widget):
         self.image.size = self.size
         if self.turret:
             self.turret.size = (Map.mapvar.squsize,Map.mapvar.squsize)
-        self.range = self.rangecalc
+        self.range = Map.mapvar.squsize * self.rangecalc
+        print self.range
 
     def remove(self):
         for wall in self.towerwalls:
@@ -282,7 +283,7 @@ class Tower(Widget):
     def updateModifiers(self):
         self.damage = self.initdamage * self.towerGroup.dmgModifier
         self.reload = self.initreload * self.towerGroup.reloadModifier
-        self.range = self.initrange * self.towerGroup.rangeModifier
+        self.range = self.rangecalc * Map.mapvar.squsize * self.towerGroup.rangeModifier
         if self.type == 'Wind':
             self.push = self.initpush * self.towerGroup.pushModifier
         if self.type == 'Ice':
@@ -424,9 +425,9 @@ class FireTower(Tower):
     initreload = .2
     imagestr = os.path.join('towerimgs', 'Fire', 'icon.png')
     def __init__(self,pos,**kwargs):
+        self.rangecalc = 3.3
         Tower.__init__(self, pos, **kwargs)
         self.pos = pos
-        self.rangecalc = Map.mapvar.squsize*3.3
         self.cost = FireTower.cost
         self.initrange = FireTower.initrange
         self.initdamage = FireTower.initdamage
@@ -455,10 +456,10 @@ class LifeTower(Tower):
     initreload = 1.0
     imagestr = os.path.join('towerimgs', 'Life', 'icon.png')
     def __init__(self,pos, **kwargs):
+        self.rangecalc = 5
         Tower.__init__(self, pos, **kwargs)
         self.pos = pos
         self.cost = LifeTower.cost
-        self.rangecalc =Map.mapvar.squsize*5
         self.initrange = LifeTower.initrange
         self.initdamage = LifeTower.initdamage
         self.initreload = LifeTower.initreload
@@ -487,10 +488,10 @@ class GravityTower(Tower):
     initpush = 10
     imagestr = os.path.join('towerimgs', 'Gravity', 'icon.png')
     def __init__(self,pos,**kwargs):
+        self.rangecalc = 2
         Tower.__init__(self, pos, **kwargs)
         self.pos = pos
         self.cost = GravityTower.cost
-        self.rangecalc = Map.mapvar.squsize*2
         self.initrange = GravityTower.initrange
         self.initdamage = GravityTower.initdamage
         self.initreload = GravityTower.initreload
@@ -533,10 +534,10 @@ class IceTower(Tower):
     initslowpercent = .8
     imagestr = os.path.join('towerimgs', 'Ice', 'icon.png')
     def __init__(self,pos, **kwargs):
+        self.rangecalc = 2
         Tower.__init__(self, pos, **kwargs)
         self.pos = pos
         self.cost = IceTower.cost
-        self.rangecalc = Map.mapvar.squsize*2
         self.initrange = IceTower.initrange
         self.initdamage = IceTower.initdamage
         self.initreload = IceTower.initreload
@@ -571,10 +572,10 @@ class WindTower(Tower):
     initpush = 10
     imagestr = os.path.join('towerimgs', 'Wind', 'icon.png')
     def __init__(self,pos, **kwargs):
+        self.rangecalc = 6.3
         Tower.__init__(self, pos, **kwargs)
         self.pos = pos
         self.cost = WindTower.cost
-        self.rangecalc = Map.mapvar.squsize*6.3
         self.initrange = WindTower.initrange
         self.initdamage = WindTower.initdamage
         self.initreload = WindTower.initreload

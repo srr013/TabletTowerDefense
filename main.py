@@ -17,7 +17,7 @@ from kivy.uix.widget import Widget
 
 from kivy.uix.floatlayout import FloatLayout
 from kivy.clock import Clock
-from kivy.core.window import Window, WindowBase
+from kivy.core.window import Window
 from kivy.config import Config
 from kivy.properties import StringProperty
 from kivy.graphics import *
@@ -38,23 +38,25 @@ class Background(Widget):
 
     def bindings(self, *args):
         self.size=Window.size
+        self.layout.size = Window.size
 
 class Game(Widget):
     def __init__(self, **kwargs):
         super(Game, self).__init__(**kwargs)
-        self._keyboard = Window.request_keyboard(Keyboard_Kivy._keyboard_closed, self)
-        self._keyboard.bind(on_key_up=Keyboard_Kivy._on_keyboard_up)
+        #self._keyboard = Window.request_keyboard(Keyboard_Kivy._keyboard_closed, self)
+        #self._keyboard.bind(on_key_up=Keyboard_Kivy._on_keyboard_up)
         self.mainMenu = None
         self.pauseMenu = None
         self.size_hint=(1,1)
         self.framecount=-1
-        Player.player.frametime = 1 / 60.0
+        self.frametime = 1/20.0
+        Player.player.frametime = self.frametime
 
     def bindings(self, *args):
         self.size=Window.size
         for child in self.children:
             child.size = Window.size
-        if Player.player.state == 'Menu':
+        if self.mainMenu:
                  self.mainMenu.bindings()
 
     def startFuncs(self):
@@ -76,17 +78,17 @@ class Game(Widget):
             if Player.player.wavenum == 0:
                 self.startFuncs()
             else:
-                self.Clock.schedule_interval(self.update, 1/60)
+                self.Clock.schedule_interval(self.update,self.frametime)
                 MainFunctions.startAllAnimation()
             self.remove_widget(self.mainMenu)
         elif obj.id == 'Restart':
             MainFunctions.resetGame()
             Player.player.state = 'Playing'
-            self.Clock.schedule_interval(self.update, 1 / 60)
+            self.Clock.schedule_interval(self.update,self.frametime)
             self.remove_widget(self.mainMenu)
         elif obj.id == 'unpause':
             Player.player.state = 'Playing'
-            self.Clock.schedule_interval(self.update,1/60)
+            self.Clock.schedule_interval(self.update,self.frametime)
             MainFunctions.startAllAnimation()
             self.remove_widget(self.pauseMenu)
         elif obj.id == 'onepath':
@@ -134,6 +136,7 @@ class Game(Widget):
             self.add_widget(self.pauseMenu)
 
     def update(self, dt):
+        #print self.Clock.get_fps()
         if self.framecount < 2 :
             self.framecount += 1
         if Player.player.state == 'Menu':
@@ -183,8 +186,10 @@ class Main(App):
     #instantiate required classes and variables
     def build(self):
         game = Game()
-        Window.size = (Map.mapvar.winwid, Map.mapvar.winhei)
+        #Window.size = (Map.mapvar.winwid, Map.mapvar.winhei)
+        Window.fullscreen = 'auto'
         Window.bind(size=game.bindings)
+
 
         #general appearance updates
         background = Background()
@@ -203,10 +208,11 @@ class Main(App):
         game.topBar = GUI.gui.createTopBar()
         game.add_widget(game.topBar)
         game.add_widget(GUI.gui.rightSideButtons())
+        game.bindings()
 
         #this runs the game.update loop, which is used for handling the entire game
         game.Clock = Clock
-        game.Clock.schedule_interval(game.update,1/60)
+        game.Clock.schedule_interval(game.update,game.frametime)
         return game
 
 
@@ -216,6 +222,6 @@ if __name__ == '__main__':
     #
     # p = pstats.Stats('cprofile_results')
     # # sort by cumulative time in a function
-    # p.sort_stats('cumulative').print_stats(10)
+    # p.sort_stats('cumulative').print_stats(20)
     # # sort by time spent in a function
-    # p.sort_stats('time').print_stats(10)
+    # p.sort_stats('time').print_stats(20)

@@ -57,7 +57,6 @@ def updateFlyingList():
 def updatePath():
     '''Update the path using A* algorithm'''
     Map.newPath.walls = Map.path.get_wall_list()
-    #print "walls", Map.newPath.walls
     if len(Map.mapvar.flymovelists) == 0:
         updateFlyingList()
 
@@ -97,32 +96,30 @@ def dispMessage(*args):
         GUI.gui.alertAnimation.start(GUI.gui.alertScroller)
 
 def flashScreen(color, numframes):
-    with Map.mapvar.backgroundimg.canvas.after:
-        if color == 'red':
-            Color(1,0,0,.5)
-        else:
-            Color(0,0,0,.5)
-        GUI.gui.bgrect = Rectangle(size=(Map.mapvar.scrwid, Map.mapvar.scrhei), pos=(0, 0))
+    if not GUI.gui.bgrect:
+        with Map.mapvar.backgroundimg.canvas.after:
+            if color == 'red':
+                x = float(1.0 - (Player.player.health/20.0))
+                Color(1,0,0,x)
+            else:
+                Color(0,0,0,.5)
+            GUI.gui.bgrect = Rectangle(size=(Map.mapvar.scrwid, Map.mapvar.scrhei), pos=(0, 0))
 
-    Map.mapvar.dispFlashCounter = 0
-    Map.mapvar.dispFlashLimit = numframes
+        Map.mapvar.dispFlashCounter = 0
+        Map.mapvar.dispFlashLimit = numframes
 
 def workDisp():
     if GUI.gui.bgrect:
         Map.mapvar.dispFlashCounter +=1
         if Map.mapvar.dispFlashCounter >= Map.mapvar.dispFlashLimit:
-            print "removing bgrect from flash"
             Map.mapvar.backgroundimg.canvas.after.remove(GUI.gui.bgrect)
             GUI.gui.bgrect = None
             Map.mapvar.dispFlashCounter = 0
     dispMessage()
-
-#
-# def dispExplosions():
-#     for explosion in Localdefs.explosions:
-#         print explosion
-#         explosion[2].dispExplosions(explosion)
-
+    if GUI.gui.messageCounter > 0:
+        GUI.gui.messageCounter+=1
+        if GUI.gui.messageCounter >= 60:
+            GUI.gui.removeMessage()
 
 def workEnemies():
     '''Move, draw to screen, draw health bars of enemys.
@@ -140,22 +137,6 @@ def workEnemies():
 
 def updateGUI(wavetime):
     GUI.gui.updateTopBar(wavetime)
-
-
-
-# def towerButtonPressed(selected):
-#     '''receives a Button object from GUI_Kivy
-#     Display the tower and a circle for tower range if a button is pressed'''
-#
-#     mouseat = Map.mapvar.background.touch_pos
-#     if eval("Towers."+selected.type+"Tower").basecost*(1-Player.player.modDict[selected.type.lower()+"CostMod"])*(1-Player.player.modDict["towerCostMod"]) > Player.player.money:
-#         addAlert("Not Enough Money", 48, "center", (240, 0, 0))
-#         Player.player.towerSelected = None
-#         selected = None
-#         return selected
-#
-#     selected.img.pos = mouseat
-#     Map.mapvar.background.add_widget(selected.img)
 
 def pauseGame(*args):
     id = args[0].id
@@ -245,5 +226,6 @@ def resetGame():
     GUI.gui.nextwaveButton.disabled = False
     GUI.gui.enemyInfoButton.disabled = False
 
+    Map.path.createPath()
     updatePath()
     GUI.gui.addAlert("New Game", 'repeat')

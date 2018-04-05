@@ -5,7 +5,7 @@ import Wavegen
 from kivy.uix.image import Image
 
 playerhealth = 20
-playermoney = 50
+playermoney = 500
 
 class Player():
     def __init__(self):

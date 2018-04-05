@@ -27,6 +27,7 @@ import Map
 import Utilities
 import Enemy
 import TowerAbilities
+import main
 
 import math
 import os
@@ -180,8 +181,8 @@ class mainMenu(SmartMenu):
     def __init__(self, **kwargs):
         super(mainMenu, self).__init__(**kwargs)
 
-        self.layout = GridLayout(rows=2, size=(700,400), padding=[20], spacing = 20)
-        self.layout.center = ((Map.mapvar.winwid/2),(Map.mapvar.winhei/2))
+        self.layout = GridLayout(rows=2, size=(Map.mapvar.squsize*23,Map.mapvar.squsize*13), padding=[Map.mapvar.squsize], spacing = Map.mapvar.squsize)
+        self.layout.center = ((Map.mapvar.scrwid/2),(Map.mapvar.scrhei/2))
         self.id ='mainmenu'
         self.add_widget(self.layout)
 
@@ -223,22 +224,22 @@ class mainMenu(SmartMenu):
         self.difficultyLayout.add_widget(self.hard)
         self.enemyOrderLayout = BoxLayout(orientation='vertical',spacing=10, padding=10)
         self.enemyOrderLabel = Label(text="Order:")
-        self.standardOrder = ToggleButton(text='Std', id='standard',group='order', state='down')
-        self.randomOrder = ToggleButton(text='Rnd', id='random',group='order')
+        self.standardOrder = ToggleButton(text='Standard', id='standard',group='order', state='down')
+        self.randomOrder = ToggleButton(text='Random', id='random',group='order')
         self.enemyOrderLayout.add_widget(self.enemyOrderLabel)
         self.enemyOrderLayout.add_widget(self.standardOrder)
         self.enemyOrderLayout.add_widget(self.randomOrder)
-
-
         self.buttonLayout.add_widget(self.gameplayButtons)
         self.configLayout.add_widget(self.pathLayout)
         self.configLayout.add_widget(self.difficultyLayout)
         self.configLayout.add_widget(self.enemyOrderLayout)
         self.buttonLayout.add_widget(self.configLayout)
         self.layout.add_widget(self.buttonLayout)
+
     def bindings(self):
-        self.layout.center = ((Map.mapvar.winwid / 2), (Map.mapvar.winhei / 2))
-        print self.layout.center
+        Map.mapvar.scrwid,Map.mapvar.scrhei = main.Window.size
+        self.layout.center = ((Map.mapvar.scrwid / 2), (Map.mapvar.scrhei / 2))
+        print self.layout.center, Map.mapvar.scrwid, main.Window.size
         self.bgrect.size = self.size
         self.menurect.pos = self.layout.pos
 
@@ -254,9 +255,9 @@ class topBarWidget():
         self.Icon.size_hint_x = None
         self.Icon.size = (30, 30)
         self.Label.size_hint_x = None
-        self.Label.size = (30, 50)
+        self.Label.size = (Map.mapvar.squsize*.8, Map.mapvar.squsize*1.6)
         self.Variable.size_hint_x = None
-        self.Variable.size = (50, 50)
+        self.Variable.size = (Map.mapvar.squsize*1.3, Map.mapvar.squsize*1.3)
         self.Box.add_widget(self.Icon)
         self.Box.add_widget(self.Label)
         self.Box.add_widget(self.Variable)
@@ -273,6 +274,7 @@ class GUI():
         self.myDispatcher = EventDispatcher.EventDisp()
         self.topBar = None
         self.bgrect = None
+        self.messageCounter = None
 
     def bindings(self, *args):
         if self.topBar:
@@ -302,11 +304,11 @@ class GUI():
 
     def createTopBar(self):
         self.topBar=Bar(pos=(0,Window.height-45), size = (Window.width,45))
-        self.menuButton = Button(text='Menu', id='menu', size_hint=(None,None), width=50, height=30)
+        self.menuButton = Button(text='Menu', id='menu', size_hint=(None,None), width=Map.mapvar.squsize+Map.mapvar.squsize*.6, height=Map.mapvar.squsize, font_size = main.Window.size[0]*.015)
         self.menuButton.bind(on_release = MainFunctions.pauseGame)
-        self.pauseButton = Button(text='Pause', id ='pause', size_hint=(None,None), width=50, height=30)
+        self.pauseButton = Button(text='Pause', id ='pause', size_hint=(None,None), width=Map.mapvar.squsize+Map.mapvar.squsize*.6, height=Map.mapvar.squsize, font_size = main.Window.size[0]*.014)
         self.pauseButton.bind(on_release=MainFunctions.pauseGame)
-        self.nextwaveButton = Button(text = 'Next Wave', id = 'next', size_hint=(None,None), width=80, height=30)
+        self.nextwaveButton = Button(text = 'Next Wave', id = 'next', size_hint=(None,None), width=3*Map.mapvar.squsize, height=Map.mapvar.squsize, font_size = main.Window.size[0]*.015)
         self.nextwaveButton.bind(on_release=self.nextWave)
         self.nextwaveButton.valign = 'top'
         self.topBar.layout.add_widget(self.menuButton)
@@ -323,19 +325,19 @@ class GUI():
         EventFunctions.nextWave()
 
     def createWaveStreamer(self):
-        self.waveStreamerLayout = StackLayout(orientation='lr-tb',pos=(Window.width/2, Window.height-Map.mapvar.squsize*3+3), size = (700,30))
-        self.waveStreamerLabel = Label(text="Next Waves:", size_hint= (None,None),size = (120,30), color=[0,0,0,1])
+        self.waveStreamerLayout = StackLayout(orientation='lr-tb',pos=(Window.width/2, Window.height-Map.mapvar.squsize*3+3), size = (13*Map.mapvar.squsize,Map.mapvar.squsize))
+        self.waveStreamerLabel = Label(text="Next Waves:", size_hint= (None,None),size = (Map.mapvar.squsize*4,Map.mapvar.squsize), color=[0,0,0,1])
         self.waveStreamerLayout.add_widget(self.waveStreamerLabel)
-        self.waveStreamerEnemyLayout = GridLayout(rows=1, size_hint=(None,1), size=(580,30))
+        self.waveStreamerEnemyLayout = GridLayout(rows=1, size_hint=(None,1), size=(9*Map.mapvar.squsize,Map.mapvar.squsize))
         x=0
         for wave in Player.player.waveTypeList:
-            lbl = Label(size_hint=(None,None), text = wave[0], id='wave'+str(x), text_size=(None,None),size=(70,30), color=[0,0,0,1])
+            lbl = Label(size_hint=(None,None), text = wave[0], id='wave'+str(x), text_size=(None,None),size=(Map.mapvar.squsize*2.6,Map.mapvar.squsize), color=[0,0,0,1])
             x+=1
             if wave[1]:#if boss
                 lbl.bold = True
                 lbl.color = [1,0,0,1]
             self.waveStreamerEnemyLayout.add_widget(lbl)
-        self.waveScroller = ScrollView(do_scroll_y=False, scroll_x=0, size_hint=(None,1), width=280, bar_color=[1,1,1,0], bar_inactive_color=[1,1,1,0])
+        self.waveScroller = ScrollView(do_scroll_y=False, scroll_x=0, size_hint=(None,1), width=Map.mapvar.squsize*9, bar_color=[1,1,1,0], bar_inactive_color=[1,1,1,0])
         self.waveScroller.add_widget(self.waveStreamerEnemyLayout)
         self.waveStreamerLayout.add_widget(self.waveScroller)
         self.topBar.add_widget(self.waveStreamerLayout)
@@ -347,7 +349,7 @@ class GUI():
         self.waveStreamerEnemyLayout.clear_widgets()
         x=0
         for wave in Player.player.waveTypeList:
-            lbl = Label(size_hint=(None,None), text = wave[0], id='wave'+str(x), text_size=(None,None),size=(70,30), color=[0,0,0,1])
+            lbl = Label(size_hint=(None,None), text = wave[0], id='wave'+str(x), text_size=(None,None),size=(Map.mapvar.squsize*2.3,Map.mapvar.squsize), color=[0,0,0,1])
             x+=1
             if wave[1]:#if boss
                 lbl.bold = True
@@ -398,6 +400,21 @@ class GUI():
         self.alertScroller.scroll_x=1
         MainFunctions.dispMessage()
 
+    def createMessage(self, msg):
+        if not self.messageCounter:
+            self.messageCounter = 1
+            self.messageLayout = BoxLayout(orientation = 'horizontal')
+            self.messageLayout.pos = (Map.mapvar.scrwid/2-(self.messageLayout.size[0]/2), Map.mapvar.scrhei/1.5)
+            self.messageLabel = Label(text=msg, color=[0,0,0,1], size_hint = (None,None), font_size='48sp')
+            self.messageLayout.add_widget(self.messageLabel)
+            Map.mapvar.backgroundimg.add_widget(self.messageLayout)
+
+    def removeMessage(self):
+        self.messageLabel.text = ' '
+        self.messageLayout.remove_widget(self.messageLabel)
+        Map.mapvar.backgroundimg.remove_widget(self.messageLayout)
+        self.messageCounter = None
+
     def createTBBox(self, squarepos, squwid, squhei):
         Player.player.tbbox = Scatter(size=(Map.mapvar.squsize*squwid,Map.mapvar.squsize*squhei), pos=(squarepos[0]+2*Map.mapvar.squsize,squarepos[1]-Map.mapvar.squsize*2), do_resize=False, do_rotation=False)
         if squarepos[0]+2*Map.mapvar.squsize + Map.mapvar.squsize*squwid > Map.mapvar.scrwid:
@@ -428,7 +445,7 @@ class GUI():
         self.sellbtn.instance = Localdefs.towerabilitylist[0]
         self.sellbtn.image.source = self.sellbtn.instance.imgstr
         self.sellbtn.image.size_hint = (None, None)
-        self.sellbtn.image.size = (30, 30)
+        self.sellbtn.image.size = (Map.mapvar.squsize, Map.mapvar.squsize)
         self.sellbtn.image.pos = self.sellbtn.pos
         self.sellbtn.text = '              '+self.sellbtn.instance.type + ':  $' + str(int(Player.player.towerSelected.refund))
         Player.player.layout.add_widget(self.sellbtn)
@@ -533,11 +550,11 @@ class GUI():
         self.createTBBox(squarepos,4,6)
 
         for button in Localdefs.iconlist:
-            tmpbtn = ButtonWithImage(text=' ',size_hint=(None, None), size=(60,60))
+            tmpbtn = ButtonWithImage(text=' ',size_hint=(None, None), size=(Map.mapvar.squsize*2,Map.mapvar.squsize*2))
             tmpbtn.instance = button
             tmpbtn.image.source = button.imgstr
             tmpbtn.label.text = " $"+str(button.cost)
-            tmpbtn.label.size = (30,18)
+            tmpbtn.label.size = (Map.mapvar.squsize,Map.mapvar.squsize*.6)
             if button.cost > Player.player.money:
                 tmpbtn.disabled = True
             Player.player.layout.add_widget(tmpbtn)
@@ -569,7 +586,7 @@ class EnemyPanel(TabbedPanel):
         self.tab_width=40
         self.size_hint = (1,1)
         self.size = (275,220)
-        self.pos = (Window.width - 330, 10)
+        self.pos = (Window.width - Map.mapvar.squsize*11, Map.mapvar.squsize*.3)
         self.background_color=[.1,.1,.1,.6]
         self.border = [1,1,1,1]
         self.do_default_tab = False
@@ -603,15 +620,15 @@ class panelHeader(TabbedPanelHeader):
 
     def createEnemyPanelContent(self,enemy):
         waveNum=Player.player.wavenum
-        self.enemyPanel_header = Label(text=str(enemy), width=self.width-30, height= 40, size_hint=(None,None), font_size=24, text_size = (200,40), halign='center')
+        self.enemyPanel_header = Label(text=str(enemy), width=self.width-Map.mapvar.squsize, height= Map.mapvar.squsize*1.3, size_hint=(None,None), font_size=24, text_size = (Map.mapvar.squsize*7,Map.mapvar.squsize*1.3), halign='center')
         self.enemyPanel_enemyinfo = GridLayout(cols=1, col_force_default=True, row_force_default=True,
                                                   row_default_height=30, col_default_width=self.width, size_hint=(None,None))
-        self.enemyPanel_numEnemies = Label(text="Number: "+str(int(eval("Enemy."+enemy +".defaultNum") * (1+ (waveNum/70.0)))), font_size=20, text_size = (260, 30))
-        self.enemyPanel_enemyHealth = Label(text="HP: "+str(int(eval("Enemy."+enemy +".health") * (1+ (waveNum/70.0)))),font_size=20, text_size = (260, 30))
-        self.enemyPanel_enemySpeed = Label(text="Speed: "+str(int(eval("Enemy."+enemy +".speed") * (1+ (waveNum/70.0)))),font_size=20, text_size = (260, 30))
-        self.enemyPanel_enemyArmor = Label(text="Armor: "+str(int(eval("Enemy."+enemy +".armor") * (1+ (waveNum/70.0)))),font_size=20, text_size = (260, 30))
-        self.enemyPanel_enemyReward = Label(text="Reward: "+str(int(eval("Enemy."+enemy +".reward") * (1+ (waveNum/70.0)))),font_size=20, text_size = (260, 30))
-        self.enemyPanel_disclaimer = Label(text="Numbers reflect enemy if sent next wave",font_size=10, text_size = (260, 30))
+        self.enemyPanel_numEnemies = Label(text="Number: "+str(int(eval("Enemy."+enemy +".defaultNum") * (1+ (waveNum/70.0)))), font_size=20, text_size = (Map.mapvar.squsize*9, Map.mapvar.squsize))
+        self.enemyPanel_enemyHealth = Label(text="HP: "+str(int(eval("Enemy."+enemy +".health") * (1+ (waveNum/70.0)))),font_size=20, text_size = (Map.mapvar.squsize*9, Map.mapvar.squsize))
+        self.enemyPanel_enemySpeed = Label(text="Speed: "+str(int(eval("Enemy."+enemy +".speed") * (1+ (waveNum/70.0)))),font_size=20, text_size = (Map.mapvar.squsize*9, Map.mapvar.squsize))
+        self.enemyPanel_enemyArmor = Label(text="Armor: "+str(int(eval("Enemy."+enemy +".armor") * (1+ (waveNum/70.0)))),font_size=20, text_size = (Map.mapvar.squsize*9, Map.mapvar.squsize))
+        self.enemyPanel_enemyReward = Label(text="Reward: "+str(int(eval("Enemy."+enemy +".reward") * (1+ (waveNum/70.0)))),font_size=20, text_size = (Map.mapvar.squsize*9, Map.mapvar.squsize))
+        self.enemyPanel_disclaimer = Label(text="Numbers reflect enemy if sent next wave",font_size=10, text_size = (Map.mapvar.squsize*9, Map.mapvar.squsize))
         self.enemyPanel_enemyinfo.add_widget(self.enemyPanel_numEnemies)
         self.enemyPanel_enemyinfo.add_widget(self.enemyPanel_enemyHealth)
         self.enemyPanel_enemyinfo.add_widget(self.enemyPanel_enemySpeed)
@@ -652,12 +669,12 @@ class Bar(SmartMenu):
             variable.id = element
             icon = Utilities.imgLoad(icon)
             icon.size_hint_x = None
-            icon.size = (30,30)
+            icon.size = (Map.mapvar.squsize,Map.mapvar.squsize)
             label.size_hint_x=None
-            label.size = (40,50)
+            label.size = (Map.mapvar.squsize+Map.mapvar.squsize*.3,Map.mapvar.squsize+Map.mapvar.squsize*.6)
             #nlabel.valign='center'
             variable.size_hint_x = None
-            variable.size = (90,50)
+            variable.size = (3*Map.mapvar.squsize,Map.mapvar.squsize+Map.mapvar.squsize*.6)
             box.add_widget(icon)
             box.add_widget(label)
             box.add_widget(variable)

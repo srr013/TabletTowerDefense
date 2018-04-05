@@ -123,21 +123,21 @@ def get_pos(pos,h,w,num):
 
 def adjacentRoadPos(pos):
     list = []
-    y = int(pos[1] + 60)
-    x = int(pos[0] - 30)
+    y = int(pos[1] + Map.mapvar.squsize*2)
+    x = int(pos[0] - Map.mapvar.squsize)
     list.append([x, y])
 
-    while x <= pos[0] + 30:
-        x += 30
+    while x <= pos[0] + Map.mapvar.squsize:
+        x += Map.mapvar.squsize
         list.append([x, y])
     while y >= pos[1]:
-        y -= 30
+        y -= Map.mapvar.squsize
         list.append([x, y])
     while x >= pos[0]:
-        x -= 30
+        x -= Map.mapvar.squsize
         list.append([x, y])
     while y <= pos[1]:
-        y += 30
+        y += Map.mapvar.squsize
         list.append([x, y])
     return list
 

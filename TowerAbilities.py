@@ -31,12 +31,13 @@ class Sell(TowerAbility):
     @classmethod
     def apply(cls,**kwargs):
         tower = Player.player.towerSelected
-        Player.player.money+=(tower.totalspent)
-        GUI.gui.myDispatcher.Money = str(Player.player.money)
-        tower.remove()
-        Player.player.towerSelected = None
-        Map.mapvar.updatePath = True
-        return True
+        if tower:
+            Player.player.money+=(tower.totalspent)
+            GUI.gui.myDispatcher.Money = str(Player.player.money)
+            tower.remove()
+            Player.player.towerSelected = None
+            Map.mapvar.updatePath = True
+            return True
 
 class Upgrade(TowerAbility):
     @classmethod

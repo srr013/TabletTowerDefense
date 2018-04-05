@@ -4,7 +4,7 @@ import Localdefs
 import Map
 
 
-maxSets = 6
+maxSets = 20
 
 def genModList():
     modifiers = ['speedInc', 'strInc', 'numInc', 'armInc', 'fireRes', 'waterRes','rewardInc']
