@@ -1,12 +1,12 @@
-import Utilities
 import os
-import math
-import Localdefs
-import Map
-
+from kivy.animation import Animation
 from kivy.graphics import *
 from kivy.uix.widget import Widget
-from kivy.animation import Animation
+
+import Localdefs
+import Map
+import Utilities
+
 
 ##manages each shot from each tower so we can show the shot in flight.
 class Shot(Widget):

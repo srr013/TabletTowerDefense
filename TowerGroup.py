@@ -1,16 +1,15 @@
-import Localdefs
-import Map
-import Utilities
-import Player
-import Shot
-
-from kivy.animation import Animation
-from kivy.graphics import *
-
 import operator
 import os
 import random
-from functools import partial
+from kivy.animation import Animation
+from kivy.graphics import *
+
+import Localdefs
+import Map
+import Player
+import Shot
+import Utilities
+
 
 class TowerGroup():
     def __init__(self, tower):
@@ -28,7 +27,7 @@ class TowerGroup():
         self.adjacentRoads = set()
         self.adjacentRoadFlag = True
         self.active = False
-        self.targetTimer=0
+        self.targetTimer = 0
         self.facing = 'l'
         self.towersNeedingAnim = []
 
@@ -56,19 +55,16 @@ class TowerGroup():
         Localdefs.towerGroupDict[self.towerType].remove(self)
 
     def updateModifiers(self):
-        self.dmgModifier = 1 + (len(self.towerSet)-1) * .05
-        self.reloadModifier = 1 - (len(self.towerSet)-1) * .05
-        self.rangeModifier = 1 + (len(self.towerSet)-1) * .05
-        self.pushModifier = 1 + (len(self.towerSet)-1) * .05
-        self.slowTimeModifier = 1 + (len(self.towerSet)-1) *.05
-        self.slowPercentModifier = 1 + (len(self.towerSet)-1) *.05
-        self.stunTimeModifier = 1 + (len(self.towerSet)-1) *.05
+        self.dmgModifier = 1 + (len(self.towerSet) - 1) * .05
+        self.reloadModifier = 1 - (len(self.towerSet) - 1) * .05
+        self.rangeModifier = 1 + (len(self.towerSet) - 1) * .05
+        self.pushModifier = 1 + (len(self.towerSet) - 1) * .05
+        self.slowTimeModifier = 1 + (len(self.towerSet) - 1) * .05
+        self.slowPercentModifier = 1 + (len(self.towerSet) - 1) * .05
+        self.stunTimeModifier = 1 + (len(self.towerSet) - 1) * .05
 
         for tower in self.towerSet:
             tower.updateModifiers()
-
-
-
 
     def target(self):
         '''Create a sorted list of enemies based on distance from the tower. If enemy is within tower range then hit enemy'''
@@ -82,22 +78,22 @@ class TowerGroup():
             if tower.totalUpgradeTime > 0:
                 return
             for enemy in sortedlist:
-                if Utilities.in_range(tower,enemy):
+                if Utilities.in_range(tower, enemy):
                     if enemy.isair and tower.attackair:
-                        self.in_range_air +=1
+                        self.in_range_air += 1
                         if self.active:
-                            self.hitEnemy(tower,enemy)
+                            self.hitEnemy(tower, enemy)
                         if not self.active:
                             self.enable()
-                        tower.shotcount +=1
+                        tower.shotcount += 1
 
                     if not enemy.isair and tower.attackground:
-                        self.in_range_ground+=1
+                        self.in_range_ground += 1
                         if self.active:
-                            self.hitEnemy(tower,enemy)
+                            self.hitEnemy(tower, enemy)
                         if not self.active:
                             self.enable()
-                        tower.shotcount +=1
+                        tower.shotcount += 1
 
                     if tower.shotcount > 0:
                         self.targetTimer = tower.reload
@@ -107,23 +103,23 @@ class TowerGroup():
 
                 if tower.shotcount >= tower.allowedshots:
                     break
-        if self.in_range_ground == 0 and self.in_range_air==0 and self.active:
+        if self.in_range_ground == 0 and self.in_range_air == 0 and self.active:
             self.disable()
         if self.in_range_air == 0 and self.towerType == 'Wind' and self.active:
             self.disable()
 
-    def hitEnemy(self,tower, enemy):
+    def hitEnemy(self, tower, enemy):
         '''Reduces enemy health by damage - armor'''
-        if tower.type == "Ice" and enemy.slowtime <= tower.slowtime-1:
+        if tower.type == "Ice" and enemy.slowtime <= tower.slowtime - 1:
             enemy.slowtimers.append(enemy)
-            if enemy.image.color != [0,0,1,1]:
-                enemy.image.color = [0,0,1,1]
+            if enemy.image.color != [0, 0, 1, 1]:
+                enemy.image.color = [0, 0, 1, 1]
             enemy.slowtime = tower.slowtime
             enemy.slowpercent = tower.slowpercent
             enemy.health -= max(tower.damage - enemy.armor, 0)
             enemy.checkHealth()
         if tower.type == "Gravity":
-            rand = True if random.randint (0,100) > 90 else False
+            rand = True if random.randint(0, 100) > 90 else False
             if rand == True:
                 enemy.stuntimers.append(enemy)
                 enemy.stuntime = tower.stuntime
@@ -147,10 +143,9 @@ class TowerGroup():
         if tower.type == 'Wind':
             Shot.Shot(tower, enemy)
 
-
     def enable(self):
         self.active = True
-        if self.towerType=='Ice':
+        if self.towerType == 'Ice':
             self.genRoadList()
         if self.towerType == 'Gravity':
             self.targetTimer = self.tower.reload
@@ -159,26 +154,28 @@ class TowerGroup():
         if self.towerType == 'Wind':
             self.targetTimer = 0
             for tower in self.towerSet:
-                 tower.turret.source = os.path.join('towerimgs', self.towerType, "turret.gif")
+                tower.turret.source = os.path.join('towerimgs', self.towerType, "turret.gif")
 
     def animateGravity(self, tower):
-        tower.animation = Animation(size=(Map.mapvar.squsize*3, Map.mapvar.squsize*3), pos=(tower.center[0] - Map.mapvar.squsize*1.5, tower.center[1] - Map.mapvar.squsize*1.5),
-                                    duration=tower.reload - .1) + Animation(size=(Map.mapvar.squsize*1.5, Map.mapvar.squsize*1.5),
-                                    pos=(tower.center[0] - Map.mapvar.squsize*.74, tower.center[1] - Map.mapvar.squsize*.74), duration=.1)
+        tower.animation = Animation(size=(Map.mapvar.squsize * 3, Map.mapvar.squsize * 3), pos=(
+        tower.center[0] - Map.mapvar.squsize * 1.5, tower.center[1] - Map.mapvar.squsize * 1.5),
+                                    duration=tower.reload - .1) + Animation(
+            size=(Map.mapvar.squsize * 1.5, Map.mapvar.squsize * 1.5),
+            pos=(tower.center[0] - Map.mapvar.squsize * .74, tower.center[1] - Map.mapvar.squsize * .74), duration=.1)
         tower.animation.repeat = True
         tower.animation.start(tower.attackImage)
 
     def disable(self):
         self.active = False
-        if self.towerType=='Ice':
+        if self.towerType == 'Ice':
             self.targetTimer = self.tower.reload
             self.genRoadList()
-        if self.towerType=='Gravity':
+        if self.towerType == 'Gravity':
             self.targetTimer = 0
             for tower in self.towerSet:
                 tower.animation.cancel_all(tower.attackImage)
                 tower.closeanimation.start(tower.attackImage)
-        if self.towerType=='Wind':
+        if self.towerType == 'Wind':
             self.targetTimer = 0
             for tower in self.towerSet:
                 tower.turret.source = os.path.join('towerimgs', self.towerType, "turret.png")

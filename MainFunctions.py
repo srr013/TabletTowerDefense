@@ -1,14 +1,16 @@
-import Localdefs, Map, Towers, Pathfinding
-import time
-import Player
-import GUI
-import TowerAbilities
-import EventFunctions
 import os
-
-from kivy.uix.label import Label
-from kivy.graphics import *
 from kivy.animation import Animation
+from kivy.graphics import *
+
+import EventFunctions
+import GUI
+import Localdefs
+import Map
+import Pathfinding
+import Player
+import TowerAbilities
+import Towers
+
 
 def makeIcons():
     '''Creates an Icon from the class for each tower'''
@@ -19,12 +21,12 @@ def makeUpgradeIcons():
     for ability in TowerAbilities.baseAbilityList:
         TowerAbilities.TowerAbility(ability)
 
-def tickAndClear(clock,background):
+def tickAndClear(clock, background):
     '''Updates the game time and blits the background
     Clock: pygame.time.Clock instance
     background: the game's background image'''
     clock.tick(30)
-    #Player.player.screen.blit(background,(0,0))
+    # Player.player.screen.blit(background,(0,0))
 
 def workSenders(*args):
     '''Determines what enemys to create and where to place them.
@@ -46,6 +48,7 @@ def workTowers():
                     group.takeTurn()
 
 def updateFlyingList():
+    print "updating flying path"
     '''Update movelist for flying enemies'''
     # only border walls for flying list. Flying list to be index 1.
     Map.flyPath.walls = Map.path.border_walls
@@ -55,6 +58,7 @@ def updateFlyingList():
         Map.mapvar.flymovelists.append(Pathfinding.reconstruct_path(came_from, startpoint, Map.mapvar.basepoint))
 
 def updatePath():
+    print "Updating ground path"
     '''Update the path using A* algorithm'''
     Map.newPath.walls = Map.path.get_wall_list()
     if len(Map.mapvar.flymovelists) == 0:
@@ -68,10 +72,6 @@ def updatePath():
             Map.mapvar.blockedSquare = cost_so_far
             return False
         Map.mapvar.movelists.append(Pathfinding.reconstruct_path(came_from, startpoint, Map.mapvar.basepoint))
-        # if Map.mapvar.movelists[x][0] == "Path Blocked":
-        #     Map.mapvar.blockedSquare = Map.mapvar.movelists[x][1]
-        #     return False
-        # x+=1
 
     Map.mapvar.genmovelists()
     Map.mapvar.updatePath = False
@@ -82,7 +82,6 @@ def updatePath():
 def updateIce():
     for group in Localdefs.towerGroupDict['Ice']:
         group.getAdjacentRoads()
-
 
 def workShots():
     '''Update the shot location and hit the enemy'''
@@ -99,27 +98,29 @@ def flashScreen(color, numframes):
     if not GUI.gui.bgrect:
         with Map.mapvar.backgroundimg.canvas.after:
             if color == 'red':
-                x = float(1.0 - (Player.player.health/20.0))
-                Color(1,0,0,x)
+                x = float(1.0 - (Player.player.health / 20.0))
+                Color(1, 0, 0, x)
             else:
-                Color(0,0,0,.5)
+                Color(0, 0, 0, .5)
             GUI.gui.bgrect = Rectangle(size=(Map.mapvar.scrwid, Map.mapvar.scrhei), pos=(0, 0))
 
         Map.mapvar.dispFlashCounter = 0
         Map.mapvar.dispFlashLimit = numframes
 
+
 def workDisp():
     if GUI.gui.bgrect:
-        Map.mapvar.dispFlashCounter +=1
+        Map.mapvar.dispFlashCounter += 1
         if Map.mapvar.dispFlashCounter >= Map.mapvar.dispFlashLimit:
             Map.mapvar.backgroundimg.canvas.after.remove(GUI.gui.bgrect)
             GUI.gui.bgrect = None
             Map.mapvar.dispFlashCounter = 0
     dispMessage()
     if GUI.gui.messageCounter > 0:
-        GUI.gui.messageCounter+=1
+        GUI.gui.messageCounter += 1
         if GUI.gui.messageCounter >= 60:
             GUI.gui.removeMessage()
+
 
 def workEnemies():
     '''Move, draw to screen, draw health bars of enemys.
@@ -135,8 +136,10 @@ def workEnemies():
 
     Player.player.newMoveList = False
 
+
 def updateGUI(wavetime):
     GUI.gui.updateTopBar(wavetime)
+
 
 def pauseGame(*args):
     id = args[0].id
@@ -148,6 +151,7 @@ def pauseGame(*args):
     elif Player.player.state == 'Paused':
         Player.player.state = 'Playing'
 
+
 def stopAllAnimation():
     for enemy in Map.mapvar.enemycontainer.children:
         enemy.anim.cancel(enemy)
@@ -157,12 +161,13 @@ def stopAllAnimation():
         shot.anim.cancel(shot)
     for tower in Map.mapvar.towercontainer.children:
         if tower.type == 'Gravity' and tower.animation:
-                tower.towerGroup.disable()
+            tower.towerGroup.disable()
         if tower.type == 'Wind':
-            tower.turret.source = os.path.join('towerimgs','Wind','turret.png')
+            tower.turret.source = os.path.join('towerimgs', 'Wind', 'turret.png')
     GUI.gui.waveAnimation.cancel(GUI.gui.waveScroller)
     if GUI.gui.catchUpWaveAnimation:
         GUI.gui.catchUpWaveAnimation.cancel(GUI.gui.waveScroller)
+
 
 def startAllAnimation():
     for enemy in Map.mapvar.enemycontainer.children:
@@ -171,20 +176,22 @@ def startAllAnimation():
         shot.anim.start(shot)
     for tower in Map.mapvar.towercontainer.children:
         if tower.type == 'Wind' and tower.towerGroup.active:
-            tower.turret.source = os.path.join('towerimgs','Wind','turret.gif')
+            tower.turret.source = os.path.join('towerimgs', 'Wind', 'turret.gif')
     scroll = .25 - GUI.gui.waveScroller.scroll_x
     GUI.gui.catchUpWaveAnimation = Animation(scroll_x=scroll, duration=Player.player.wavetimeInt)
     GUI.gui.catchUpWaveAnimation.bind(on_complete=EventFunctions.updateAnim)
     GUI.gui.catchUpWaveAnimation.start(GUI.gui.waveScroller)
+
 
 def resetGame():
     '''Resets game variables so player can restart the game quickly.'''
     Map.mapvar.getStartPoints()
     Map.mapvar.flylistgenerated = False
     Map.mapvar.flymovelists = []
-    AllLists = [Localdefs.towerlist, Localdefs.bulletlist, Localdefs.menulist, Localdefs.explosions, Localdefs.senderlist, Localdefs.timerlist, Localdefs.shotlist, Localdefs.alertQueue]
+    AllLists = [Localdefs.towerlist, Localdefs.bulletlist, Localdefs.menulist, Localdefs.explosions,
+                Localdefs.senderlist, Localdefs.timerlist, Localdefs.shotlist, Localdefs.alertQueue]
 
-    i=0
+    i = 0
     for list in AllLists:
         while i < len(list):
             list.pop()

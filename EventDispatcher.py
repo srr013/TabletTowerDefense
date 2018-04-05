@@ -1,18 +1,18 @@
 from kivy.event import EventDispatcher
-from kivy.properties import StringProperty, NumericProperty
-import GUI
+
+from kivy.properties import StringProperty
+
 
 class EventDisp(EventDispatcher):
     Timer = StringProperty()
-    #Wave = StringProperty()
+    # Wave = StringProperty()
     Score = StringProperty()
     Money = StringProperty()
     Health = StringProperty()
     WaveNum = StringProperty()
     Gems = StringProperty()
 
-
-    def __init__(self,**kwargs):
+    def __init__(self, **kwargs):
         super(EventDisp, self).__init__(**kwargs)
 
     def callback(instance, instance2, *args):
