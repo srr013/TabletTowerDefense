@@ -2,7 +2,7 @@ import Map
 import Wavegen
 
 playerhealth = 20
-playermoney = 500
+playermoney = 100
 
 
 class Player():
@@ -16,6 +16,7 @@ class Player():
         self.gameover = False
         self.towerSelected = None
         self.tbbox = None
+        self.layout = None
         self.wavestart = 999
         self.next_wave = False
         # self.game_speed = 3

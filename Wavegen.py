@@ -35,20 +35,26 @@ def wavegen():
     enemyModList = genModList()
     setNum = 1  # a set is counted every X waves
     wavesPerSet = 7
-    enemytypes = ['Standard', 'Crowd', 'Strong', 'Splinter',
-                  'Airborn']  # ['Airborn','Airborn','Airborn','Airborn','Airborn',]
-    waveList = []
+    #enemytypes = ['Airborn','Airborn','Airborn','Airborn','Airborn']
+    enemytypes = ['Standard', 'Crowd', 'Strong', 'Splinter','Airborn']
+    waveDict = {}
     waveTypeList = []
     waveNum = 1
     difficultyMod = 1
+    rewardMod = 2
     if Map.mapvar.difficulty == 'medium':
         difficultyMod = 1.2
+        rewardMod = 1.5
     elif Map.mapvar.difficulty == 'hard':
         difficultyMod = 1.6
+        rewardMod = 1
 
     while setNum < maxSets:
         counter = 0
         while float(waveNum) / wavesPerSet <= setNum:
+            isBoss = False
+            if float(waveNum) / wavesPerSet == setNum:
+                isBoss = True
             if Map.mapvar.waveOrder == 'standard':
                 enemyType = enemytypes[counter]
                 counter += 1
@@ -57,22 +63,23 @@ def wavegen():
             else:
                 enemyType = enemytypes[random.randint(0, len(enemytypes) - 1)]  # selects a random enemy type
             numEnemies = int(eval("Enemy." + enemyType + ".defaultNum") * (1 + (setNum / 10.0)) * difficultyMod)
-            healthEnemies = int(eval("Enemy." + enemyType + ".health") * (1 + (setNum / 10.0)) * difficultyMod)
+            healthEnemies = int(eval("Enemy." + enemyType + ".health") * (1 + (setNum / 7.0)) * difficultyMod)
             speedEnemies = eval("Enemy." + enemyType + ".speed") * (1 + (setNum / 10.0))
             armorEnemies = eval("Enemy." + enemyType + ".armor") * (1 + (setNum / 10.0)) * difficultyMod
-            rewardEnemies = int(eval("Enemy." + enemyType + ".reward") * (1 + (setNum / 10.0)))
+            rewardEnemies = int(eval("Enemy." + enemyType + ".reward") * (1 + (setNum / 10.0))*rewardMod)
 
-            if float(waveNum) / wavesPerSet == setNum:
-                isBoss = True
-            else:
-                isBoss = False
+            if isBoss:
+                healthEnemies *= 4
+                speedEnemies *= 1.3
+                armorEnemies *= 4
+                rewardEnemies *= 4
 
-            wave = {'wavenum': waveNum, 'setnum': setNum, 'enemynum': numEnemies, 'enemyhealth': healthEnemies,
+            waveDict[waveNum]={'setnum': setNum, 'enemynum': numEnemies, 'enemyhealth': healthEnemies,
                     'enemyspeed': speedEnemies,
                     'enemytype': enemyType, 'enemyarmor': armorEnemies, 'enemymods': enemyModList[setNum - 1],
                     'enemyreward': rewardEnemies, 'isboss': isBoss}
-            waveList.append(wave)
+
             waveTypeList.append([enemyType, isBoss])
             waveNum += 1
         setNum += 1
-    return waveList, waveTypeList
+    return waveDict, waveTypeList

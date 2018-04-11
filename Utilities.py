@@ -91,6 +91,9 @@ def genWalls(pos, squarewidth, squareheight):
             j += 1
         k += 1
         h -= 1
+    Map.myGrid.walls = Map.path.get_wall_list()
+    for wall in walls:
+        Map.myGrid.updateWalls(wall.squpos)
     return walls
 
 
@@ -119,6 +122,20 @@ def in_range(tower, enemy):
     """Determines if an enemy is within the tower's defined range"""
     return (enemy.right > tower.center[0] - tower.range and enemy.pos[0] < tower.center[0] + tower.range) and \
            (enemy.top > tower.center[1] - tower.range and enemy.pos[1] < tower.center[1] + tower.range)
+
+def get_all_in_range(tower, list, flyingOnly = False):
+    results = []
+    for x in list:
+        if flyingOnly:
+            if x.isair:
+                if (x.right > tower.center[0] - tower.range and x.pos[0] < tower.center[0] + tower.range) and \
+                        (x.top > tower.center[1] - tower.range and x.pos[1] < tower.center[1] + tower.range):
+                    results.append(x)
+        else:
+            if (x.right > tower.center[0] - tower.range and x.pos[0] < tower.center[0] + tower.range) and \
+            (x.top > tower.center[1] - tower.range and x.pos[1] < tower.center[1] + tower.range):
+                results.append(x)
+    return results
 
 
 def get_pos(pos, h, w, num):

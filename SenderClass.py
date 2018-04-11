@@ -10,6 +10,7 @@ class Sender():
 
     def __init__(self, **kwargs):
         self.specialSend = kwargs['specialSend']
+        self.wave = Player.player.wavenum
         if self.specialSend:
             self.enemytype = 'Crowd'
             self.pos = kwargs['pos']
@@ -18,13 +19,13 @@ class Sender():
             self.numThisWave = kwargs['number']
             self.enemycounter = self.enemycounterinit = kwargs['deploySpeed']
         else:
-            self.enemytype = Player.player.waveList[Player.player.wavenum - 1]['enemytype']
-            self.numThisWave = Player.player.waveList[Player.player.wavenum - 1]['enemynum']
+            self.enemytype = Player.player.waveList[self.wave]['enemytype']
+            self.numThisWave = Player.player.waveList[self.wave]['enemynum']
             self.enemycounter = self.enemycounterinit = eval("Enemy." + self.enemytype + ".deploySpeed")
         self.enemiesDeployed = 0
-        self.isBoss = Player.player.waveList[Player.player.wavenum - 1]['isboss']
+        self.isBoss = Player.player.waveList[self.wave]['isboss']
         Localdefs.senderlist.append(self)
-        print (self.enemytype)
+        #print (self.enemytype), Player.player.waveList[Player.player.wavenum]
 
     def tick(self):
         '''Sends enemies and maintains Senderlist'''
@@ -34,10 +35,10 @@ class Sender():
                 if self.enemytype == 'Crowd' and self.specialSend == True:
 
                     f = operator.methodcaller(self.enemytype, isBoss=self.isBoss, specialSend=self.specialSend,
-                                              pos=self.pos, curnode=self.curnode, curwave=self.curwave)
+                                              pos=self.pos, curnode=self.curnode, wave = self.wave)
                     f(Enemy)
                 else:
-                    f = operator.methodcaller(self.enemytype, isBoss=self.isBoss, specialSend=self.specialSend)
+                    f = operator.methodcaller(self.enemytype, isBoss=self.isBoss, specialSend=self.specialSend, wave = self.wave)
                     f(Enemy)
                 self.enemiesDeployed += 1
             else:

@@ -23,6 +23,7 @@ def placeTowerFromList(*args):
         else:
             for tower in createdTowers:
                 tower.remove()
+                GUI.gui.createMessage("Path Blocked")
                 Player.player.money += tower.cost
                 GUI.gui.myDispatcher.Money = str(Player.player.money)
     if createdTowers:
@@ -36,6 +37,7 @@ def resetEnemyPaths():
                 enemy.anim.cancel_all(enemy)
             try:
                 enemy.movelist = Map.mapvar.pointmovelists[enemy.movelistNum]
+                enemy.dirlist = Map.mapvar.dirmovelists[enemy.movelistNum]
                 enemy.getNearestNode()
             except IndexError:
                 print "Indexerror", enemy.movelist, enemy.movelistNum, enemy.curnode
@@ -51,9 +53,8 @@ def checkBlockedPath(createdTowers):
     for tower in createdTowers:
         for wall in tower.towerwalls:
             for dir in dirlist:
-                # print wall.squpos, dir
                 if dir == wall.squpos:
-                    print "removing tower"
+                    GUI.gui.createMessage("Path Blocked")
                     tower.remove()
                     Player.player.money += tower.cost
                     GUI.gui.myDispatcher.Money = str(Player.player.money)
@@ -66,24 +67,19 @@ def placeTower(*args):
     towerselected = args[0].instance
     sufficient_funds = True if towerselected.cost <= Player.player.money else False
     if sufficient_funds == False:
-        GUI.gui.createMessage("Not enough money")
+        GUI.gui.createMessage("Not Enough Money")
     collide = None
     towerWidget = Widget(pos=pos, size=(Map.mapvar.squsize * 2 - 1, Map.mapvar.squsize * 2 - 1))
     for wall in Map.mapvar.wallcontainer.children:
         if towerWidget.collide_widget(wall):
             collide = wall
-            GUI.gui.createMessage("Can't overlap towers")
+            GUI.gui.createMessage("Can't Overlap")
 
     if sufficient_funds and not collide:
         newTower = eval("Towers." + towerselected.type + towerselected.base)(pos)
         Map.mapvar.towercontainer.add_widget(newTower)
         Player.player.towerSelected = None
         return newTower
-
-    else:
-        print "tower not placed", sufficient_funds, collide
-        # MainFunctions.addAlert("Invalid Location".format(pos), 48, "center", (240, 0, 0))
-
 
 def updateAnim(*args):
     for child in GUI.gui.waveStreamerEnemyLayout.children:
@@ -108,7 +104,7 @@ def nextWave(*args):
     Player.player.next_wave = False
     SenderClass.Sender(specialSend=False)
     GUI.gui.waveAnimation.start(GUI.gui.waveScroller)
-    if Player.player.waveList[Player.player.wavenum - 1]['isboss']:
+    if Player.player.waveList[Player.player.wavenum]['isboss']:
         GUI.gui.addAlert('Boss Round. Wave ' + str(Player.player.wavenum) + ' starting', 'warning')
     else:
         GUI.gui.addAlert('Wave ' + str(Player.player.wavenum) + ' starting', 'warning')

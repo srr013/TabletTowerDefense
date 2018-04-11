@@ -20,7 +20,6 @@ class TowerDragger(DragBehavior, Image):
         self.allow_stretch = True
         self.size = (Map.mapvar.squsize * 2 - 1, Map.mapvar.squsize * 2 - 1)
         self.pos = kwargs['pos']
-        print "towerdraggerpos", self.pos
         Map.mapvar.backgroundimg.add_widget(self)
         self.bind(on_touch_up=self.touch_up)
         self.lastpos = None
@@ -36,11 +35,15 @@ class TowerDragger(DragBehavior, Image):
         self.pos = Map.mapvar.background.adjustInBounds(self.pos)
         if self.collide_widget(Map.mapvar.background.placeholder):
             self.pos = Map.mapvar.background.placeholder.pos
-        if self.pos[0] >= self.placeholder.pos[0] + Map.mapvar.squsize * 2:
+        if self.pos[0] >= self.placeholder.right:
             Player.player.tbbox.pos = (
                 self.placeholder.pos[0] - Player.player.tbbox.size[0], Player.player.tbbox.pos[1])
-        elif self.pos[0] <= self.placeholder.pos[0] and Player.player.tbbox.pos[0] < self.placeholder.pos[0]:
+            if Player.player.tbbox.pos[0] <= 0:
+                Player.player.tbbox.pos = (5, Player.player.tbbox.pos[1])
+        elif self.pos[0] < self.placeholder.pos[0] and Player.player.tbbox.pos[0] < self.placeholder.pos[0]:
             Player.player.tbbox.pos = (self.placeholder.pos[0] + 2 * Map.mapvar.squsize, Player.player.tbbox.pos[1])
+            if Player.player.tbbox.right > Map.mapvar.scrwid:
+                Player.player.tbbox.set_right(Map.mapvar.scrwid-5)
         delta_x, delta_y = (self.pos[0] - self.placeholder.pos[0], self.pos[1] - self.placeholder.pos[1])
         axis = self.genTowerPos(delta_x, delta_y)
         if axis == 'x':
