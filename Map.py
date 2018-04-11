@@ -21,13 +21,13 @@ def gen_border_walls():
     while x < mapvar.squwid:
         y = 0
         Wall.Wall(squpos=(x, y))
-        y = mapvar.squhei
+        y = (mapvar.playhei/mapvar.squsize)
         Wall.Wall(squpos=(x, y))
         y = 1
         Wall.Wall(squpos=(x, y))
-        y = mapvar.squhei - 1
+        y = (mapvar.playhei/mapvar.squsize) + 1
         Wall.Wall(squpos=(x, y))
-        y = mapvar.squhei - 2
+        y = (mapvar.playhei/mapvar.squsize) + 2
         Wall.Wall(squpos=(x, y))
         x += 1
     y = 0
@@ -61,14 +61,18 @@ class Map():
         self.flylistgenerated = False
         self.movelistnum = -1
         self.blockedSquare = None
+        # The following variables control game and field sizing
         self.scrwid = Window.width
-        self.scrhei = Window.height  # Playable screen height.
+        self.scrhei = Window.height
         self.squsize = self.scrwid / 34
+        self.playhei = self.squsize * 16 # the top line of the play area should always be 16 squsize from the bottom
+        self.playwid = self.squsize * 32
         self.border = 2 * self.squsize
         self.squborder = self.border / self.squsize
         self.waveseconds = 20.5
         self.squwid = int(self.scrwid / self.squsize) - 1  # Window is 33 squ wide
         self.squhei = int(self.scrhei / self.squsize) - 1  # Window is 20 squ high
+
 
     def genmovelists(self):
         '''Generate the movement list for enemys and path blitting'''
@@ -81,22 +85,23 @@ class Map():
             ##translate tiles to pixels. SQU represents a tile width or height
             pointlist = list([(point[0] * self.squsize, point[1] * self.squsize) for point in movelist[0]])
             enemymovelist = list([(point[0] * self.squsize, point[1] * self.squsize) for point in movelist[0]])
-            dirmovelist = movelist[1]
             ##create a rect for each set of points to connect the path from one point to another
             pathrectlist = list([Utilities.createRect(pointlist[ind], (
                 pointlist[ind + 1][0] - pointlist[ind][0], pointlist[ind + 1][1] - pointlist[ind][1])) for ind in
                                  range(len(pointlist) - 2)])
             self.pointmovelists.append(enemymovelist)
             self.pathrectlists.append(pathrectlist)
-            self.dirmovelists.append(dirmovelist)
+            self.dirmovelists.append(movelist[1])
 
         if not self.flylistgenerated:
             self.pointflymovelists = []
+            self.dirflymovelists = []
             for movelist in self.flymovelists:
                 enemymovelist = list([(point[0] * self.squsize, point[1] * self.squsize) for point in movelist[0]])
                 self.pointflymovelists.append(enemymovelist)
+                self.dirflymovelists.append(movelist[1])
                 self.flylistgenerated = True
-                self.flylistgenerated = True
+
 
     def backgroundInit(self):
         self.backgroundimg = Widget()
@@ -116,10 +121,10 @@ class Map():
             Color(0, 0, 0, .6)
             self.borderLine = Line(points=[self.squsize * self.squborder, self.squsize * self.squborder,
                                            self.squsize * self.squborder,
-                                           self.scrhei - self.squsize * (self.squborder + 1),
-                                           self.scrwid - self.squsize * self.squborder,
-                                           self.scrhei - self.squsize * (self.squborder + 1),
-                                           self.scrwid - self.squsize * self.squborder, self.squsize * self.squborder,
+                                           self.playhei,
+                                           self.playwid,
+                                           self.playhei,
+                                           self.playwid, self.squsize * self.squborder,
                                            self.squsize * self.squborder, self.squsize * self.squborder], width=1)
 
         self.background.bind(size=self.bindings)
@@ -154,17 +159,21 @@ class Map():
         self.scrhei = main.Window.height
         self.scrwid = main.Window.width
         self.squsize = self.scrwid / 34
+        self.playhei = self.squsize * 16
+        self.playwid = self.squsize * 32
         self.border = 2 * self.squsize
         self.squborder = self.border / self.squsize
         self.squwid = int(self.scrwid / self.squsize) - 1
         self.squhei = int(self.scrhei / self.squsize) - 1
         self.borderLine.points = [self.squsize * self.squborder, self.squsize * self.squborder,
-                                  self.squsize * self.squborder, self.scrhei - self.squsize * (self.squborder + 1),
-                                  self.scrwid - self.squsize * self.squborder,
-                                  self.scrhei - self.squsize * (self.squborder + 1),
-                                  self.scrwid - self.squsize * self.squborder, self.squsize * self.squborder,
-                                  self.squsize * self.squborder, self.squsize * self.squborder]
+                                           self.squsize * self.squborder,
+                                           self.playhei,
+                                           self.playwid,
+                                           self.playhei,
+                                           self.playwid, self.squsize * self.squborder,
+                                           self.squsize * self.squborder, self.squsize * self.squborder]
         self.backgroundimg.remove_widget(self.baseimg)
+        GUI.gui.alertStreamerBinding()
         self.genmovelists()
         self.baseimg = None
         self.roadGen()
@@ -180,8 +189,6 @@ class Map():
     def roadGen(self):
         self.roadcontainer.clear_widgets()
         Localdefs.roadlist = list()
-        '''Generate the path and base and blit them'''
-        # 2 movelists are passed in currently. Only print tiles for the first, the ground move list. The flying move list should be the last list.
         for pathnum in range(0, len(self.movelists)):
             x = 0
             for square in self.pathrectlists[pathnum]:
@@ -194,7 +201,7 @@ class Map():
         if not self.baseimg:
             self.baseimg = Utilities.imgLoad(source=os.path.join('backgroundimgs', 'Base.png'))
             self.baseimg.allow_stretch = True
-            self.baseimg.size = (self.squsize * 3, self.squsize * 3)
+            self.baseimg.size = (self.squsize * 3 - 2, self.squsize * 3 - 2)
             self.baseimg.pos = (
                 self.basepoint[0] * self.squsize, self.basepoint[1] * self.squsize - (self.baseimg.size[1] / 3))
             self.backgroundimg.add_widget(self.baseimg)
@@ -239,5 +246,7 @@ class Path():
 
 
 path = Path()
-newPath = Pathfinding.GridWithWeights(mapvar.squwid, mapvar.squhei - 1, 0, (28, 9))
-flyPath = Pathfinding.GridWithWeights(mapvar.squwid, mapvar.squhei - 1, 0, (28, 9))
+# newPath = Pathfinding.GridWithWeights(mapvar.squwid, mapvar.squhei - 1, 0, (28, 9))
+flyPath = Pathfinding.neighborGridwithWeights(mapvar.squwid, mapvar.squhei - 1, 0, (28, 9))
+myGrid = Pathfinding.neighborGridwithWeights(mapvar.squwid, mapvar.squhei - 1, 0, (28, 9))
+

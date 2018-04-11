@@ -17,7 +17,7 @@ roadlist = list()
 activeiceroadlist = list()
 towerGroupDict = {'Life': [], 'Fire': [], 'Ice': [], 'Gravity': [], 'Wind': []}
 
-topBar_ElementList = [("Wave: ", "WaveNum", str(Player.player.wavenum), "enemyimgs/Crowd.png"),
+topBar_ElementList = [("Wave: ", "WaveNum", str(Player.player.wavenum), "enemyimgs/Crowd_r.png"),
                       ("Score: ", "Score", int(Player.player.score), "iconimgs/100.png"),
                       ("Money: ", "Money", Player.player.money, "iconimgs/coin20x24.png"),
                       ("Gems: ", "Gems", Player.player.gems, "iconimgs/reddiamond.png"),

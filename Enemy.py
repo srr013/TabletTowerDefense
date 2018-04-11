@@ -19,38 +19,42 @@ class Enemy(Widget):
     def __init__(self, **kwargs):
         super(Enemy, self).__init__()
         self.specialSend = kwargs['specialSend']
-        self.size = (Map.mapvar.squsize - 5, Map.mapvar.squsize - 5)
+        if self.type == 'Crowd':
+            self.size = (Map.mapvar.squsize/1.8, Map.mapvar.squsize/1.8)
+        elif self.type == 'Standard' or self.type == 'Airborn':
+            self.size = (Map.mapvar.squsize/1.4, Map.mapvar.squsize/1.4)
+        else:
+            self.size = (Map.mapvar.squsize - 5, Map.mapvar.squsize - 5)
+        self.wavedict = Player.player.waveList[kwargs['wave']]
         if not self.specialSend:
-            self.curnode = 0
+            self.curnode = self.weightedcurnode = 0
+            if self.type == 'Airborn':
+                self.weightedcurnode = len(Map.mapvar.pointmovelists[0])- len(self.movelist)
+            self.direction = self.dirlist[self.curnode]
             self.rect = Utilities.createRect(self.movelist[self.curnode], self.size, instance=self)
             self.pos = self.movelist[self.curnode]
             self.pushed = [0, 0]
-            self.starthealth = self.health = Player.player.waveList[Player.player.wavenum]['enemyhealth']
-            self.speed = Player.player.waveList[Player.player.wavenum]['enemyspeed']
-            self.armor = Player.player.waveList[Player.player.wavenum]['enemyarmor']
-            self.reward = Player.player.waveList[Player.player.wavenum]['enemyreward']
-            self.mods = Player.player.waveList[Player.player.wavenum]['enemymods']
-            self.isBoss = Player.player.waveList[Player.player.wavenum]['isboss']
-            # print "health, speed, armor, reward, mods", self.health, self.speed, self.armor, self.reward, self.mods
+            self.starthealth = self.health = self.wavedict['enemyhealth']
+            self.speed = self.wavedict['enemyspeed']
+            self.armor = self.wavedict['enemyarmor']
+            self.reward = self.wavedict['enemyreward']
+            self.mods = self.wavedict['enemymods']
+            self.isBoss = self.wavedict['isboss']
+            #print "health, speed, armor, reward, mods", self.health, self.speed, self.armor, self.reward, self.mods
         else:
             if self.type == 'Crowd':
                 self.starthealth = self.health = Crowd.health * 1 + (Player.player.wavenum / 70)
                 self.speed = Crowd.speed * 1 + (self.curwave / 70)
                 self.armor = Crowd.armor * 1 + (self.curwave / 70)
                 self.reward = Crowd.reward * 1 + (self.curwave / 70)
-                self.mods = Player.player.waveList[self.curwave]['enemymods']
-                self.isBoss = Player.player.waveList[self.curwave]['isboss']
+                self.mods = self.wavedict['enemymods']
+                self.isBoss = self.wavedict['isboss']
         self.image.size = self.size
         self.image.allow_stretch = True
         self.add_widget(self.image)
         Map.mapvar.enemycontainer.add_widget(self)
         if self.isBoss:
             self.size = (self.size[0] * 1.3, self.size[1] * 1.3)
-            self.starthealth = self.health = self.health * 10
-            self.speed = self.speed * 1.5
-            self.armor = self.armor * 10
-            self.reward = self.reward * 4
-            self.points = self.points * 4
         self.gemImage = None
 
         self.slowtimers = list()
@@ -61,33 +65,17 @@ class Enemy(Widget):
         self.pushAnimation = None
         # self.poisontimer = None
 
-        self.distBase = self.distToBase()
+        #self.distBase = self.distToBase()
         self.explosionlength = 1
         self.isair = False
         self.isAlive = True
         self.hit = False
         self.recovering = False
         self.pushtimer = .5
-        with self.image.canvas.before:
-            PushMatrix()
-            self.rot = Rotate()
-            self.rot.axis = (0, 0, 1)
-            self.rot.angle = 0
-            self.rot.origin = self.center
-        with self.canvas:  # draw health bars
-            Color(0, 0, 0, .6)
-            self.healthbar = Line(
-                points=[self.x, self.y + self.height + 2, self.x + self.width, self.y + self.height + 2], width=2,
-                cap=None)
-            Color(1, 1, 1, 1)
-            self.remaininghealth = Line(
-                points=[self.x, self.y + self.height + 2, self.x + self.width, self.y + self.height + 2], width=1.4,
-                cap=None)
-        with self.image.canvas.after:
-            PopMatrix()
         self.anim = self.move()
         self.image.pos = self.pos
         self.bind(pos=self.binding)
+        self.drawHealthBar()
 
     def takeTurn(self):
         '''Moves the enemy and adjusts any slow applied to it
@@ -128,10 +116,10 @@ class Enemy(Widget):
     def bindStunImage(self, *args):
         self.stunimage.pos = (self.x + (self.width / 2), self.top + 8)
 
-    def distToBase(self):
-        '''Determine distance to the end point using hypotenuse of xs and ys. Returns the distance.'''
-        return math.sqrt(math.pow(Map.mapvar.basepoint[0] * Map.mapvar.squsize - self.rect_centerx, 2) + math.pow(
-            Map.mapvar.basepoint[1] * Map.mapvar.squsize - self.rect_centery, 2))
+    # def distToBase(self):
+    #     '''Determine distance to the end point using hypotenuse of xs and ys. Returns the distance.'''
+    #     return math.sqrt(math.pow(Map.mapvar.basepoint[0] * Map.mapvar.squsize - self.rect_centerx, 2) + math.pow(
+    #         Map.mapvar.basepoint[1] * Map.mapvar.squsize - self.rect_centery, 2))
 
     def move(self, *args):
         '''Moves the enemy down the generated move list
@@ -140,12 +128,15 @@ class Enemy(Widget):
             return
 
         if self.curnode < len(self.movelist) - 1:
+            self.direction = self.dirlist[self.curnode]
             self.curnode += 1
+            self.weightedcurnode +=1
         distToTravel = int(
             abs(self.pos[0] - self.movelist[self.curnode][0] + self.pos[1] - self.movelist[self.curnode][1]))
-
         duration = float(distToTravel) / (self.speed * self.slowpercent)
         self.anim = Animation(pos=self.movelist[self.curnode], duration=duration, transition="linear")
+
+        self.image.source = os.path.join("enemyimgs", self.type+ "_"+self.direction+".png")
 
         if self.curnode >= len(self.movelist) - 1:
             self.anim.bind(on_complete=self.checkHit)
@@ -157,10 +148,13 @@ class Enemy(Widget):
 
     def checkHit(self, *args):
         if Map.mapvar.baseimg.collide_widget(self.image):
-            Player.player.health -= 1
+            if self.isBoss:
+                Player.player.health -=5
+            else:
+                Player.player.health -= 1
             GUI.gui.myDispatcher.Health = str(Player.player.health)
             Map.mapvar.enemycontainer.remove_widget(self)
-            MainFunctions.flashScreen('red', 5)
+            MainFunctions.flashScreen('red', 3)
             if Player.player.health <= 0:
                 Player.player.die()
             return
@@ -189,7 +183,7 @@ class Enemy(Widget):
     def getNearestNode(self, *args):
         curnodedist = math.sqrt((self.center[0] - self.movelist[self.curnode][0]) ** 2 + (
                     self.center[1] - self.movelist[self.curnode][1]) ** 2)
-        x = 0
+        x = self.curnode
         for square in self.movelist[self.curnode:]:
             dist = math.sqrt((self.center[0] - square[0]) ** 2 + (
                     self.center[1] - square[1]) ** 2)
@@ -207,28 +201,30 @@ class Enemy(Widget):
 
     def die(self):
         '''If enemy runs out of health add them to explosions list, remove from enemy list, and add money to player's account'''
-        if self.type == 'Splinter' and self.isAlive:
-            self.splinter()
-        if self.isair == True and self.isAlive == True:
-            Localdefs.flyinglist.remove(self)
-        if self.anim:
-            self.anim.cancel_all(self)
-        if self.isBoss:
-            x = random.randint(0, 100)
-            print "Gem rnd", x
-            if x < 1:
-                self.gemImage = True
-                Player.player.gems += 1
-                GUI.gui.myDispatcher.Gems = str(Player.player.gems)
         if self.isAlive:
-            self.startDeathAnim()
             self.isAlive = False
-        self.remove_widget(self.image)
-        Map.mapvar.enemycontainer.remove_widget(self)
-        Player.player.money += self.reward
-        Player.player.score += self.points
-        GUI.gui.myDispatcher.Money = str(Player.player.money)
-        GUI.gui.myDispatcher.Score = str(Player.player.score)
+            if self.type == 'Splinter':
+                self.splinter()
+            if self.isair == True:
+                Localdefs.flyinglist.remove(self)
+            if self.anim:
+                self.anim.cancel_all(self)
+            if self.pushAnimation:
+                self.pushAnimation.cancel_all(self)
+            if self.isBoss:
+                x = random.randint(0, 100)
+                if x < 1:
+                    self.gemImage = True
+                    Player.player.gems += 1
+                    GUI.gui.myDispatcher.Gems = str(Player.player.gems)
+            self.startDeathAnim()
+            self.remove_widget(self.image)
+            Map.mapvar.enemycontainer.remove_widget(self)
+            Player.player.money += self.reward
+            Player.player.score += self.points
+            GUI.gui.myDispatcher.Money = str(Player.player.money)
+            GUI.gui.myDispatcher.Score = str(Player.player.score)
+            MainFunctions.updateGUI()
 
     def startDeathAnim(self):
         if self.gemImage:
@@ -255,22 +251,49 @@ class Enemy(Widget):
             if self.gemImage:
                 Map.mapvar.backgroundimg.remove_widget(self.gemImage)
 
+    def drawHealthBar(self):
+        healthbarpoints = [self.x, self.y + self.height + 2, self.x + self.width, self.y + self.height + 2]
+        if self.direction == 'd':
+            healthbarpoints = [self.right + 2, self.y + self.height, self.right + 2, self.y]
+        elif self.direction == 'u':
+            healthbarpoints = [self.x - 2, self.y, self.x - 2, self.y + self.height]
+
+        with self.canvas:  # draw health bars
+            Color(0, 0, 0, .6)
+            self.healthbar = Line(
+                points=healthbarpoints, width=2, cap=None)
+            Color(1, 1, 1, 1)
+            self.remaininghealth = Line(
+                points=healthbarpoints, width=1.4, cap=None)
+
     def updateHealthBar(self):
-        self.healthbar.points = [self.x, self.y + self.height + 2, self.x + self.width, self.y + self.height + 2]
+        healthbarpoints = [self.x, self.y + self.height + 2, self.x + self.width, self.y + self.height + 2]
+        if self.direction == 'd':
+            healthbarpoints = [self.right + 2, self.y + self.height, self.right + 2, self.y]
+        elif self.direction == 'u':
+            healthbarpoints = [self.x - 2, self.y, self.x - 2, self.y + self.height]
+
+
         self.percentHealthRemaining = self.health / self.starthealth
-        self.remaininghealth.points = [self.x, self.y + self.height + 2,
-                                       self.x + self.width * self.percentHealthRemaining, self.y + self.height + 2]
+        remaininghealth = [self.x, self.y + self.height + 2, self.x + self.width * self.percentHealthRemaining, self.y + self.height + 2]
+        if self.direction == 'd':
+            remaininghealth = [self.right + 2, self.y + self.height, self.right + 2, self.y + self.height * (1 - self.percentHealthRemaining)]
+        elif self.direction == 'u':
+            remaininghealth = [self.x - 2, self.y, self.x - 2, self.y + self.height * self.percentHealthRemaining]
+
+        self.healthbar.points = healthbarpoints
+        self.remaininghealth.points = remaininghealth
 
 
 class Standard(Enemy):
-    defaultNum = 10
+    defaultNum = 8
     deploySpeed = 1
-    health = 100
-    speed = 30
+    health = 80
+    speed = 45
     armor = 0
-    reward = 5
-    points = 10
-    imagesrc = os.path.join("enemyimgs", "Standard.png")
+    reward = 1
+    points = 1
+    imagesrc = os.path.join("enemyimgs", "Standard_r.png")
 
     def __init__(self, **kwargs):
         self.type = 'Standard'
@@ -281,18 +304,19 @@ class Standard(Enemy):
         self.image = Utilities.imgLoad(self.imagesrc)
         self.movelistNum = random.randint(0, Map.mapvar.numpaths - 1)
         self.movelist = Map.mapvar.pointmovelists[self.movelistNum]  # 0 for ground, 1 for air
+        self.dirlist = Map.mapvar.dirmovelists[self.movelistNum]
         super(Standard, self).__init__(**kwargs)
 
 
 class Airborn(Enemy):
-    defaultNum = 10
+    defaultNum = 8
     deploySpeed = 1
-    health = 100
-    speed = 30
+    health = 80
+    speed = 50
     armor = 0
-    reward = 5
-    points = 10
-    imagesrc = os.path.join("enemyimgs", "Airborn.png")
+    reward = 1
+    points = 1
+    imagesrc = os.path.join("enemyimgs", "Airborn_r.png")
 
     def __init__(self, **kwargs):
         self.type = 'Airborn'
@@ -303,21 +327,21 @@ class Airborn(Enemy):
         self.image = Utilities.imgLoad(self.imagesrc)
         self.movelistNum = random.randint(0, Map.mapvar.numpaths - 1)
         self.movelist = Map.mapvar.pointflymovelists[self.movelistNum]  # 0 for ground, 1 for air
-        self.dirlist = Map.mapvar.dirmovelists[self.movelistNum]
+        self.dirlist = Map.mapvar.dirflymovelists[self.movelistNum]
         super(Airborn, self).__init__(**kwargs)
         self.isair = True
         Localdefs.flyinglist.append(self)
 
 
 class Splinter(Enemy):
-    defaultNum = 3
+    defaultNum = 5
     deploySpeed = 3
-    health = 200
-    speed = 25
+    health = 150
+    speed = 30
     armor = 5
-    reward = 10
-    points = 20
-    imagesrc = os.path.join("enemyimgs", "Splinter.png")
+    reward = 2
+    points = 2
+    imagesrc = os.path.join("enemyimgs", "Splinter_r.png")
 
     def __init__(self, **kwargs):
         self.type = 'Splinter'
@@ -329,6 +353,7 @@ class Splinter(Enemy):
         self.movelistNum = random.randint(0, Map.mapvar.numpaths - 1)
         self.movelist = Map.mapvar.pointmovelists[self.movelistNum]  # 0 for ground, 1 for air
         self.curwave = Player.player.wavenum
+        self.dirlist = Map.mapvar.dirmovelists[self.movelistNum]
         super(Splinter, self).__init__(**kwargs)
 
     # break the Splinter apart when it dies. 15 Crowd are released.
@@ -340,12 +365,12 @@ class Splinter(Enemy):
 class Strong(Enemy):
     defaultNum = 5
     deploySpeed = 3
-    health = 250
-    speed = 20
+    health = 200
+    speed = 25
     armor = 10
-    reward = 10
-    points = 20
-    imagesrc = os.path.join("enemyimgs", "Strong.png")
+    reward = 2
+    points = 2
+    imagesrc = os.path.join("enemyimgs", "Strong_r.png")
 
     def __init__(self, **kwargs):
         self.type = 'Strong'
@@ -356,18 +381,19 @@ class Strong(Enemy):
         self.image = Utilities.imgLoad(self.imagesrc)
         self.movelistNum = random.randint(0, Map.mapvar.numpaths - 1)
         self.movelist = Map.mapvar.pointmovelists[self.movelistNum]  # 0 for ground, 1 for air
+        self.dirlist = Map.mapvar.dirmovelists[self.movelistNum]
         super(Strong, self).__init__(**kwargs)
 
 
 class Crowd(Enemy):
-    defaultNum = 20
-    deploySpeed = .4
-    health = 25
-    speed = 30
+    defaultNum = 15
+    deploySpeed = .8
+    health = 40
+    speed = 60
     armor = 0
-    reward = 3
-    points = 6
-    imagesrc = os.path.join("enemyimgs", "Crowd.png")
+    reward = 1
+    points = 1
+    imagesrc = os.path.join("enemyimgs", "Crowd_r.png")
 
     def __init__(self, **kwargs):
         self.type = 'Crowd'
@@ -377,15 +403,16 @@ class Crowd(Enemy):
         self.image = Utilities.imgLoad(self.imagesrc)
         self.movelistNum = random.randint(0, Map.mapvar.numpaths - 1)
         self.movelist = Map.mapvar.pointmovelists[self.movelistNum]  # 0 for ground, 1 for air
+        self.dirlist = Map.mapvar.dirmovelists[self.movelistNum]
 
         if kwargs['specialSend']:
-            self.size = (Map.mapvar.squsize * .7, Map.mapvar.squsize * .7)
+            self.size = (Map.mapvar.squsize * .5, Map.mapvar.squsize * .5)
             self.pos = kwargs['pos']
-            self.curwave = kwargs['curwave']
+            self.curwave = kwargs['wave']
             pushx = random.randint(-75, 75)
             pushy = random.randint(-75, 75)
             self.pushed = [pushx, pushy]
-            self.curnode = kwargs['curnode']
+            self.curnode = self.weightedcurnode = kwargs['curnode']
             self.rect = Utilities.createRect(self.pos, self.size, instance=self)
 
         super(Crowd, self).__init__(**kwargs)

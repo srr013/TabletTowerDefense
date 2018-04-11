@@ -29,7 +29,14 @@ class Road():
     def getRoadColor(self):
         if self.iceNeighbor:
             return os.path.join('backgroundimgs', 'blueroadarrow.png')
-        redlist = Map.mapvar.startpoint
+        redlist = list(Map.mapvar.startpoint)
+        for road in redlist:
+            if road == (1,9):
+                redlist.append((2,9))
+            if road == (10,16):
+                redlist.append((10,15))
+            if road == (10,1):
+                redlist.append((10,2))
         if self.image.squpos in redlist:
             return os.path.join('backgroundimgs', 'redroadarrow.png')
 

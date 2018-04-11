@@ -28,15 +28,15 @@ class Shot(Widget):
         Localdefs.shotlist.append(self)
         self.currentPointerAngle = 0
         self.bind(pos = self.binding)
-        if tower.type != 'Wind':
-            with self.image.canvas.before:
-                PushMatrix()
-                self.rot = Rotate()
-                self.rot.axis = (0, 0, 1)
-                self.rot.origin=self.image.center
-                self.rot.angle=180
-            with self.image.canvas.after:
-                PopMatrix()
+        # if tower.type != 'Wind':
+        #     with self.image.canvas.before:
+        #         PushMatrix()
+        #         self.rot = Rotate()
+        #         self.rot.axis = (0, 0, 1)
+        #         self.rot.origin=self.image.center
+        #         self.rot.angle=180
+        #     with self.image.canvas.after:
+        #         PopMatrix()
 
         if tower.type == 'Wind':
             self.speed = 250
@@ -109,10 +109,11 @@ class Shot(Widget):
         self.anim.start(self)
 
     def rotate(self):
-        if self.tower.type != 'Wind':
-            self.angle = 180 + Utilities.get_rotation(self, self.enemy)
-        self.rot.origin = self.image.center
-        self.rot.angle = self.angle
+        # if self.tower.type != 'Wind':
+        #     self.angle = 180 + Utilities.get_rotation(self, self.enemy)
+        if self.tower.type == 'Wind':
+            self.rot.origin = self.image.center
+            self.rot.angle = self.angle
 
     def removeShot(self, *args):
         if not self.complete:

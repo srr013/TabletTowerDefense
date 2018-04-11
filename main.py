@@ -8,6 +8,7 @@ from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.widget import Widget
+from kivy.utils import platform
 
 import EventFunctions
 import GUI
@@ -15,7 +16,7 @@ import MainFunctions
 import Map
 import Player
 
-
+import sys
 # import cProfile
 # import pstats
 
@@ -51,42 +52,44 @@ class Game(Widget):
 
     def bindings(self, *args):
         self.size = Window.size
-        for child in self.children:
-            child.size = Window.size
         if self.mainMenu:
             self.mainMenu.bindings()
+            Map.mapvar.shaderRect.size = self.size
 
     def startFuncs(self):
-        if not Map.mapvar.startpoint:
-            Map.mapvar.getStartPoints()
-            Player.player.genWaveList()
-            GUI.gui.createWaveStreamer()
-            Map.path.createPath()
-            MainFunctions.updatePath()
-            GUI.gui.removeAlert()
-            GUI.gui.menuButton.disabled = False
-            GUI.gui.pauseButton.disabled = False
-            GUI.gui.nextwaveButton.disabled = False
-            GUI.gui.enemyInfoButton.disabled = False
+        Map.mapvar.getStartPoints()
+        Player.player.genWaveList()
+        GUI.gui.createWaveStreamer()
+        Map.path.createPath()
+        MainFunctions.buildNodeDicts()
+        MainFunctions.updatePath()
+        GUI.gui.removeAlert()
 
     def menuFuncs(self, obj):
         if obj.id == 'Play':
             Player.player.state = 'Playing'
-            if Player.player.wavenum == 0:
+            if Player.player.wavenum == 0 and obj.text == 'Play':
                 self.startFuncs()
             else:
                 self.Clock.schedule_interval(self.update, self.frametime)
                 MainFunctions.startAllAnimation()
+            GUI.gui.toggleButtons()
             self.remove_widget(self.mainMenu)
         elif obj.id == 'Restart':
             MainFunctions.resetGame()
             Player.player.state = 'Playing'
             self.Clock.schedule_interval(self.update, self.frametime)
             self.remove_widget(self.mainMenu)
+            GUI.gui.toggleButtons()
+            self.startFuncs()
+        elif obj.id == 'Quit':
+            Main.get_running_app().stop()
+            sys.exit()
         elif obj.id == 'unpause':
             Player.player.state = 'Playing'
             self.Clock.schedule_interval(self.update, self.frametime)
             MainFunctions.startAllAnimation()
+            GUI.gui.toggleButtons()
             self.remove_widget(self.pauseMenu)
         elif obj.id == 'onepath':
             Map.mapvar.numpaths = 1
@@ -106,10 +109,6 @@ class Game(Widget):
             Map.mapvar.waveOrder = 'random'
 
     def dispMainMenu(self):
-        GUI.gui.menuButton.disabled = True
-        GUI.gui.pauseButton.disabled = True
-        GUI.gui.nextwaveButton.disabled = True
-        GUI.gui.enemyInfoButton.disabled = True
         if self.mainMenu == None:
             self.mainMenu = GUI.mainMenu()
             for button in self.mainMenu.walk(restrict=True):
@@ -121,9 +120,11 @@ class Game(Widget):
             self.mainMenu.restartButton.text = 'Start New'
             self.mainMenu.startButton.text = 'Resume'
             self.add_widget(self.mainMenu)
+        GUI.gui.toggleButtons(active=False)
         MainFunctions.dispMessage()
 
     def dispPauseMenu(self):
+        GUI.gui.toggleButtons(active=False)
         if self.pauseMenu == None:
             self.pauseMenu = GUI.pauseMenu()
             for button in self.pauseMenu.walk(restrict=True):
@@ -133,9 +134,9 @@ class Game(Widget):
             self.add_widget(self.pauseMenu)
 
     def update(self, dt):
-        # print self.Clock.get_fps()
+        #print self.Clock.get_fps()
         if Player.player.state == 'Menu':
-            if Player.player.wavenum == 0:
+            if Player.player.wavenum == 0 and not GUI.gui.alertQueue:
                 GUI.gui.addAlert("Welcome to Tablet TD!", 'repeat')
             if Player.player.wavenum > 0:
                 self.Clock.unschedule(self.update)
@@ -148,6 +149,9 @@ class Game(Widget):
         elif Player.player.state == 'Playing':
             if Player.player.gameover:
                 # need some sort of gameover screen. Wait on user to start new game.
+                self.mainMenu = None
+                Player.player.state = 'Menu'
+                GUI.gui.addAlert("You Lose!", 'repeat')
                 MainFunctions.resetGame()
                 Player.player.gameover = False
             # Update path when appropriate
@@ -173,10 +177,19 @@ class Game(Widget):
 
 class Main(App):
     """Instantiate required classes and variables and launch the game.update loop"""
+    def on_pause(self):
+        Player.player.state = 'Menu'
+
+        return True
+
     def build(self):
         game = Game()
         # Window.size = (Map.mapvar.winwid, Map.mapvar.winhei)
-        Window.fullscreen = 'auto'
+        if platform == 'linux':
+            #Window.size = (1334,750) #tablet
+            Window.size = (1280,720) #phone
+        else:
+            Window.fullscreen = 'auto'
         Window.bind(size=game.bindings)
         # general appearance updates
         background = Background()

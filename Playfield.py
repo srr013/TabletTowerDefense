@@ -6,13 +6,12 @@ import TowerDragging
 import Utilities
 import main
 import Player
-
+import Localdefs
 
 class playField(ScatterLayout):
     def __init__(self, **kwargs):
         super(playField, self).__init__(**kwargs)
-
-        ##scatter properties to allow partial scaling and no rotation
+        # scatter properties to allow partial scaling and no rotation
         self.scale = 1
         self.scale_max = 1.5
         self.scale_min = 1
@@ -27,22 +26,20 @@ class playField(ScatterLayout):
 
     def bindings(self, *args):
         self.size = main.Window.size
-        print "size", self.size
         for child in self.children:
+            print child
             child.size = self.size
 
     def on_touch_down(self, touch):
         self.squarepos = Utilities.getPos(touch.pos)
         self.squarepos = self.adjustInBounds(self.squarepos)
-        print "squarepos", self.squarepos, Map.mapvar.squsize, Map.mapvar.scrhei
-
         # move the selected square if a neighboring tower overlaps
         self.adjustForNeighbor()
-
+        if not self.adjustForBase():
+            return
         if self.dragger and self.dragger.collide_point(*touch.pos):
             self.dragger.on_touch_down(touch)
             return
-
         # don't allow touches outside of play boundary if a menu isn't open
         if self.popUpOpen:
             if not self.popUpOpen.collide_point(*touch.pos):
@@ -71,6 +68,7 @@ class playField(ScatterLayout):
                 if Player.player.tbbox != None:
                     self.removeAll()
                 Player.player.towerSelected = tower
+                print tower.towerGroup, tower.towerGroup.towerSet, Localdefs.towerGroupDict
                 GUI.gui.towerMenu(tower.pos)
                 return True
 
@@ -83,12 +81,13 @@ class playField(ScatterLayout):
             return True
 
     def adjustInBounds(self, pos):
-        if pos[0] + 2 * Map.mapvar.squsize > Map.mapvar.scrwid - Map.mapvar.squsize * 2:
-            pos[0] = Map.mapvar.scrwid - Map.mapvar.squsize * 4
+        if pos[0] + 2 * Map.mapvar.squsize > Map.mapvar.playwid:
+            pos[0] = Map.mapvar.playwid - Map.mapvar.squsize * 2
+            self.adjustForBase()
         elif pos[0] < Map.mapvar.squsize * 2:
             pos[0] = Map.mapvar.squsize * 2
-        if pos[1] + 2 * Map.mapvar.squsize > Map.mapvar.scrhei - Map.mapvar.squsize * 3:
-            pos[1] = Map.mapvar.scrhei - Map.mapvar.squsize * 5
+        if pos[1] + 2 * Map.mapvar.squsize > Map.mapvar.playhei:
+            pos[1] = Map.mapvar.playhei - Map.mapvar.squsize * 2
         elif pos[1] < Map.mapvar.squsize * 2:
             pos[1] = Map.mapvar.squsize * 2
         return pos
@@ -103,9 +102,25 @@ class playField(ScatterLayout):
                 self.squarepos[1] -= Map.mapvar.squsize
                 self.squarepos[0] -= Map.mapvar.squsize
 
+    def adjustForBase(self):
+        if Map.mapvar.baseimg.collide_point(*self.squarepos):
+            return False
+        if Map.mapvar.baseimg.collide_point(self.squarepos[0] + 2*Map.mapvar.squsize, self.squarepos[1]):
+            self.squarepos[0] -= Map.mapvar.squsize
+        # elif Map.mapvar.baseimg.collide_point(self.squarepos[0] - Map.mapvar.squsize, self.squarepos[1]):
+        #     self.squarepos[0] += Map.mapvar.squsize
+        if Map.mapvar.baseimg.collide_point(self.squarepos[0], self.squarepos[1] + 2*Map.mapvar.squsize):
+            self.squarepos[1] -= Map.mapvar.squsize
+        # elif Map.mapvar.baseimg.collide_point(self.squarepos[0], self.squarepos[1] - Map.mapvar.squsize):
+        #     self.squarepos[1] += Map.mapvar.squsize
+        if Map.mapvar.baseimg.collide_point(self.squarepos[0] + 2*Map.mapvar.squsize, self.squarepos[1] + 2*Map.mapvar.squsize):
+                self.squarepos[1] -= Map.mapvar.squsize
+                self.squarepos[0] -= Map.mapvar.squsize
+        return True
+
     def outOfBounds(self, pos):
-        if pos[0] >= Map.mapvar.scrwid - Map.mapvar.squsize * 2 or pos[
-            1] >= Map.mapvar.scrhei - Map.mapvar.squsize * 3 or \
+        if pos[0] >= Map.mapvar.playwid * 2 or \
+                pos[1] >= Map.mapvar.playhei or \
                 pos[0] < Map.mapvar.squsize * 2 or pos[1] < Map.mapvar.squsize * 2:
             return True
         else:
@@ -119,7 +134,7 @@ class playField(ScatterLayout):
         if Map.mapvar.enemypanel.parent:
             Map.mapvar.backgroundimg.remove_widget(Map.mapvar.enemypanel)
         if Map.mapvar.triangle:
-            Map.mapvar.backgroundimg.canvas.remove(Map.mapvar.triangle)
+            Map.mapvar.backgroundimg.canvas.after.remove(Map.mapvar.triangle)
             Map.mapvar.triangle = None
         if Map.mapvar.towerRange:
             Map.mapvar.backgroundimg.canvas.remove(Map.mapvar.towerRange)

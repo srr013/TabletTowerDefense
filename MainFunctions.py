@@ -10,6 +10,7 @@ import Pathfinding
 import Player
 import TowerAbilities
 import Towers
+import main
 
 
 def makeIcons():
@@ -38,17 +39,29 @@ def workTowers():
     '''Towers target enemy(s) and create Shot instances
     Frametime: the amount of time elapsed per frame'''
     for tower in Localdefs.towerlist:
-        tower.takeTurn()
+        if tower.totalUpgradeTime > 0:
+            tower.targetTimer = tower.reload
+            tower.upgradeTimeElapsed += Player.player.frametime
+            tower.updateUpgradeStatusBar()
+        elif tower.type in ['Life', 'Fire']:
+            tower.takeTurn()
     for type in Localdefs.towerGroupDict.values():
         if type:
             for group in type:
+                if group.needsUpdate:
+                    group.updateTowerGroup()
                 if group.towerSet == set():
                     group.removeTowerGroup()
-                else:
+                elif group.towerType in ['Wind', 'Ice', 'Gravity']:
                     group.takeTurn()
 
+def buildNodeDicts():
+    Map.myGrid.walls = Map.path.border_walls
+    Map.flyPath.walls = Map.path.border_walls
+    Map.myGrid.genNodeDict()
+    Map.flyPath.genNodeDict()
+
 def updateFlyingList():
-    print "updating flying path"
     '''Update movelist for flying enemies'''
     # only border walls for flying list. Flying list to be index 1.
     Map.flyPath.walls = Map.path.border_walls
@@ -58,16 +71,16 @@ def updateFlyingList():
         Map.mapvar.flymovelists.append(Pathfinding.reconstruct_path(came_from, startpoint, Map.mapvar.basepoint))
 
 def updatePath():
-    print "Updating ground path"
     '''Update the path using A* algorithm'''
-    Map.newPath.walls = Map.path.get_wall_list()
+    # Map.newPath.walls = Map.path.get_wall_list()
+    Map.myGrid.walls = Map.path.get_wall_list()
     if len(Map.mapvar.flymovelists) == 0:
-        updateFlyingList()
+         updateFlyingList()
 
-    Map.mapvar.movelists = list()
+    Map.mapvar.movelists = []
     x=0
     for startpoint in Map.mapvar.startpoint:
-        came_from, cost_so_far = Pathfinding.get_path(Map.newPath, startpoint, Map.mapvar.basepoint)
+        came_from, cost_so_far = Pathfinding.get_path(Map.myGrid, startpoint, Map.mapvar.basepoint)
         if came_from == 'Path Blocked':
             Map.mapvar.blockedSquare = cost_so_far
             return False
@@ -75,7 +88,6 @@ def updatePath():
 
     Map.mapvar.genmovelists()
     Map.mapvar.updatePath = False
-    Player.player.newMoveList = True
     Map.mapvar.roadGen()
     updateIce()
 
@@ -118,7 +130,7 @@ def workDisp():
     dispMessage()
     if GUI.gui.messageCounter > 0:
         GUI.gui.messageCounter += 1
-        if GUI.gui.messageCounter >= 60:
+        if GUI.gui.messageCounter >= 20:
             GUI.gui.removeMessage()
 
 
@@ -126,7 +138,7 @@ def workEnemies():
     '''Move, draw to screen, draw health bars of enemys.
     Frametime: the amount of time elapsed per frame'''
     for enemy in Map.mapvar.enemycontainer.children:
-        enemy.distBase = enemy.distToBase()
+        #enemy.distBase = enemy.distToBase()
         if Player.player.newMoveList:
             if enemy.isair:
                 enemy.movelist = Map.mapvar.pointflymovelists[enemy.movelistNum]
@@ -137,8 +149,12 @@ def workEnemies():
     Player.player.newMoveList = False
 
 
-def updateGUI(wavetime):
-    GUI.gui.updateTopBar(wavetime)
+def updateGUI():
+    if Player.player.layout:
+        for button in Player.player.layout.children:
+                if button.disabled == True and button.group == 'Enableable':
+                    if button.instance.cost <= Player.player.money:
+                        button.disabled = False
 
 
 def pauseGame(*args):
@@ -154,9 +170,10 @@ def pauseGame(*args):
 
 def stopAllAnimation():
     for enemy in Map.mapvar.enemycontainer.children:
-        enemy.anim.cancel(enemy)
+        if enemy.anim:
+            enemy.anim.cancel_all(enemy)
         if enemy.pushAnimation:
-            enemy.pushAnimation.cancel(enemy)
+            enemy.pushAnimation.cancel_all(enemy)
     for shot in Map.mapvar.shotcontainer.children:
         shot.anim.cancel(shot)
     for tower in Map.mapvar.towercontainer.children:
@@ -164,9 +181,9 @@ def stopAllAnimation():
             tower.towerGroup.disable()
         if tower.type == 'Wind':
             tower.turret.source = os.path.join('towerimgs', 'Wind', 'turret.png')
-    GUI.gui.waveAnimation.cancel(GUI.gui.waveScroller)
+    GUI.gui.waveAnimation.cancel_all(GUI.gui.waveScroller)
     if GUI.gui.catchUpWaveAnimation:
-        GUI.gui.catchUpWaveAnimation.cancel(GUI.gui.waveScroller)
+        GUI.gui.catchUpWaveAnimation.cancel_all(GUI.gui.waveScroller)
 
 
 def startAllAnimation():
@@ -188,34 +205,31 @@ def resetGame():
     Map.mapvar.getStartPoints()
     Map.mapvar.flylistgenerated = False
     Map.mapvar.flymovelists = []
+    Map.mapvar.pointmovelist = []
+    Localdefs.towerGroupDict = {'Life': [], 'Fire': [], 'Ice': [], 'Gravity': [], 'Wind': []}
     AllLists = [Localdefs.towerlist, Localdefs.bulletlist, Localdefs.menulist, Localdefs.explosions,
                 Localdefs.senderlist, Localdefs.timerlist, Localdefs.shotlist, Localdefs.alertQueue]
-
     i = 0
     for list in AllLists:
         while i < len(list):
             list.pop()
-
     for tower in Map.mapvar.towercontainer.children:
-        tower = 0
+        tower.remove()
     Map.mapvar.towercontainer.clear_widgets()
-
     for enemy in Map.mapvar.enemycontainer.children:
         enemy.anim.cancel(enemy)
         if enemy.pushAnimation:
             enemy.pushAnimation.cancel(enemy)
-        enemy = 0
     Map.mapvar.enemycontainer.clear_widgets()
-
     for road in Map.mapvar.roadcontainer.children:
         road.iceNeighbor = False
-        road = 0
     Map.mapvar.roadcontainer.clear_widgets()
-
     Map.mapvar.shotcontainer.clear_widgets()
     Map.mapvar.wallcontainer.clear_widgets()
     Map.mapvar.towerdragimagecontainer.clear_widgets()
-
+    # Map.flyPath = Pathfinding.neighborGridwithWeights(Map.mapvar.squwid, Map.mapvar.squhei - 1, 0, (28, 9))
+    # Map.myGrid = Pathfinding.neighborGridwithWeights(Map.mapvar.squwid, Map.mapvar.squhei - 1, 0, (28, 9))
+    # buildNodeDicts()
     Player.player.wavenum = 0
     GUI.gui.myDispatcher.WaveNum = GUI.gui.myDispatcher.Wave = str(Player.player.wavenum)
     Player.player.wavetime = int(Map.mapvar.waveseconds)
@@ -226,13 +240,9 @@ def resetGame():
     GUI.gui.myDispatcher.Health = str(Player.player.health)
     Player.player.score = 0
     GUI.gui.myDispatcher.Score = str(Player.player.score)
-    GUI.gui.resetWaveStreamer()
+    GUI.gui.removeWaveStreamer()
+    if GUI.gui.bgrect:
+        Map.mapvar.backgroundimg.canvas.after.remove(GUI.gui.bgrect)
+        GUI.gui.bgrect = None
+    GUI.gui.addAlert("New Game - Play Again", 'repeat')
 
-    GUI.gui.menuButton.disabled = False
-    GUI.gui.pauseButton.disabled = False
-    GUI.gui.nextwaveButton.disabled = False
-    GUI.gui.enemyInfoButton.disabled = False
-
-    Map.path.createPath()
-    updatePath()
-    GUI.gui.addAlert("New Game", 'repeat')

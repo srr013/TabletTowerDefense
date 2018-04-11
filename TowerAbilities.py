@@ -12,6 +12,7 @@ class TowerAbility:
         '''Instantiate an Icon with the tower information it represents'''
         self.type = ability['type']
         self.func = ability['func']
+        self.cost = None
         Localdefs.towerabilitylist.append(self)
         try:
             self.img = Utilities.imgLoad(os.path.join('iconimgs', self.type + '.png'))
@@ -39,7 +40,7 @@ class Sell(TowerAbility):
         if tower:
             Player.player.money += (tower.totalspent)
             GUI.gui.myDispatcher.Money = str(Player.player.money)
-            tower.remove()
+            tower.remove(sell = True)
             Player.player.towerSelected = None
             Map.mapvar.updatePath = True
             return True
