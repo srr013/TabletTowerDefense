@@ -15,6 +15,7 @@ def placeTowerFromList(*args):
     createdTowers = []
     for tower in list:
         createdTowers.append(placeTower(instance, tower))
+
     x = 0
     while MainFunctions.updatePath() == False:
         if x == 0:
@@ -25,6 +26,7 @@ def placeTowerFromList(*args):
                 tower.remove()
                 GUI.gui.createMessage("Path Blocked")
                 Player.player.money += tower.cost
+                Player.player.analytics.moneySpent -= tower.cost
                 GUI.gui.myDispatcher.Money = str(Player.player.money)
     if createdTowers:
         resetEnemyPaths()
@@ -36,7 +38,7 @@ def resetEnemyPaths():
             if enemy.anim:
                 enemy.anim.cancel_all(enemy)
             try:
-                enemy.movelist = Map.mapvar.pointmovelists[enemy.movelistNum]
+                enemy.movelist = Map.mapvar.enemymovelists[enemy.movelistNum]
                 enemy.dirlist = Map.mapvar.dirmovelists[enemy.movelistNum]
                 enemy.getNearestNode()
             except IndexError:
@@ -77,6 +79,7 @@ def placeTower(*args):
 
     if sufficient_funds and not collide:
         newTower = eval("Towers." + towerselected.type + towerselected.base)(pos)
+        Player.player.analytics.moneySpent += newTower.cost
         Map.mapvar.towercontainer.add_widget(newTower)
         Player.player.towerSelected = None
         return newTower
@@ -102,9 +105,10 @@ def nextWave(*args):
     Player.player.wavetimeInt = int(Map.mapvar.waveseconds)
     GUI.gui.myDispatcher.Timer = str(Player.player.wavetimeInt)
     Player.player.next_wave = False
+    Player.player.sound.playSound(Player.player.sound.waveBeep)
     SenderClass.Sender(specialSend=False)
     GUI.gui.waveAnimation.start(GUI.gui.waveScroller)
     if Player.player.waveList[Player.player.wavenum]['isboss']:
-        GUI.gui.addAlert('Boss Round. Wave ' + str(Player.player.wavenum) + ' starting', 'warning')
+        GUI.gui.addAlert('Bosses are worth 5 health. Wave '+ str(Player.player.wavenum)+': '+Player.player.waveList[Player.player.wavenum]['enemytype'] , 'warning')
     else:
-        GUI.gui.addAlert('Wave ' + str(Player.player.wavenum) + ' starting', 'warning')
+        GUI.gui.addAlert('Wave ' + str(Player.player.wavenum)+": "+Player.player.waveList[Player.player.wavenum]['enemytype'], 'normal')

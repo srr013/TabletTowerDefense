@@ -16,6 +16,7 @@ import Player
 import Shot
 import TowerGroup
 import Utilities
+import TowerNeighbors
 
 
 class Tower(Widget):
@@ -26,6 +27,7 @@ class Tower(Widget):
         self.levelLabel.text = str(int(value))
 
     def __init__(self, pos, **kwargs):
+        Player.player.analytics.towersBought += 1
         super(Tower, self).__init__(**kwargs)
         self.pos = pos
         self.targetTimer = 0
@@ -50,9 +52,9 @@ class Tower(Widget):
         self.lastNeighborCount = 0
         self.neighborFlag = 'update'
         self.neighborList = []
-        self.neighbors = self.getNeighbors()  # neighbors is a directional dict 'left':towerobj
+        self.neighbors = TowerNeighbors.getNeighbors(self)  # neighbors is a directional dict 'left':towerobj
         self.towerGroup = None
-        self.getGroup()
+        TowerNeighbors.getGroup(self)
         self.adjacentRoadPos = Utilities.adjacentRoadPos(self.pos)
         self.adjacentRoads = list()
         self.adjacentRoadFlag = False
@@ -67,10 +69,10 @@ class Tower(Widget):
         self.hasTurret = False
         self.shotcount = 0
         self.allowedshots = 1
-
         self.totalUpgradeTime = 0
         self.upgradeTimeElapsed = 0
         self.percentComplete = 0
+        self.upgradePath = None
 
         self.levelLabel = Label(text=str(self.level), size_hint=(None, None), size=(7, 7),
                                 pos=(self.image.pos[0] + 6, self.image.pos[1] + 6),
@@ -101,235 +103,28 @@ class Tower(Widget):
             if self.closeanimation:
                 self.closeanimation.cancel_all(self.turret)
         Map.mapvar.towercontainer.remove_widget(self)
+        if self.upgradePath == 'LeaderPath' and self.towerGroup.hasLeader:
+            self.towerGroup.hasLeader = False
         if self in self.towerGroup.towerSet:
             self.towerGroup.towerSet.remove(self)
         if sell and self.neighborList:
-            self.updateNeighbors()
-
-
-    def getNeighbors(self):
-        neighbors = {}
-        sidecount = 0
-        neighborlist = []
-
-        for tower in Localdefs.towerlist:
-            if tower.rect_x == self.rect_x - 2 * Map.mapvar.squsize and tower.rect_y == self.rect_y and (
-                    tower.type == self.type):
-                neighbors['l0'] = tower
-                neighborlist.append('l0')
-            elif tower.rect_x == self.rect_x + 2 * Map.mapvar.squsize and tower.rect_y == self.rect_y and (
-                    tower.type == self.type):
-                neighbors['r0'] = tower
-                neighborlist.append('r0')
-            elif tower.rect_y == self.rect_y + 2 * Map.mapvar.squsize and tower.rect_x == self.rect_x and (
-                    tower.type == self.type):
-                neighbors['u0'] = tower
-                neighborlist.append('u0')
-            elif tower.rect_y == self.rect_y - 2 * Map.mapvar.squsize and tower.rect_x == self.rect_x and (
-                    tower.type == self.type):
-                neighbors['d0'] = tower
-                neighborlist.append('d0')
-            elif tower.rect_x == self.rect_x - 2 * Map.mapvar.squsize and \
-                    (tower.type == self.type):
-                if tower.rect_y == (self.rect_y + Map.mapvar.squsize):
-                    neighbors['l1'] = tower
-                    neighborlist.append('l1')
-                elif tower.rect_y == (self.rect_y - Map.mapvar.squsize):
-                    neighbors['l2'] = tower
-                    neighborlist.append('l2')
-            elif tower.rect_x == self.rect_x + 2 * Map.mapvar.squsize and \
-                    (tower.type == self.type):
-                if tower.rect_y == (self.rect_y + Map.mapvar.squsize):
-                    neighbors['r1'] = tower
-                    neighborlist.append('r1')
-                elif tower.rect_y == (self.rect_y - Map.mapvar.squsize):
-                    neighbors['r2'] = tower
-                    neighborlist.append('r2')
-            elif tower.rect_y == self.rect_y + 2 * Map.mapvar.squsize and \
-                    (tower.type == self.type):
-                if tower.rect_x == (self.rect_x - Map.mapvar.squsize):
-                    neighbors['u1'] = tower
-                    neighborlist.append('u1')
-                elif tower.rect_x == (self.rect_x + Map.mapvar.squsize):
-                    neighbors['u2'] = tower
-                    neighborlist.append('u2')
-            elif tower.rect_y == self.rect_y - 2 * Map.mapvar.squsize and \
-                    (tower.type == self.type):
-                if tower.rect_x == (self.rect_x - Map.mapvar.squsize):
-                    neighbors['d1'] = tower
-                    neighborlist.append('d1')
-                elif tower.rect_x == (self.rect_x + Map.mapvar.squsize):
-                    neighbors['d2'] = tower
-                    neighborlist.append('d2')
-
-        totalNeighbors = 0
-        sideList = set()
-        for neighbor in neighborlist:
-            totalNeighbors += 1
-            sideList.add(neighbor[0])
-
-        if totalNeighbors != self.lastNeighborCount:
-            self.neighborFlag = 'update'
-            self.neighborList = neighborlist
-            self.lastNeighborCount = totalNeighbors
-            self.neighborSideCount = len(sideList)  # 1-4 to be used in getImage
-            self.neighborSideList = list(sideList)
-
-        return neighbors
-
-    def getGroup(self):
-        if not self.neighbors: #create a new towerGroup
-            self.towerGroup = TowerGroup.TowerGroup(self)
-            self.getImage()
-
-        else: #use the existing one from a neighbor and set all
-            letter = self.neighborList[0]
-            self.towerGroup = self.neighbors[letter].towerGroup
-            self.getImage()
-            if len(self.neighborList) >= 1:
-                x = 0
-                while x < len(self.neighborList):
-                    letter = self.neighborList[x]
-                    self.getData(letter)
-                    x += 1
-
-    def updateNeighbors(self):
-        x = 0
-        tg = self.towerGroup
-        while x < len(self.neighborList): #update the neighbors of the removed tower
-            neighbor = self.neighbors[self.neighborList[x]]
-            if neighbor.towerGroup == tg:
-                neighbor.towerGroup = TowerGroup.TowerGroup(neighbor)
-                neighbor.neighbors = neighbor.getNeighbors()
-                neighborset = set()
-                neighbor.setGroup(neighborset)
-                neighbor.getImage()
-            neighbor.towerGroup.updateTowerGroup()
-            x+=1
-        tg.updateTowerGroup()
-
-    def setGroup(self, set):
-        neighbors = self.neighbors.values()
-        for value in neighbors:
-            if value not in set:
-                value.towerGroup = self.towerGroup
-                set.add(value)
-                value.setGroup(set)
-
-    def getData(self, string):
-        tower = self.neighbors[string]
-        tower.neighbors = tower.getNeighbors()
-        tower.getImage()
-        for element in tower.towerGroup.towerSet:
-            element.towerGroup = self.towerGroup
-
-
-    def getImage(self):
-        if not self.neighbors:
-            self.imageNum = 0
-            self.updateImage()
-            return
-        if self.neighborSideCount == 4:
-            self.imageNum = 4
-
-        elif self.neighborSideCount == 3:
-            self.imageNum = 3
-
-        elif self.neighborSideCount == 2:
-            list = sorted(self.neighborSideList)
-            if list[0][0] == 'd' and list[1][0] == 'u':
-                self.imageNum = '2_1'
-            elif list[0][0] == 'l' and list[1][0] == 'r':
-                self.imageNum = '2_1'
-            else:
-                self.imageNum = '2_2'
-
-        elif self.neighborSideCount == 1:
-            self.imageNum = 1
-
-        self.updateImage()
-
-    def getRotation(self):
-        rotation = 0
-        desiredRotation = 0
-        list = sorted(self.neighborSideList)
-        count = self.neighborSideCount
-        if self.neighborFlag == 'update':
-            if count == 1:
-                if list[0][0] == 'd':
-                    desiredRotation = 270
-                elif list[0][0] == 'l':
-                    desiredRotation = 180
-                elif list[0][0] == 'r':
-                    desiredRotation = 0
-                elif list[0][0] == 'u':
-                    desiredRotation = 90
-            if count == 2:
-                if list[0][0] == 'd' and list[1][0] == 'u':
-                    desiredRotation = 90
-                elif list[0][0] == 'd' and list[1][0] == 'l':
-                    desiredRotation = 180
-                elif list[0][0] == 'd' and list[1][0] == 'r':
-                    desiredRotation = 270
-                elif list[0][0] == 'l' and list[1][0] == 'r':
-                    desiredRotation = 0
-                elif list[0][0] == 'l' and list[1][0] == 'u':
-                    desiredRotation = 90
-                elif list[0][0] == 'r' and list[1][0] == 'u':
-                    desiredRotation = 0
-            if count == 3:
-                if list[0][0] == 'd' and list[1][0] == 'l' and list[2][0] == 'r':
-                    desiredRotation = 270
-                elif list[0][0] == 'd' and list[1][0] == 'l' and list[2][0] == 'u':
-                    desiredRotation = 180
-                elif list[0][0] == 'd' and list[1][0] == 'r' and list[2][0] == 'u':
-                    desiredRotation = 0
-                elif list[0][0] == 'l' and list[1][0] == 'r' and list[2][0] == 'u':
-                    desiredRotation = 90
-            if count == 4:
-                desiredRotation = 0
-            rotation = abs(self.currentRotation - desiredRotation)
-            if self.currentRotation > desiredRotation:
-                rotation = -rotation
-            self.currentRotation = desiredRotation
-
-            return rotation
-
-        else:
-            return 0
-
-    def updateImage(self):
-        # rotation is counter-clockwise in Kivy
-        rotation = 0
-        if self.neighbors:
-            rotation = self.getRotation()
-        if self.neighborFlag == 'update':
-            self.imagestr = os.path.join('towerimgs', self.type, str(self.imageNum) + '.png')
-            self.image.source = self.imagestr
-            self.neighborFlag = ''
-        if rotation != 0:
-            with self.image.canvas.before:
-                PushMatrix()
-                self.rot = Rotate(axis=(0, 0, 1), origin=self.image.center, angle=rotation)
-            with self.image.canvas.after:
-                PopMatrix()  # tower positioning and rotation
+            TowerNeighbors.updateNeighbors(self)
 
     def updateModifiers(self):
-        self.damage = self.initdamage * self.towerGroup.dmgModifier
-        if self.type != 'Gravity' or self.type != 'Ice':
-            self.reload = self.initreload * self.towerGroup.reloadModifier
+        self.damage = self.damage * self.towerGroup.dmgModifier
+        if self.type != 'Gravity' and self.type != 'Ice':
+            self.reload = self.reload * self.towerGroup.reloadModifier
             self.range = self.rangecalc * Map.mapvar.squsize * self.towerGroup.rangeModifier
         if self.type == 'Wind':
-            self.push = self.initpush * self.towerGroup.pushModifier
+            self.push = self.push * self.towerGroup.pushModifier
         if self.type == 'Ice':
-            self.slowtime = self.initslowtime * self.towerGroup.slowTimeModifier
-            self.slowpercent = self.initslowpercent * self.towerGroup.slowPercentModifier
+            self.slowtime = self.slowtime * self.towerGroup.slowTimeModifier
+            self.slowpercent = self.slowpercent * self.towerGroup.slowPercentModifier
         if self.type == 'Gravity':
-            self.stuntime = self.initstuntime * self.towerGroup.stunTimeModifier
+            self.stuntime = self.stuntime * self.towerGroup.stunTimeModifier
         self.setUpgradeData()
 
     def upgrade(self):
-        self.priorimage = str(self.image.source)
         if self.type == 'Gravity':
             if self.animating:
                 self.animation.cancel_all(self.turret)
@@ -344,13 +139,16 @@ class Tower(Widget):
             self.remainingtime = Line(points=[self.x + .5*Map.mapvar.squsize, self.y + Map.mapvar.squsize/3, self.x + .5*Map.mapvar.squsize, self.y + Map.mapvar.squsize/3], width=4, cap='none')
         self.upgradeTimeElapsed = 0
         self.totalUpgradeTime = self.level * 5
+        if self.level == Player.player.upgPathSelectLvl:
+            self.setupUpgradePath()
 
     def updateUpgradeStatusBar(self):
         self.percentComplete = self.upgradeTimeElapsed / self.totalUpgradeTime
         if self.percentComplete >= 1:
-            # self.towerGroup.enable()
             self.upgradeTowerStats()
             self.level += 1
+            if Player.player.analytics.maxTowerLevel < self.level:
+                Player.player.analytics.maxTowerLevel = self.level
             self.canvas.remove(self.remainingtime)
             self.canvas.remove(self.statusbar)
             self.totalUpgradeTime = self.upgradeTimeElapsed = self.percentComplete = 0
@@ -360,35 +158,66 @@ class Tower(Widget):
             return
         self.remainingtime.points = [self.x + .5*Map.mapvar.squsize, self.y + Map.mapvar.squsize/3, self.x + .5*Map.mapvar.squsize + ((self.width - Map.mapvar.squsize) * self.percentComplete),
                                      self.y + Map.mapvar.squsize/3]
+    def setupUpgradePath(self):
+        #called at upgrade start so self.level+!
+        if self.upgradePath == 'LeaderPath':
+            if self.hasTurret:
+                self.hasTurret = False
+                self.remove_widget(self.turret)
+            self.damageBonus = (self.level + 1 - Player.player.upgPathSelectLvl) * 20
+            self.reloadBonus = (self.level + 1 - Player.player.upgPathSelectLvl) * 20
+            self.rangeBonus = (self.level + 1 - Player.player.upgPathSelectLvl) * 20
+            self.pushBonus = (self.level + 1 - Player.player.upgPathSelectLvl) * 20
+            self.slowpercentBonus = (self.level + 1 - Player.player.upgPathSelectLvl) * 20
+            self.slowtimeBonus = (self.level + 1 - Player.player.upgPathSelectLvl) * 20
+            self.stuntimeBonus = (self.level + 1 - Player.player.upgPathSelectLvl) * 20
+        else:
+            if self.type == 'Fire':
+                self.turret.source = os.path.join("towerimgs", self.type, "turret2.gif")
 
     def upgradeTowerStats(self):
         self.refund = self.totalspent * .8
         self.range = self.range + self.range * self.upgradeDict['Range'][self.level - 1]
-        self.nextRange = round(self.upgradeDict['Range'][self.level] * self.range + self.range, 1)
+        #self.nextRange = round(self.upgradeDict['Range'][self.level] * self.range + self.range, 1)
         if self.type == 'Ice':
             self.slowpercent = self.slowpercent + self.slowpercent * self.upgradeDict['Slow%'][self.level - 1]
-            self.nextSlowPercent = round(self.upgradeDict['Slow%'][self.level] * self.slowpercent + self.slowpercent, 2)
+            #self.nextSlowPercent = round(self.upgradeDict['Slow%'][self.level] * self.slowpercent + self.slowpercent, 2)
             self.slowtime = self.slowtime + self.slowtime * self.upgradeDict['SlowTime'][self.level - 1]
-            self.nextSlowTime = round(self.upgradeDict['SlowTime'][self.level] * self.slowtime + self.slowtime, 1)
+            #self.nextSlowTime = round(self.upgradeDict['SlowTime'][self.level] * self.slowtime + self.slowtime, 1)
         elif self.type == 'Wind':
             self.push = self.push + self.push * self.upgradeDict['Push'][self.level - 1]
-            self.nextPush = round(self.upgradeDict['Push'][self.level] * self.push + self.push, 1)
+            #self.nextPush = round(self.upgradeDict['Push'][self.level] * self.push + self.push, 1)
             self.reload = self.reload + self.reload * self.upgradeDict['Reload'][self.level - 1]
-            self.nextReload = round(self.upgradeDict['Reload'][self.level] * self.reload + self.reload, 1)
+            #self.nextReload = round(self.upgradeDict['Reload'][self.level] * self.reload + self.reload, 1)
         else:
             self.damage = self.damage + self.damage * self.upgradeDict['Damage'][self.level - 1]
-            self.nextDamage = round(self.upgradeDict['Damage'][self.level] * self.damage + self.damage, 1)
+            #self.nextDamage = round(self.upgradeDict['Damage'][self.level] * self.damage + self.damage, 1)
             self.reload = self.reload + self.reload * self.upgradeDict['Reload'][self.level - 1]
-            self.nextReload = round(self.upgradeDict['Reload'][self.level] * self.reload + self.reload, 1)
+            #self.nextReload = round(self.upgradeDict['Reload'][self.level] * self.reload + self.reload, 1)
+
         self.setUpgradeData()
 
     def setUpgradeData(self):
-        self.nextDamage = round(self.upgradeDict['Damage'][self.level - 1] * self.damage + self.damage, 1)
-        self.nextReload = round(self.upgradeDict['Reload'][self.level - 1] * self.reload + self.reload, 1)
-        self.nextRange = int(self.upgradeDict['Range'][self.level - 1] * self.range + self.range, 1)
-        self.upgradeData = ['Dmg', round(self.damage,1), self.nextDamage,
-                            'Rld', round(self.reload,1), self.nextReload,
-                            'Rng', int(self.range), self.nextRange]
+        if self.upgradePath != 'LeaderPath':
+            dict = self.upgradeDict
+        else:
+            dict = self.upgradeLeaderDict
+        self.nextDamage = round(dict['Damage'][self.level - 1] * self.damage + self.damage, 1)
+        self.groupDamage = str(int((self.towerGroup.dmgModifier-1.0)*100))+'%'
+        self.nextReload = round(dict['Reload'][self.level - 1] * self.reload + self.reload, 1)
+        self.groupReload = '0%' if self.towerGroup.reloadModifier == 1 else str(int(self.towerGroup.reloadModifier-1.0)*100)+'%'
+        if self.towerGroup.leader:
+            self.groupReload = self.towerGroup.leader.reloadBonus
+        self.nextRange = int(dict['Range'][self.level - 1] * self.range + self.range)
+        self.groupRange = str(int((self.towerGroup.rangeModifier-1.0)*100))+'%'
+        if self.upgradePath != 'LeaderPath':
+            self.upgradeData = ['Dmg', round(self.damage,1), self.groupDamage, self.nextDamage,
+                                'Rld', round(self.reload,1), self.groupReload, self.nextReload,
+                                'Rng', int(self.range), self.groupRange, self.nextRange]
+        else:
+            self.upgradeData = ['GrpDmg', str(int(self.damageBonus))+"%", self.groupDamage, self.nextDamage,
+                                'GrpRld', str(int(self.reloadBonus))+"%", self.groupReload, self.nextReload,
+                                'GrpRng', str(int(self.rangeBonus))+"%", self.groupRange, self.nextRange]
 
     def takeTurn(self):
         '''Maintain reload wait period and call target() once period is over
@@ -437,18 +266,15 @@ class Tower(Widget):
 
     def hitEnemy(self, enemy = None):
         '''Reduces enemy health by damage - armor'''
+        Player.player.analytics.gameDamage += self.damage
         if self.type == "Ice" and enemy.slowtime <= self.slowtime - 1:
             enemy.slowtimers.append(enemy)
             if enemy.image.color != [0, 0, 1, 1]:
                 enemy.image.color = [0, 0, 1, 1]
             enemy.slowtime = self.slowtime
-            enemy.slowpercent = self.slowpercent
+            enemy.slowpercent = 1 - self.slowpercent
             enemy.health -= max(self.damage - enemy.armor, 0)
             enemy.checkHealth()
-
-        # elif self.type == 'Wind':
-        #     Shot.Shot(self, enemy)
-
         elif self.type == 'Gravity':
             rand = True if random.randint(0, 100) > 90 else False
             if rand == True:
@@ -536,7 +362,9 @@ class FireTower(Tower):
         self.hasTurret = True
         self.loadTurret()
         self.upgradeDict = {'Damage': [.1, .1, .1, .1, .1, 0], 'Range': [0, 0, 0, 0, .5, 0],
-                            'Reload': [0, 0, 0, 0, -.2, 0], 'Cost': [5, 50, 150, 250, 500, 'NA']}
+                            'Reload': [0, 0, 0, 0, -.2, 0], 'Cost': [5, (50,1), 150, 250, (500,1), 'NA']}
+        self.upgradeLeaderDict = {'Damage': [.1, .1, .1, .1, .1, 0], 'Range': [0, 0, 0, 0, .5, 0],
+                            'Reload': [0, 0, 0, 0, -.2, 0], 'Cost': [5, 50, 150, 250, (500,1), 'NA']}
         self.setUpgradeData()
 
 
@@ -565,7 +393,9 @@ class LifeTower(Tower):
         self.active = True
         self.loadTurret()
         self.upgradeDict = {'Damage': [.1, .1, .1, .1, .1, 0], 'Range': [0, 0, 0, 0, .5, 0],
-                            'Reload': [0, 0, 0, 0, -.2, 0], 'Cost': [5, 50, 150, 250, 500, 'NA']}
+                            'Reload': [0, 0, 0, 0, -.2, 0], 'Cost': [5, 50, 150, 250, (500,1), 'NA']}
+        self.upgradeLeaderDict = {'Damage': [.1, .1, .1, .1, .1, 0], 'Range': [0, 0, 0, 0, .5, 0],
+                            'Reload': [0, 0, 0, 0, -.2, 0], 'Cost': [5, 50, 150, 250, (500, 1), 'NA']}
         self.setUpgradeData()
 
 
@@ -599,8 +429,23 @@ class GravityTower(Tower):
         self.animating = False
         self.loadTurret()
         self.upgradeDict = {'Damage': [.2, .2, .3, .3, .6, 0], 'Range': [0, 0, 0, 0, 0, 0],
-                            'Reload': [0, 0, 0, 0, 0, 0], 'Cost': [5, 50, 150, 250, 500, 'NA']}
+                            'Reload': [0, 0, 0, 0, 0, 0], 'Cost': [5, 50, 150, 250, (500,1), 'NA']}
+        self.upgradeLeaderDict = {'Damage': [.2, .2, .3, .3, .6, 0], 'Range': [0, 0, 0, 0, 0, 0],
+                            'Reload': [0, 0, 0, 0, 0, 0], 'Cost': [5, 50, 150, 250, (500, 1), 'NA']}
         self.setUpgradeData()
+
+    def setUpgradeData(self):
+        if self.upgradePath != 'LeaderPath':
+            dict = self.upgradeDict
+        else:
+            dict = self.upgradeLeaderDict
+        self.nextDamage = round(dict['Damage'][self.level - 1] * self.damage + self.damage, 1)
+        self.groupDamage = str(int((self.towerGroup.dmgModifier - 1.0) * 100)) + '%'
+        self.nextReload = round(dict['Reload'][self.level - 1] * self.reload + self.reload, 1)
+        self.nextRange = int(dict['Range'][self.level - 1] * self.range + self.range)
+        self.upgradeData = ['Dmg', round(self.damage, 1), self.groupDamage, self.nextDamage,
+                            'Rld', round(self.reload, 1), '0%', self.nextReload,
+                            'Rng', int(self.range), '0%', self.nextRange]
 
 
 class IceTower(Tower):
@@ -610,7 +455,7 @@ class IceTower(Tower):
     initdamage = 1
     initreload = 2
     initslowtime = 3
-    initslowpercent = .8
+    initslowpercent = .2
     attacks = "Both"
     imagestr = os.path.join('towerimgs', 'Ice', 'icon.png')
 
@@ -630,17 +475,25 @@ class IceTower(Tower):
         self.active = False
         self.allowedshots = 999
         self.hasTurret = False
-        self.upgradeDict = {'Slow%': [-.05, -.05, -.05, -.05, -.15, 0], 'Range': [0, 0, 0, 0, 0, 0],
-                            'SlowTime': [.1, .1, .1, .1, .5, 0], 'Cost': [5, 50, 150, 250, 500, 'NA']}
+        self.upgradeDict = {'Slow%': [.05, .05, .05, .05, .15, 0], 'Range': [0, 0, 0, 0, 0, 0],
+                            'SlowTime': [.1, .1, .1, .1, .5, 0], 'Cost': [5, 50, 150, 250, (500,1), 'NA']}
+        self.upgradeLeaderDict = {'Slow%': [.05, .05, .05, .05, .15, 0], 'Range': [0, 0, 0, 0, 0, 0],
+                            'SlowTime': [.1, .1, .1, .1, .5, 0], 'Cost': [5, 50, 150, 250, (500, 1), 'NA']}
         self.setUpgradeData()
 
     def setUpgradeData(self):
-        self.nextSlowPercent = round(self.upgradeDict['Slow%'][self.level - 1] * self.slowpercent + self.slowpercent, 2)
-        self.nextSlowTime = round(self.upgradeDict['SlowTime'][self.level - 1] * self.slowtime + self.slowtime, 1)
-        self.nextRange = round(self.upgradeDict['Range'][self.level - 1] * self.range + self.range, 1)
-        self.upgradeData = ['Slow%', int((1 - self.slowpercent)*100), int((1 - self.nextSlowPercent)*100),
-                            'SlowTm', round(self.slowtime,1), round(self.nextSlowTime,1),
-                            'Rng', round(self.range,1), round(self.nextRange,1)]
+        if self.upgradePath != 'LeaderPath':
+            dict = self.upgradeDict
+        else:
+            dict = self.upgradeLeaderDict
+        self.nextSlowPercent = round(dict['Slow%'][self.level - 1] * self.slowpercent + self.slowpercent, 2)
+        self.groupSlowPercent = str(int((self.towerGroup.slowPercentModifier-1.0)*100))+'%'
+        self.nextSlowTime = round(dict['SlowTime'][self.level - 1] * self.slowtime + self.slowtime, 1)
+        self.groupSlowTime = str(int((self.towerGroup.slowTimeModifier-1.0)*100))+'%'
+        self.nextRange = round(dict['Range'][self.level - 1] * self.range + self.range, 1)
+        self.upgradeData = ['Slow', str(int(self.slowpercent*100))+'%', self.groupSlowPercent, str(int((self.nextSlowPercent)*100))+'%',
+                            'SlowTm', str(round(self.slowtime,1))+'s', self.groupSlowTime, str(round(self.nextSlowTime,1))+'s',
+                            'Rng', round(self.range,1), '0%', round(self.nextRange,1)]
 
 
 class WindTower(Tower):
@@ -675,17 +528,25 @@ class WindTower(Tower):
         self.allowedshots = 1
 
         self.upgradeDict = {'Push': [.1, .1, .1, .1, .1, 0], 'Range': [0, 0, .1, 0, .5, 0],
-                            'Reload': [0, 0, -.1, 0, -.2, 0], 'Cost': [5, 50, 150, 250, 500, 'NA']}
+                            'Reload': [0, 0, -.1, 0, -.2, 0], 'Cost': [5, 50, 150, 250, (500,1), 'NA']}
+        self.upgradeLeaderDict = {'Push': [.1, .1, .1, .1, .1, 0], 'Range': [0, 0, .1, 0, .5, 0],
+                            'Reload': [0, 0, -.1, 0, -.2, 0], 'Cost': [5, 50, 150, 250, (500, 1), 'NA']}
 
         self.setUpgradeData()
 
     def setUpgradeData(self):
-        self.nextPush = round(self.upgradeDict['Push'][self.level - 1] * self.push + self.push, 1)
-        self.nextReload = round(self.upgradeDict['Reload'][self.level - 1] * self.reload + self.reload, 1)
-        self.nextRange = round(self.upgradeDict['Range'][self.level - 1] * self.range + self.range, 1)
-        self.upgradeData = ['Push', round(self.push,1), round(self.nextPush,1),
-                            'Rld', round(self.reload,1), round(self.nextReload,1),
-                            'Rng', int(self.range), int(self.nextRange)]
+        if self.upgradePath != 'LeaderPath':
+            dict = self.upgradeDict
+        else:
+            dict = self.upgradeLeaderDict
+        self.nextPush = round(dict['Push'][self.level - 1] * self.push + self.push, 1)
+        self.groupPush = str(int((self.towerGroup.pushModifier-1.0)*100))+'%'
+        self.nextReload = round(dict['Reload'][self.level - 1] * self.reload + self.reload, 1)
+        self.groupReload = str(int((self.towerGroup.reloadModifier-1.0)*100))+'%'
+        self.nextRange = round(dict['Range'][self.level - 1] * self.range + self.range, 1)
+        self.upgradeData = ['Push', round(self.push,1), self.groupPush, round(self.nextPush,1),
+                            'Rld', round(self.reload,1), self.groupReload, round(self.nextReload,1),
+                            'Rng', int(self.range), '0%', int(self.nextRange)]
 
 
 available_tower_list = [FireTower, IceTower, GravityTower, WindTower, LifeTower]

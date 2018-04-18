@@ -15,8 +15,10 @@ import GUI
 import MainFunctions
 import Map
 import Player
+import Sound
 
 import sys
+import time
 # import cProfile
 # import pstats
 
@@ -57,6 +59,7 @@ class Game(Widget):
             Map.mapvar.shaderRect.size = self.size
 
     def startFuncs(self):
+        Player.player.analytics.gameTimeStart = time.time()
         Map.mapvar.getStartPoints()
         Player.player.genWaveList()
         GUI.gui.createWaveStreamer()
@@ -83,6 +86,9 @@ class Game(Widget):
             GUI.gui.toggleButtons()
             self.startFuncs()
         elif obj.id == 'Quit':
+            Player.player.analytics.finalWave= Player.player.wavenum
+            Player.player.analytics.gameTimeEnd = time.time()
+            print Player.player.analytics._print()
             Main.get_running_app().stop()
             sys.exit()
         elif obj.id == 'unpause':
@@ -148,10 +154,13 @@ class Game(Widget):
             MainFunctions.stopAllAnimation()
         elif Player.player.state == 'Playing':
             if Player.player.gameover:
-                # need some sort of gameover screen. Wait on user to start new game.
+                Player.player.sound.playSound(Player.player.sound.gameOver)
+                Player.player.analytics.finalWave = Player.player.wavenum
+                Player.player.analytics.gameTimeEnd = time.time()
                 self.mainMenu = None
                 Player.player.state = 'Menu'
                 GUI.gui.addAlert("You Lose!", 'repeat')
+                print Player.player.analytics._print()
                 MainFunctions.resetGame()
                 Player.player.gameover = False
             # Update path when appropriate
@@ -166,6 +175,7 @@ class Game(Widget):
             MainFunctions.workShots()
             MainFunctions.workDisp()
             if Player.player.wavenum > 0:
+                GUI.gui.nextwaveButton.text = 'Next Wave'
                 Player.player.wavetime -= Player.player.frametime
                 Player.player.wavetimeInt = int(Player.player.wavetime)
                 GUI.gui.myDispatcher.Timer = str(Player.player.wavetimeInt)
@@ -178,6 +188,8 @@ class Game(Widget):
 class Main(App):
     """Instantiate required classes and variables and launch the game.update loop"""
     def on_pause(self):
+        if Player.player.sound.music:
+            Player.player.sound.music.stop()
         Player.player.state = 'Menu'
 
         return True
@@ -203,10 +215,13 @@ class Main(App):
         MainFunctions.makeIcons()
         MainFunctions.makeUpgradeIcons()
         # create toolbars
-        game.topBar = GUI.gui.createTopBar()
-        game.add_widget(game.topBar)
-        game.add_widget(GUI.gui.rightSideButtons())
+        # game.topBar = GUI.gui.createTopBar()
+        # game.add_widget(game.topBar)
+        GUI.gui.initTopBar()
+        Map.mapvar.backgroundimg.add_widget(GUI.gui.rightSideButtons())
         game.bindings()
+        Player.player.sound = Sound.MySound(Player.player.soundOn, Player.player.musicOn)
+        Player.player.sound.playMusic(Player.player.sound.gameMusic)
         # This runs the game.update loop, which is used for handling the entire game
         game.Clock = Clock
         game.Clock.schedule_interval(game.update, game.frametime)

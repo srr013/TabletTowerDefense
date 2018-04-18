@@ -1,8 +1,10 @@
+from kivy.storage.dictstore import DictStore
 import Map
 import Wavegen
+import Analytics
 
 playerhealth = 20
-playermoney = 100
+playermoney = 10000
 
 
 class Player():
@@ -10,7 +12,8 @@ class Player():
         # self.name = "player"
         self.health = playerhealth
         self.money = playermoney
-        self.gems = 0
+        self.gems = 5
+        self.upgPathSelectLvl = 2
         self.abilities = list()
         self.wavenum = 0
         self.gameover = False
@@ -28,6 +31,14 @@ class Player():
         self.newMoveList = False
         self.wavetime = None
         self.wavetimeInt = None
+        self.analytics = Analytics.Analytics()
+        self.store = DictStore('settings.txt')
+        if self.store.exists('audio'):
+            self.soundOn = self.store.get('audio')['soundOn']
+            self.musicOn = self.store.get('audio')['musicOn']
+        else:
+            self.soundOn = True
+            self.musicOn = True
 
     def die(self):
         '''Set gameover to True to reset the game'''
@@ -37,5 +48,8 @@ class Player():
         self.waveList, self.waveTypeList = Wavegen.wavegen()  # [{'wavenum': 1, 'setnum': 1, 'enemytype': 'b', 'enemymods': []}, dict repeats]
         self.wavetime = Map.mapvar.waveseconds
         self.wavetimeInt = int(Map.mapvar.waveseconds)
+
+    def storeSettings(self):
+        self.store.put('audio', soundOn=self.soundOn,musicOn=self.musicOn)
 
 player = Player()

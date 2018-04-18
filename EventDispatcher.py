@@ -1,20 +1,21 @@
 from kivy.event import EventDispatcher
-
 from kivy.properties import StringProperty
+from kivy.properties import BooleanProperty
 
 
 class EventDisp(EventDispatcher):
     Timer = StringProperty()
-    # Wave = StringProperty()
     Score = StringProperty()
     Money = StringProperty()
     Health = StringProperty()
     WaveNum = StringProperty()
     Gems = StringProperty()
+    totalCost = StringProperty()
+
 
     def __init__(self, **kwargs):
         super(EventDisp, self).__init__(**kwargs)
 
-    def callback(instance, instance2, *args):
-        print('My callback is call from', instance)
-        print('and the value changed to', instance2, args[0])
+
+# It's easiest to bind a standard event directly to the widget and callback instead of creating new events (like in this file). For example
+# in GUI the checkbox for sound is bound directly to the callback in Sound.

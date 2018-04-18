@@ -28,8 +28,7 @@ class Enemy(Widget):
         self.wavedict = Player.player.waveList[kwargs['wave']]
         if not self.specialSend:
             self.curnode = self.weightedcurnode = 0
-            if self.type == 'Airborn':
-                self.weightedcurnode = len(Map.mapvar.pointmovelists[0])- len(self.movelist)
+            self.weightedcurnode = len(Map.mapvar.enemymovelists[0])- len(self.movelist)
             self.direction = self.dirlist[self.curnode]
             self.rect = Utilities.createRect(self.movelist[self.curnode], self.size, instance=self)
             self.pos = self.movelist[self.curnode]
@@ -76,6 +75,7 @@ class Enemy(Widget):
         self.image.pos = self.pos
         self.bind(pos=self.binding)
         self.drawHealthBar()
+        Player.player.analytics.totalHP += self.health
 
     def takeTurn(self):
         '''Moves the enemy and adjusts any slow applied to it
@@ -126,7 +126,6 @@ class Enemy(Widget):
         Frametime: the amount of time elapsed per frame'''
         if self.stuntime > 0:
             return
-
         if self.curnode < len(self.movelist) - 1:
             self.direction = self.dirlist[self.curnode]
             self.curnode += 1
@@ -148,6 +147,7 @@ class Enemy(Widget):
 
     def checkHit(self, *args):
         if Map.mapvar.baseimg.collide_widget(self.image):
+            Player.player.sound.playSound(Player.player.sound.hitBase, start=.5)
             if self.isBoss:
                 Player.player.health -=5
             else:
@@ -213,14 +213,15 @@ class Enemy(Widget):
                 self.pushAnimation.cancel_all(self)
             if self.isBoss:
                 x = random.randint(0, 100)
-                if x < 1:
+                if x < 10:
                     self.gemImage = True
                     Player.player.gems += 1
                     GUI.gui.myDispatcher.Gems = str(Player.player.gems)
             self.startDeathAnim()
             self.remove_widget(self.image)
             Map.mapvar.enemycontainer.remove_widget(self)
-            Player.player.money += self.reward
+            Player.player.money += int(self.reward)
+            Player.player.analytics.moneyEarned += self.reward
             Player.player.score += self.points
             GUI.gui.myDispatcher.Money = str(Player.player.money)
             GUI.gui.myDispatcher.Score = str(Player.player.score)
@@ -232,7 +233,7 @@ class Enemy(Widget):
             self.gemImage.size = (40, 40)
             self.gemImage.center = self.center
             Map.mapvar.backgroundimg.add_widget(self.gemImage)
-            self.gemanim = Animation(pos=(Map.mapvar.squsize*20, Map.mapvar.scrhei - Map.mapvar.squsize), size=(10, 12), duration=4) + \
+            self.gemanim = Animation(pos=(Map.mapvar.squsize*20, Map.mapvar.scrhei - Map.mapvar.squsize), size=(20, 24), duration=6) + \
                            Animation(size=(0, 0), duration=.1)
             self.gemanim.bind(on_complete=self.endDeathAnim)
             self.gemanim.start(self.gemImage)
@@ -303,7 +304,7 @@ class Standard(Enemy):
         self.imagesrc = Standard.imagesrc
         self.image = Utilities.imgLoad(self.imagesrc)
         self.movelistNum = random.randint(0, Map.mapvar.numpaths - 1)
-        self.movelist = Map.mapvar.pointmovelists[self.movelistNum]  # 0 for ground, 1 for air
+        self.movelist = Map.mapvar.enemymovelists[self.movelistNum]  # 0 for ground, 1 for air
         self.dirlist = Map.mapvar.dirmovelists[self.movelistNum]
         super(Standard, self).__init__(**kwargs)
 
@@ -326,7 +327,7 @@ class Airborn(Enemy):
         self.imagesrc = Airborn.imagesrc
         self.image = Utilities.imgLoad(self.imagesrc)
         self.movelistNum = random.randint(0, Map.mapvar.numpaths - 1)
-        self.movelist = Map.mapvar.pointflymovelists[self.movelistNum]  # 0 for ground, 1 for air
+        self.movelist = Map.mapvar.enemyflymovelists[self.movelistNum]  # 0 for ground, 1 for air
         self.dirlist = Map.mapvar.dirflymovelists[self.movelistNum]
         super(Airborn, self).__init__(**kwargs)
         self.isair = True
@@ -351,7 +352,7 @@ class Splinter(Enemy):
         self.imagesrc = Splinter.imagesrc
         self.image = Utilities.imgLoad(self.imagesrc)
         self.movelistNum = random.randint(0, Map.mapvar.numpaths - 1)
-        self.movelist = Map.mapvar.pointmovelists[self.movelistNum]  # 0 for ground, 1 for air
+        self.movelist = Map.mapvar.enemymovelists[self.movelistNum]  # 0 for ground, 1 for air
         self.curwave = Player.player.wavenum
         self.dirlist = Map.mapvar.dirmovelists[self.movelistNum]
         super(Splinter, self).__init__(**kwargs)
@@ -380,7 +381,7 @@ class Strong(Enemy):
         self.imagesrc = Strong.imagesrc
         self.image = Utilities.imgLoad(self.imagesrc)
         self.movelistNum = random.randint(0, Map.mapvar.numpaths - 1)
-        self.movelist = Map.mapvar.pointmovelists[self.movelistNum]  # 0 for ground, 1 for air
+        self.movelist = Map.mapvar.enemymovelists[self.movelistNum]  # 0 for ground, 1 for air
         self.dirlist = Map.mapvar.dirmovelists[self.movelistNum]
         super(Strong, self).__init__(**kwargs)
 
@@ -402,7 +403,7 @@ class Crowd(Enemy):
         self.imagesrc = Crowd.imagesrc
         self.image = Utilities.imgLoad(self.imagesrc)
         self.movelistNum = random.randint(0, Map.mapvar.numpaths - 1)
-        self.movelist = Map.mapvar.pointmovelists[self.movelistNum]  # 0 for ground, 1 for air
+        self.movelist = Map.mapvar.enemymovelists[self.movelistNum]  # 0 for ground, 1 for air
         self.dirlist = Map.mapvar.dirmovelists[self.movelistNum]
 
         if kwargs['specialSend']:
@@ -413,6 +414,7 @@ class Crowd(Enemy):
             pushy = random.randint(-75, 75)
             self.pushed = [pushx, pushy]
             self.curnode = self.weightedcurnode = kwargs['curnode']
+            print self.curnode, self.movelist
             self.rect = Utilities.createRect(self.pos, self.size, instance=self)
 
         super(Crowd, self).__init__(**kwargs)

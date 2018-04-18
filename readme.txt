@@ -1,8 +1,14 @@
 ========================================
 Tablet Tower Defense ReadMe:
 ========================================
-Version .1
+Version .2
 
+----------------
+License
+----------------
+This work is licensed under the NPOSL-3.0 license. No revenue may be generated from sale of the software, support or services.
+https://opensource.org/licenses/NPOSL-3.0
+Please contact the creator (scott.r.rossignol@gmail.com) with any questions.
 
 ----------------
 Gameplay:

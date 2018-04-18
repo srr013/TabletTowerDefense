@@ -22,7 +22,7 @@ class Road():
         self.imagestr = self.getRoadColor()
         self.image.source = self.imagestr
         self.image.bind(size=self.bindings)
-        self.direction = Map.mapvar.dirmovelists[pathnum][index]
+        self.direction = Map.mapvar.roaddirlists[pathnum][index]
         self.center = (self.pos[0] + .5 * self.size[0], self.pos[1] + .5 * self.size[1])
         self.setDirection()
 
