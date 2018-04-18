@@ -6,7 +6,7 @@ from kivy.uix.widget import Widget
 import Localdefs
 import Map
 import Utilities
-
+import Player
 
 ##manages each shot from each tower so we can show the shot in flight.
 class Shot(Widget):
@@ -65,6 +65,7 @@ class Shot(Widget):
 
     def hitEnemy(self, enemy):
         '''Reduces enemy health by damage - armor'''
+        Player.player.analytics.gameDamage += self.damage
         enemy.health -= max(self.damage - (self.damage*(self.enemy.armor/100)), 0)
         enemy.checkHealth()
         if self.tower.type == "Wind":

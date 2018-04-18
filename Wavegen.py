@@ -34,7 +34,7 @@ def wavegen():
     """Generates the list of enemies for each game"""
     enemyModList = genModList()
     setNum = 1  # a set is counted every X waves
-    wavesPerSet = 7
+    wavesPerSet = 6
     #enemytypes = ['Airborn','Airborn','Airborn','Airborn','Airborn']
     enemytypes = ['Standard', 'Crowd', 'Strong', 'Splinter','Airborn']
     waveDict = {}
@@ -48,9 +48,8 @@ def wavegen():
     elif Map.mapvar.difficulty == 'hard':
         difficultyMod = 1.6
         rewardMod = 1
-
+    counter = 0
     while setNum < maxSets:
-        counter = 0
         while float(waveNum) / wavesPerSet <= setNum:
             isBoss = False
             if float(waveNum) / wavesPerSet == setNum:
@@ -62,11 +61,11 @@ def wavegen():
                     counter = 0
             else:
                 enemyType = enemytypes[random.randint(0, len(enemytypes) - 1)]  # selects a random enemy type
-            numEnemies = int(eval("Enemy." + enemyType + ".defaultNum") * (1 + (setNum / 10.0)) * difficultyMod)
+            numEnemies = round(int(eval("Enemy." + enemyType + ".defaultNum") * (1 + (setNum / 10.0)) * difficultyMod),1)
             healthEnemies = int(eval("Enemy." + enemyType + ".health") * (1 + (setNum / 7.0)) * difficultyMod)
             speedEnemies = eval("Enemy." + enemyType + ".speed") * (1 + (setNum / 10.0))
             armorEnemies = eval("Enemy." + enemyType + ".armor") * (1 + (setNum / 10.0)) * difficultyMod
-            rewardEnemies = int(eval("Enemy." + enemyType + ".reward") * (1 + (setNum / 10.0))*rewardMod)
+            rewardEnemies = round(int(eval("Enemy." + enemyType + ".reward") * (1 + (setNum / 10.0))*rewardMod),1)
 
             if isBoss:
                 healthEnemies *= 4
@@ -78,7 +77,7 @@ def wavegen():
                     'enemyspeed': speedEnemies,
                     'enemytype': enemyType, 'enemyarmor': armorEnemies, 'enemymods': enemyModList[setNum - 1],
                     'enemyreward': rewardEnemies, 'isboss': isBoss}
-
+            #print waveDict[waveNum]
             waveTypeList.append([enemyType, isBoss])
             waveNum += 1
         setNum += 1

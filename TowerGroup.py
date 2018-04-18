@@ -31,6 +31,7 @@ class TowerGroup():
         self.towersNeedingAnim = []
         self.animating = False
         self.needsUpdate = True
+        self.leader = None
 
     def updateTowerGroup(self):
         self.updateList()
@@ -55,13 +56,23 @@ class TowerGroup():
         Localdefs.towerGroupDict[self.towerType].remove(self)
 
     def updateModifiers(self):
-        self.dmgModifier = 1 + (len(self.towerSet) - 1) * .05
-        if self.towerType != 'Gravity' or self.towerType != 'Ice':
-            self.rangeModifier = 1 + (len(self.towerSet) - 1) * .05
-        self.pushModifier = 1 + (len(self.towerSet) - 1) * .05
-        self.slowTimeModifier = 1 + (len(self.towerSet) - 1) * .05
-        self.slowPercentModifier = 1 + (len(self.towerSet) - 1) * .05
-        self.stunTimeModifier = 1 + (len(self.towerSet) - 1) * .05
+        if not self.leader:
+            self.dmgModifier = 1 + (len(self.towerSet) - 1) * .05
+            if self.towerType != 'Gravity' or self.towerType != 'Ice':
+                self.rangeModifier = 1 + (len(self.towerSet) - 1) * .05
+            self.pushModifier = 1 + (len(self.towerSet) - 1) * .05
+            self.slowTimeModifier = 1 + (len(self.towerSet) - 1) * .05
+            self.slowPercentModifier = 1 + (len(self.towerSet) - 1) * .05
+            self.stunTimeModifier = 1 + (len(self.towerSet) - 1) * .05
+        else:
+            self.dmgModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.leader.damageBonus/100)
+            if self.towerType != 'Gravity' or self.towerType != 'Ice':
+                self.rangeModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.leader.rangeBonus/100)
+            self.pushModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.leader.pushBonus/100)
+            self.slowTimeModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.leader.slowtimeBonus/100)
+            self.slowPercentModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.leader.slowpercentBonus/100)
+            self.stunTimeModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.leader.stuntimeBonus/100)
+            self.reloadModifier = 1 + (self.leader.reloadBonus/100)
 
         for tower in self.towerSet:
             tower.updateModifiers()

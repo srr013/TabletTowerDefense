@@ -18,43 +18,6 @@ def heuristic(a, b):
     (x2, y2) = b
     return abs(x1 - x2) + abs(y1 - y2)
 
-
-# def a_star_search(graph, start, goal):
-#     '''Implements the A* search algorithm
-#     Returns: came_from dict, cost_so_far
-#     Graph: the available space to move. Usually from GridWithWeights
-#     Start: the starting point of the unit (x,y)
-#     Goal: Unit's end point (x,y)'''
-#     frontier = Queue.PriorityQueue()
-#     frontier.put(start, 0)
-#     came_from = {}
-#     cost_so_far = {}
-#     came_from[start] = None
-#     cost_so_far[start] = 0
-#
-#     while not frontier.empty():
-#         current = frontier.get()
-#         if current == goal:
-#             break
-#         neighbors = graph.neighbors(current)
-#         if not neighbors:
-#             came_from = 'Path Blocked'
-#             cost_so_far = current
-#
-#         for next in neighbors:
-#             new_cost = cost_so_far[current] + graph.cost(current, next)
-#             if next not in cost_so_far or new_cost < cost_so_far[next]:
-#                 cost_so_far[next] = new_cost
-#                 priority = new_cost + heuristic(goal, next)
-#                 frontier.put(next, priority)
-#                 came_from[next] = [current]
-#         if frontier.qsize() == 0:
-#             came_from = 'Path Blocked'
-#             cost_so_far = current
-#
-#     return came_from, cost_so_far
-
-
 def a_star_search(graph, start, goal):
     '''Implements the A* search algorithm
     Returns: came_from dict, cost_so_far
@@ -134,18 +97,22 @@ def reconstruct_path(came_from, start, goal):
 
     y = 0
     move = []
+    movedir = []
     move.append(path[y])
+    movedir.append(direction[y])
     y += 1
     while y < len(direction):
         if y == len(direction) - 1:
             move.append(path[y])
+            movedir.append(direction[y])
             break
         if direction[y - 1] == direction[y]:
             pass
         else:
             move.append(path[y])
+            movedir.append(direction[y])
         y += 1
-    return path, direction, move
+    return path, direction, move, movedir
 
 
 class MapGrid():

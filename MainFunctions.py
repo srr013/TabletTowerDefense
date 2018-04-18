@@ -10,7 +10,7 @@ import Pathfinding
 import Player
 import TowerAbilities
 import Towers
-import main
+import Analytics
 
 
 def makeIcons():
@@ -138,12 +138,11 @@ def workEnemies():
     '''Move, draw to screen, draw health bars of enemys.
     Frametime: the amount of time elapsed per frame'''
     for enemy in Map.mapvar.enemycontainer.children:
-        #enemy.distBase = enemy.distToBase()
         if Player.player.newMoveList:
             if enemy.isair:
-                enemy.movelist = Map.mapvar.pointflymovelists[enemy.movelistNum]
+                enemy.movelist = Map.mapvar.enemyflymovelists[enemy.movelistNum]
             else:
-                enemy.movelist = Map.mapvar.pointmovelists[enemy.movelistNum]
+                enemy.movelist = Map.mapvar.enemymovelists[enemy.movelistNum]
         enemy.takeTurn()
 
     Player.player.newMoveList = False
@@ -205,7 +204,7 @@ def resetGame():
     Map.mapvar.getStartPoints()
     Map.mapvar.flylistgenerated = False
     Map.mapvar.flymovelists = []
-    Map.mapvar.pointmovelist = []
+    Map.mapvar.pointmovelists = []
     Localdefs.towerGroupDict = {'Life': [], 'Fire': [], 'Ice': [], 'Gravity': [], 'Wind': []}
     AllLists = [Localdefs.towerlist, Localdefs.bulletlist, Localdefs.menulist, Localdefs.explosions,
                 Localdefs.senderlist, Localdefs.timerlist, Localdefs.shotlist, Localdefs.alertQueue]
@@ -240,7 +239,9 @@ def resetGame():
     GUI.gui.myDispatcher.Health = str(Player.player.health)
     Player.player.score = 0
     GUI.gui.myDispatcher.Score = str(Player.player.score)
+    Player.player.analytics = Analytics.Analytics()
     GUI.gui.removeWaveStreamer()
+    GUI.gui.nextwaveButton.text = 'Start'
     if GUI.gui.bgrect:
         Map.mapvar.backgroundimg.canvas.after.remove(GUI.gui.bgrect)
         GUI.gui.bgrect = None

@@ -4,6 +4,7 @@ from kivy.uix.image import Image
 import Map
 import Player
 import Utilities
+import GUI
 
 
 class TowerDragger(DragBehavior, Image):
@@ -50,6 +51,9 @@ class TowerDragger(DragBehavior, Image):
             self.pos[1] = self.placeholder.pos[1]
         else:
             self.pos[0] = self.placeholder.pos[0]
+
+        totalCost = len(self.towerposlist)*15
+        GUI.gui.myDispatcher.totalCost = str(totalCost)
 
         x = 1  # x is 1 to ignore the initial tower
         while x < len(self.towerposlist):

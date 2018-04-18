@@ -4,6 +4,7 @@ from kivy.graphics import *
 from kivy.uix.widget import Widget
 
 import GUI
+import GUI_Templates
 import Localdefs
 import Pathfinding
 import Playfield
@@ -55,6 +56,8 @@ class Map():
         self.pointflymovelists = list()
         self.pathrectlists = list()
         self.dirmovelists = list()
+        self.enemymovelists = list()
+        self.roaddirlists = list()
         self.total_waves = 0
         self.movelists = list()
         self.flymovelists = list()
@@ -80,26 +83,33 @@ class Map():
         self.pointmovelists = []
         self.pathrectlists = []
         self.dirmovelists = []
+        self.enemymovelists = []
+        self.roaddirlists = []
 
         for movelist in self.movelists:
             ##translate tiles to pixels. SQU represents a tile width or height
             pointlist = list([(point[0] * self.squsize, point[1] * self.squsize) for point in movelist[0]])
-            enemymovelist = list([(point[0] * self.squsize, point[1] * self.squsize) for point in movelist[0]])
+            enemymovelist = list([(point[0] * self.squsize, point[1] * self.squsize) for point in movelist[2]])
             ##create a rect for each set of points to connect the path from one point to another
             pathrectlist = list([Utilities.createRect(pointlist[ind], (
                 pointlist[ind + 1][0] - pointlist[ind][0], pointlist[ind + 1][1] - pointlist[ind][1])) for ind in
                                  range(len(pointlist) - 2)])
-            self.pointmovelists.append(enemymovelist)
+            self.pointmovelists.append(pointlist)
+            self.enemymovelists.append(enemymovelist)
             self.pathrectlists.append(pathrectlist)
-            self.dirmovelists.append(movelist[1])
+            self.roaddirlists.append(movelist[1])
+            self.dirmovelists.append(movelist[3])
 
         if not self.flylistgenerated:
             self.pointflymovelists = []
             self.dirflymovelists = []
+            self.enemyflymovelists = []
             for movelist in self.flymovelists:
-                enemymovelist = list([(point[0] * self.squsize, point[1] * self.squsize) for point in movelist[0]])
-                self.pointflymovelists.append(enemymovelist)
-                self.dirflymovelists.append(movelist[1])
+                pointmovelist = list([(point[0] * self.squsize, point[1] * self.squsize) for point in movelist[0]])
+                enemymovelist = list([(point[0] * self.squsize, point[1] * self.squsize) for point in movelist[2]])
+                self.pointflymovelists.append(pointmovelist)
+                self.enemyflymovelists.append(enemymovelist)
+                self.dirflymovelists.append(movelist[3])
                 self.flylistgenerated = True
 
 
@@ -108,7 +118,8 @@ class Map():
         self.background = Playfield.playField()
         self.backgroundimg.size = self.background.size
         self.backgroundimg.pos = self.background.pos
-        self.enemypanel = GUI.EnemyPanel()
+        self.enemypanel = GUI_Templates.EnemyPanel()
+        self.towerpanel = GUI_Templates.TowerPanel()
         self.baseimg = None
         self.triangle = None
         self.towerRange = None
@@ -116,8 +127,10 @@ class Map():
         self.startpoint = None
         self.waveOrder = 'standard'
         with self.backgroundimg.canvas:
-            Color(1, 1, 1, 1)
-            self.shaderRect = Rectangle(size=self.backgroundimg.size, pos=self.backgroundimg.pos)
+            Color(.8,.8,.8,.3)
+            self.shaderRect = Rectangle(size=main.Window.size, pos=(0,0))
+            Color(1,1,1,1)
+            self.playfieldRect = Rectangle(size=(self.playwid - self.border, self.playhei-self.border), pos= (self.border, self.border))
             Color(0, 0, 0, .6)
             self.borderLine = Line(points=[self.squsize * self.squborder, self.squsize * self.squborder,
                                            self.squsize * self.squborder,
@@ -125,7 +138,8 @@ class Map():
                                            self.playwid,
                                            self.playhei,
                                            self.playwid, self.squsize * self.squborder,
-                                           self.squsize * self.squborder, self.squsize * self.squborder], width=1)
+                                           self.squsize * self.squborder, self.squsize * self.squborder], width=1.3)
+
 
         self.background.bind(size=self.bindings)
 
@@ -165,6 +179,8 @@ class Map():
         self.squborder = self.border / self.squsize
         self.squwid = int(self.scrwid / self.squsize) - 1
         self.squhei = int(self.scrhei / self.squsize) - 1
+        self.playfieldRect.size = (self.playwid - self.border, self.playhei-self.border)
+        self.playfieldRect.pos = (self.border, self.border)
         self.borderLine.points = [self.squsize * self.squborder, self.squsize * self.squborder,
                                            self.squsize * self.squborder,
                                            self.playhei,
@@ -174,6 +190,7 @@ class Map():
                                            self.squsize * self.squborder, self.squsize * self.squborder]
         self.backgroundimg.remove_widget(self.baseimg)
         GUI.gui.alertStreamerBinding()
+        GUI.gui.bindings()
         self.genmovelists()
         self.baseimg = None
         self.roadGen()

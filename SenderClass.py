@@ -31,6 +31,7 @@ class Sender():
         '''Sends enemies and maintains Senderlist'''
         self.enemycounter -= Player.player.frametime
         if self.enemycounter <= 0 or self.enemiesDeployed == 0:
+            Player.player.analytics.gameEnemies +=1
             if self.enemiesDeployed < self.numThisWave:
                 if self.enemytype == 'Crowd' and self.specialSend == True:
 

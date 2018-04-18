@@ -36,6 +36,7 @@ class Sell(TowerAbility):
 
     @classmethod
     def apply(cls, **kwargs):
+        Player.player.analytics.towersSold += 1
         tower = Player.player.towerSelected
         if tower:
             Player.player.money += (tower.totalspent)
@@ -59,6 +60,23 @@ class Upgrade(TowerAbility):
     def apply(cls, **kwargs):
         tower = Player.player.towerSelected
         cost = cls.cost(tower)
+        if isinstance(cost, tuple):
+            tower.upgradePath = kwargs['id']
+            if tower.upgradePath == 'LeaderPath':
+                if tower.towerGroup.leader == True:
+                    return
+                else:
+                    tower.towerGroup.leader = tower
+            newcost = cost[0]
+            gems = cost[1]
+            cost = newcost
+            if Player.player.gems >= gems:
+                Player.player.gems -= gems
+                GUI.gui.myDispatcher.Gems = str(Player.player.gems)
+            else:
+                return
+        Player.player.analytics.towersUpgraded += 1
+        Player.player.analytics.moneySpent += cost
         if Player.player.money >= cost:
             Player.player.money -= cost
             tower.totalspent += cost
