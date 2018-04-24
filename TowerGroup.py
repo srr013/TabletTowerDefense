@@ -16,13 +16,6 @@ class TowerGroup():
         self.towerSet = set()
         self.towerType = tower.type
         Localdefs.towerGroupDict[self.towerType].append(self)
-        self.dmgModifier = 1
-        self.reloadModifier = 1
-        self.rangeModifier = 1
-        self.pushModifier = 1
-        self.slowTimeModifier = 1
-        self.slowPercentModifier = 1
-        self.stunTimeModifier = 1
         self.adjacentRoads = set()
         self.adjacentRoadFlag = True
         self.active = False
@@ -32,6 +25,35 @@ class TowerGroup():
         self.animating = False
         self.needsUpdate = True
         self.leader = None
+
+        self.damageModifier = 1
+        self.reloadModifier = 1
+        self.rangeModifier = 1
+        self.pushModifier = 1
+        self.slowTimeModifier = 1
+        self.slowPercentModifier = 1
+        self.stunTimeModifier = 1
+        self.stunChanceModifier = 1
+        self.burnModifier = 1
+        self.blackHoleChanceModifier = 1
+        self.damageBonus = 0
+        self.reloadBonus = 0
+        self.rangeBonus = 0
+        self.pushBonus = 0
+        self.slowpercentBonus = 0
+        self.slowtimeBonus = 0
+        self.stuntimeBonus = 0
+        self.stunchanceBonus = 0
+        self.burnBonus = 0
+        self.nextDamageBonus = 0
+        self.nextReloadBonus = 0
+        self.nextRangeBonus = 0
+        self.nextPushBonus = 0
+        self.nextSlowpercentBonus = 0
+        self.nextSlowtimeBonus = 0
+        self.nextStuntimeBonus = 0
+        self.nextStunchanceBonus = 0
+        self.nextBurnBonus = 0
 
     def updateTowerGroup(self):
         self.updateList()
@@ -45,7 +67,7 @@ class TowerGroup():
             if tower not in self.towerSet and tower.towerGroup == self:
                 if self.active and self.towerType == 'Gravity':
                     self.active = False
-                if self.active and self.towerType == 'Wind':
+                if self.active and self.towerType == 'Wind' and tower.level <= Player.player.upgPathSelectLvl:
                     for t in self.towerSet:
                         t.turret.source = os.path.join('towerimgs', self.towerType, "turret.gif")
                 self.towerSet.add(tower)
@@ -56,32 +78,47 @@ class TowerGroup():
         Localdefs.towerGroupDict[self.towerType].remove(self)
 
     def updateModifiers(self):
-        if not self.leader:
-            self.dmgModifier = 1 + (len(self.towerSet) - 1) * .05
-            if self.towerType != 'Gravity' or self.towerType != 'Ice':
-                self.rangeModifier = 1 + (len(self.towerSet) - 1) * .05
-            self.pushModifier = 1 + (len(self.towerSet) - 1) * .05
-            self.slowTimeModifier = 1 + (len(self.towerSet) - 1) * .05
-            self.slowPercentModifier = 1 + (len(self.towerSet) - 1) * .05
-            self.stunTimeModifier = 1 + (len(self.towerSet) - 1) * .05
-        else:
-            self.dmgModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.leader.damageBonus/100)
-            if self.towerType != 'Gravity' or self.towerType != 'Ice':
-                self.rangeModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.leader.rangeBonus/100)
-            self.pushModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.leader.pushBonus/100)
-            self.slowTimeModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.leader.slowtimeBonus/100)
-            self.slowPercentModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.leader.slowpercentBonus/100)
-            self.stunTimeModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.leader.stuntimeBonus/100)
-            self.reloadModifier = 1 + (self.leader.reloadBonus/100)
-
+        if self.leader:
+            #setup so each bonus can be altered by removing the for loops and coding in the % change.
+            self.damageBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.reloadBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.rangeBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.pushBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.slowpercentBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.slowtimeBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.stuntimeBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.stunchanceBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.burnBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.nextDamageBonus = float((self.leader.level + 1 - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.nextReloadBonus = float((self.leader.level + 1 - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.nextRangeBonus = float((self.leader.level + 1 - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.nextPushBonus = float((self.leader.level + 1 - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.nextSlowpercentBonus = float((self.leader.level + 1 - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.nextSlowtimeBonus = float((self.leader.level + 1 - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.nextStuntimeBonus = float((self.leader.level + 1 - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.nextStunchanceBonus = float((self.leader.level + 1- Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.nextBurnBonus = float((self.leader.level + 1- Player.player.upgPathSelectLvl) * 20 / 100.0)
+        self.damageModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.damageBonus)
+        self.rangeModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.rangeBonus) if \
+            self.towerType != 'Gravity' or self.towerType != 'Ice' else 0
+        self.pushModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.pushBonus)
+        self.slowTimeModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.slowtimeBonus)
+        self.slowPercentModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.slowpercentBonus)
+        self.stunTimeModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.stuntimeBonus)
+        self.stunChanceModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.stunchanceBonus)
+        self.reloadModifier = 1 + (self.reloadBonus)
+        self.burnModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.burnBonus)
         for tower in self.towerSet:
-            tower.updateModifiers()
+            tower.setTowerData()
 
     def takeTurn(self):
         if self.active:
             in_range_air = 0
             in_range_ground = 0
             for tower in self.towerSet:
+                if tower.targetedEnemy:
+                    if not tower.turret.anim.have_properties_to_animate(tower.turret_rot):
+                        tower.moveTurret(tower.targetedEnemy)
                 list = Utilities.get_all_in_range(tower,Map.mapvar.enemycontainer.children)
                 if list:
                     for enemy in list:
@@ -118,7 +155,7 @@ class TowerGroup():
 
     def target(self):
         for tower in self.towerSet:
-            if tower.totalUpgradeTime == 0:
+            if tower.totalUpgradeTime == 0 and not tower.leader:
                 tower.target()
 
 
@@ -131,7 +168,8 @@ class TowerGroup():
         if self.towerType == 'Wind':
             self.targetTimer = 0
             for tower in self.towerSet:
-                tower.turret.source = os.path.join('towerimgs', self.towerType, "turret.gif")
+                if tower.level <= Player.player.upgPathSelectLvl:
+                    tower.turret.source = os.path.join('towerimgs', self.towerType, "turret.gif")
 
     def animateGravity(self, *args):
         tower = args[0]
@@ -168,7 +206,8 @@ class TowerGroup():
         if self.towerType == 'Wind':
             self.targetTimer = 0
             for tower in self.towerSet:
-                tower.turret.source = os.path.join('towerimgs', self.towerType, "turret.png")
+                if tower.level <= Player.player.upgPathSelectLvl:
+                    tower.turret.source = os.path.join('towerimgs', self.towerType, "turret.png")
 
     def getAdjacentRoads(self):
         self.adjacentRoads = set()
@@ -177,18 +216,9 @@ class TowerGroup():
                 for road in Localdefs.roadlist:
                     if road.pos in tower.adjacentRoadPos:
                         self.adjacentRoads.add(road)
-                        self.createIceRoad(road)
+                        road.createIceRoad()
         self.adjacentRoadFlag = True
 
-    def createIceRoad(self, road):
-        road.iceNeighbor = True
-        road.imagestr = road.getRoadColor()
-        road.image.source = road.imagestr
-        with road.image.canvas.before:
-            road.image.rgba = Color(1, 1, 1, 0)
-            road.image.rect = Rectangle(size=road.size, pos=road.pos)
-        road.image.animation = Animation(rgba=[0, 1, 1, .5], duration=.5)
-        road.image.closeanimation = Animation(rgba=[1, 1, 1, 0], duration=.1)
 
     def genRoadList(self):
         if not self.active:
@@ -196,15 +226,15 @@ class TowerGroup():
                 if road in Localdefs.activeiceroadlist:
                     Localdefs.activeiceroadlist.remove(road)
                     if road.active:
-                        if road.image.animation.have_properties_to_animate(road.image.rgba):
-                            road.image.animation.cancel(road.image.rgba)
-                        road.image.closeanimation.start(road.image.rgba)
+                        if road.animation.have_properties_to_animate(road.rgba):
+                            road.animation.cancel(road.rgba)
+                        road.closeanimation.start(road.rgba)
                         road.active = False
         if self.active:
             for road in self.adjacentRoads:
                 if road not in Localdefs.activeiceroadlist:
                     Localdefs.activeiceroadlist.append(road)
-                    self.createIceRoad(road)
+                    road.createIceRoad()
         self.toggleRoads()
 
     def toggleRoads(self):
@@ -213,12 +243,12 @@ class TowerGroup():
             if road in Localdefs.activeiceroadlist:
                 if not road.active:
                     road.active = True
-                    if road.image.closeanimation.have_properties_to_animate(road.image.rgba):
-                        road.image.closeanimation.cancel_all(road.image.rgba)
-                    road.image.animation.start(road.image.rgba)
+                    if road.closeanimation.have_properties_to_animate(road.rgba):
+                        road.closeanimation.cancel_all(road.rgba)
+                    road.animation.start(road.rgba)
             else:
                 if road.active:
-                    if road.image.animation.have_properties_to_animate(road.image.rgba):
-                        road.image.animation.cancel(road.image.rgba)
-                    road.image.closeanimation.start(road.image.rgba)
+                    if road.animation.have_properties_to_animate(road.rgba):
+                        road.animation.cancel(road.rgba)
+                    road.closeanimation.start(road.rgba)
                     road.active = False

@@ -17,9 +17,8 @@ def genModList():
     while sets > 0:
         x = 0
         numMods = int((setNum) / 2.5)
-        if numMods == 0:
-            modList.append([])
-        elif numMods >= 0:
+
+        if numMods >= 0:
             list = []
             while x < numMods:
                 list.append(modifiers[random.randint(0, len(modifiers) - 1)])
@@ -36,6 +35,7 @@ def wavegen():
     setNum = 1  # a set is counted every X waves
     wavesPerSet = 6
     #enemytypes = ['Airborn','Airborn','Airborn','Airborn','Airborn']
+    #enemytypes = ['Splinter','Splinter','Splinter','Splinter','Splinter',]
     enemytypes = ['Standard', 'Crowd', 'Strong', 'Splinter','Airborn']
     waveDict = {}
     waveTypeList = []

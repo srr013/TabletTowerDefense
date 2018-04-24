@@ -60,7 +60,6 @@ def getNeighbors(tower):
     for neighbor in neighborlist:
         totalNeighbors += 1
         sideList.add(neighbor[0])
-    print tower, neighborlist
     if totalNeighbors != tower.lastNeighborCount:
         tower.neighborFlag = 'update'
         tower.neighborList = neighborlist
@@ -91,7 +90,6 @@ def updateNeighbors(tower):
     '''Creates a new group or groups for the remaining towers after a tower is sold'''
     x = 0
     tg = tower.towerGroup
-    print tower.neighborList
     while x < len(tower.neighborList): #update the neighbors of the removed tower
         neighbor = tower.neighbors[tower.neighborList[x]]
         neighbor.neighbors = getNeighbors(neighbor)
@@ -201,16 +199,22 @@ def getRotation(tower):
 
 def updateImage(tower):
     '''Rotates the tower and applies the appropriate image'''
-    rotation = 0
+    tower.rotation = 0
     if tower.neighbors:
-        rotation = getRotation(tower)
+        tower.rotation = getRotation(tower)
     if tower.neighborFlag == 'update':
         tower.imagestr = os.path.join('towerimgs', tower.type, str(tower.imageNum) + '.png')
-        tower.image.source = tower.imagestr
+        tower.source = tower.imagestr
         tower.neighborFlag = ''
-    if rotation != 0:
-        with tower.image.canvas.before:
+    if tower.rotation != 0:
+        with tower.canvas.before:
             PushMatrix()
-            tower.rot = Rotate(axis=(0, 0, 1), origin=tower.image.center, angle=rotation)
-        with tower.image.canvas.after:
+            tower.rot = Rotate(axis=(0, 0, 1), origin=tower.center, angle=tower.rotation)
+        with tower.canvas.after:
             PopMatrix()  # tower positioning and rotation
+        with tower.levelLabel.canvas.before:
+            PushMatrix()
+            tower.levelLabel.rot = Rotate(axis=(0,0,1), origin = tower.center, angle= -tower.rotation)
+        with tower.canvas.after:
+            PopMatrix()
+        

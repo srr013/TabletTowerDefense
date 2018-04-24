@@ -6,7 +6,6 @@ import TowerDragging
 import Utilities
 import main
 import Player
-import Localdefs
 
 class playField(ScatterLayout):
     def __init__(self, **kwargs):
@@ -33,13 +32,6 @@ class playField(ScatterLayout):
     def on_touch_down(self, touch):
         self.squarepos = Utilities.getPos(touch.pos)
         self.squarepos = self.adjustInBounds(self.squarepos)
-        # move the selected square if a neighboring tower overlaps
-        self.adjustForNeighbor()
-        if not self.adjustForBase():
-            return
-        if self.dragger and self.dragger.collide_point(*touch.pos):
-            self.dragger.on_touch_down(touch)
-            return
         # don't allow touches outside of play boundary if a menu isn't open
         if self.popUpOpen:
             if not self.popUpOpen.collide_point(*touch.pos):
@@ -47,7 +39,13 @@ class playField(ScatterLayout):
                 return
             else:
                 return super(playField, self).on_touch_down(touch)
-
+        # move the selected square if a neighboring tower overlaps
+        if not self.adjustForBase(touch.pos):
+            return
+        self.adjustForNeighbor()
+        if self.dragger and self.dragger.collide_point(*touch.pos):
+            self.dragger.on_touch_down(touch)
+            return
         if not self.popUpOpen:
             if self.outOfBounds(touch.pos):
                 self.removeAll()
@@ -65,7 +63,6 @@ class playField(ScatterLayout):
     def towerSelected(self, touch):
         for tower in Map.mapvar.towercontainer.walk(restrict=True):
             if tower.collide_point(*touch.pos):
-                print tower, tower.towerGroup, tower.neighbors
                 if Player.player.tbbox != None:
                     self.removeAll()
                 Player.player.towerSelected = tower
@@ -105,20 +102,35 @@ class playField(ScatterLayout):
                 self.squarepos[1] -= Map.mapvar.squsize
                 self.squarepos[0] -= Map.mapvar.squsize
 
-    def adjustForBase(self):
-        if Map.mapvar.baseimg.collide_point(*self.squarepos):
+    def adjustForBase(self, touch):
+        if Map.mapvar.baseimg.collide_point(*touch):
             return False
-        if Map.mapvar.baseimg.collide_point(self.squarepos[0] + 2*Map.mapvar.squsize, self.squarepos[1]):
-            self.squarepos[0] -= Map.mapvar.squsize
-        # elif Map.mapvar.baseimg.collide_point(self.squarepos[0] - Map.mapvar.squsize, self.squarepos[1]):
-        #     self.squarepos[0] += Map.mapvar.squsize
-        if Map.mapvar.baseimg.collide_point(self.squarepos[0], self.squarepos[1] + 2*Map.mapvar.squsize):
-            self.squarepos[1] -= Map.mapvar.squsize
-        # elif Map.mapvar.baseimg.collide_point(self.squarepos[0], self.squarepos[1] - Map.mapvar.squsize):
-        #     self.squarepos[1] += Map.mapvar.squsize
-        if Map.mapvar.baseimg.collide_point(self.squarepos[0] + 2*Map.mapvar.squsize, self.squarepos[1] + 2*Map.mapvar.squsize):
-                self.squarepos[1] -= Map.mapvar.squsize
+        elif self.squarepos[1]+1 >= Map.mapvar.baseimg.pos[1] and self.squarepos[1] <= Map.mapvar.baseimg.top:
+            if self.squarepos[0] > Map.mapvar.baseimg.pos[0] - Map.mapvar.squsize*2 and self.squarepos[0] < Map.mapvar.baseimg.right:
                 self.squarepos[0] -= Map.mapvar.squsize
+            elif self.squarepos[0] < Map.mapvar.baseimg.right and self.squarepos[0] > Map.mapvar.baseimg.pos[0]:
+                self.squarepos[0] += Map.mapvar.squsize
+        elif self.squarepos[0] >= Map.mapvar.baseimg.pos[0] and self.squarepos[0] <= Map.mapvar.baseimg.right:
+            if self.squarepos[1] > Map.mapvar.baseimg.pos[1] - Map.mapvar.squsize * 2 and self.squarepos[1] < Map.mapvar.baseimg.pos[1]:
+                self.squarepos[1] -= Map.mapvar.squsize
+            elif self.squarepos[1] < Map.mapvar.baseimg.top + Map.mapvar.squsize * 2 and self.squarepos[1] > Map.mapvar.baseimg.top:
+                self.squarepos[1] += Map.mapvar.squsize
+        elif self.squarepos[1] < Map.mapvar.baseimg.pos[1] and self.squarepos[1] + 1 >= Map.mapvar.baseimg.pos[1] - Map.mapvar.squsize \
+            and self.squarepos[0] >= Map.mapvar.baseimg.pos[0]- Map.mapvar.squsize and self.squarepos[0] < Map.mapvar.baseimg.pos[0]:
+            self.squarepos[0] -= Map.mapvar.squsize
+            self.squarepos[1] -= Map.mapvar.squsize
+
+        # elif Map.mapvar.baseimg.collide_point(self.squarepos[0] + 2*Map.mapvar.squsize, self.squarepos[1]):
+        #     self.squarepos[0] -= Map.mapvar.squsize
+        # # elif Map.mapvar.baseimg.collide_point(self.squarepos[0] - Map.mapvar.squsize, self.squarepos[1]):
+        # #     self.squarepos[0] += Map.mapvar.squsize
+        # elif Map.mapvar.baseimg.collide_point(self.squarepos[0], self.squarepos[1] + 2*Map.mapvar.squsize):
+        #     self.squarepos[1] -= Map.mapvar.squsize
+        # # elif Map.mapvar.baseimg.collide_point(self.squarepos[0], self.squarepos[1] - Map.mapvar.squsize):
+        # #     self.squarepos[1] += Map.mapvar.squsize
+        # elif Map.mapvar.baseimg.collide_point(self.squarepos[0] + 2*Map.mapvar.squsize, self.squarepos[1] + 2*Map.mapvar.squsize):
+        #         self.squarepos[1] -= Map.mapvar.squsize
+        #         self.squarepos[0] -= Map.mapvar.squsize
         return True
 
     def outOfBounds(self, pos):
@@ -134,6 +146,7 @@ class playField(ScatterLayout):
             Map.mapvar.backgroundimg.remove_widget(Player.player.tbbox)
             Player.player.tbbox = None
             Player.player.layout = None
+            GUI.gui.tbbox = ' '
         if Map.mapvar.enemypanel.parent:
             Map.mapvar.backgroundimg.remove_widget(Map.mapvar.enemypanel)
         if Map.mapvar.towerpanel.parent:
@@ -144,6 +157,9 @@ class playField(ScatterLayout):
         if Map.mapvar.towerRange:
             Map.mapvar.backgroundimg.canvas.remove(Map.mapvar.towerRange)
             Map.mapvar.towerRange = None
+            if Map.mapvar.towerRangeExclusion:
+                Map.mapvar.backgroundimg.canvas.remove(Map.mapvar.towerRangeExclusion)
+                Map.mapvar.towerRangeExclusion = None
         if self.placeholder:
             Map.mapvar.backgroundimg.remove_widget(self.placeholder)
             self.placeholder = None

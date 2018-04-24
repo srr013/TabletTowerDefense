@@ -123,6 +123,7 @@ class Map():
         self.baseimg = None
         self.triangle = None
         self.towerRange = None
+        self.towerRangeExclusion = None
         self.alertStreamer = GUI.gui.createAlertStreamer()
         self.startpoint = None
         self.waveOrder = 'standard'
@@ -218,7 +219,7 @@ class Map():
         if not self.baseimg:
             self.baseimg = Utilities.imgLoad(source=os.path.join('backgroundimgs', 'Base.png'))
             self.baseimg.allow_stretch = True
-            self.baseimg.size = (self.squsize * 3 - 2, self.squsize * 3 - 2)
+            self.baseimg.size = (self.squsize * 3-1, self.squsize * 3-1)
             self.baseimg.pos = (
                 self.basepoint[0] * self.squsize, self.basepoint[1] * self.squsize - (self.baseimg.size[1] / 3))
             self.backgroundimg.add_widget(self.baseimg)
@@ -240,7 +241,7 @@ class Map():
             self.startpoint = [(1, 9), (10, 16)]
         else:
             self.startpoint = [(1, 9), (10, 16), (10, 1)]
-        self.basepoint = (28, 9)  # update newPath/flyPath below too
+        self.basepoint = (26, 9)  # update newPath/flyPath below too
 
 
 mapvar = Map()

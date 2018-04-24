@@ -9,6 +9,7 @@ from kivy.core.window import Window
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.widget import Widget
 from kivy.utils import platform
+from kivy.graphics import *
 
 import EventFunctions
 import GUI
@@ -91,12 +92,19 @@ class Game(Widget):
             print Player.player.analytics._print()
             Main.get_running_app().stop()
             sys.exit()
-        elif obj.id == 'unpause':
-            Player.player.state = 'Playing'
-            self.Clock.schedule_interval(self.update, self.frametime)
-            MainFunctions.startAllAnimation()
-            GUI.gui.toggleButtons()
-            self.remove_widget(self.pauseMenu)
+        elif obj.id == 'pause':
+            if Player.player.state == 'Paused':
+                self.shaderRect.size = (0,0)
+                Player.player.state = 'Playing'
+                self.Clock.schedule_interval(self.update, self.frametime)
+                MainFunctions.startAllAnimation()
+                GUI.gui.toggleButtons()
+                self.remove_widget(self.pauseMenu)
+            else:
+                Player.player.state = 'Paused'
+        elif obj.id == 'menu':
+            Player.player.state = 'Menu'
+            self.dispMainMenu()
         elif obj.id == 'onepath':
             Map.mapvar.numpaths = 1
         elif obj.id == 'twopath':
@@ -113,6 +121,7 @@ class Game(Widget):
             Map.mapvar.waveOrder = 'standard'
         elif obj.id == 'random':
             Map.mapvar.waveOrder = 'random'
+        return
 
     def dispMainMenu(self):
         if self.mainMenu == None:
@@ -126,11 +135,14 @@ class Game(Widget):
             self.mainMenu.restartButton.text = 'Start New'
             self.mainMenu.startButton.text = 'Resume'
             self.add_widget(self.mainMenu)
+        if self.pauseMenu != None:
+            if self.pauseMenu.parent:
+                self.remove_widget(self.pauseMenu)
         GUI.gui.toggleButtons(active=False)
         MainFunctions.dispMessage()
 
     def dispPauseMenu(self):
-        GUI.gui.toggleButtons(active=False)
+        GUI.gui.toggleButtons(active=False, pause=True)
         if self.pauseMenu == None:
             self.pauseMenu = GUI.pauseMenu()
             for button in self.pauseMenu.walk(restrict=True):
@@ -138,6 +150,10 @@ class Game(Widget):
             self.add_widget(self.pauseMenu)
         elif self.pauseMenu.parent == None:
             self.add_widget(self.pauseMenu)
+        with Map.mapvar.background.canvas:
+            Color(.2,.2,.2,.2)
+            self.shaderRect = Rectangle(size=(Map.mapvar.playwid-Map.mapvar.squsize*2, Map.mapvar.playhei-Map.mapvar.squsize*2),
+                      pos = (Map.mapvar.squsize*2, Map.mapvar.squsize*2))
 
     def update(self, dt):
         #print self.Clock.get_fps()
@@ -176,6 +192,7 @@ class Game(Widget):
             MainFunctions.workDisp()
             if Player.player.wavenum > 0:
                 GUI.gui.nextwaveButton.text = 'Next Wave'
+                GUI.gui.nextwaveButton.color = [1,1,0,1]
                 Player.player.wavetime -= Player.player.frametime
                 Player.player.wavetimeInt = int(Player.player.wavetime)
                 GUI.gui.myDispatcher.Timer = str(Player.player.wavetimeInt)
@@ -196,7 +213,6 @@ class Main(App):
 
     def build(self):
         game = Game()
-        # Window.size = (Map.mapvar.winwid, Map.mapvar.winhei)
         if platform == 'linux':
             #Window.size = (1334,750) #tablet
             Window.size = (1280,720) #phone
@@ -214,14 +230,13 @@ class Main(App):
         ##create a list of available towers and icons for touch interaction
         MainFunctions.makeIcons()
         MainFunctions.makeUpgradeIcons()
-        # create toolbars
-        # game.topBar = GUI.gui.createTopBar()
-        # game.add_widget(game.topBar)
         GUI.gui.initTopBar()
+        GUI.gui.pauseButton.bind(on_release=game.menuFuncs)
+        GUI.gui.menuButton.bind(on_release=game.menuFuncs)
         Map.mapvar.backgroundimg.add_widget(GUI.gui.rightSideButtons())
         game.bindings()
         Player.player.sound = Sound.MySound(Player.player.soundOn, Player.player.musicOn)
-        Player.player.sound.playMusic(Player.player.sound.gameMusic)
+        Player.player.sound.playMusic()
         # This runs the game.update loop, which is used for handling the entire game
         game.Clock = Clock
         game.Clock.schedule_interval(game.update, game.frametime)

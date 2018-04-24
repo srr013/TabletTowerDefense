@@ -50,7 +50,7 @@ class Sell(TowerAbility):
 class Upgrade(TowerAbility):
     @classmethod
     def cost(cls, tower):
-        return tower.upgradeDict['Cost'][tower.level - 1]
+        return tower.upgradeDict['Cost'][tower.level]
 
     @classmethod
     def doesFit(cls, tower):
@@ -105,4 +105,3 @@ class Rotate(TowerAbility):
             tower.towerGroup.facing = 'd'
         elif tower.towerGroup.facing == 'd':
             tower.towerGroup.facing = 'l'
-        print tower.towerGroup.facing

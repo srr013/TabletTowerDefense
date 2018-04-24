@@ -11,6 +11,7 @@ import Player
 import TowerAbilities
 import Towers
 import Analytics
+import __main__
 
 
 def makeIcons():
@@ -42,7 +43,7 @@ def workTowers():
         if tower.totalUpgradeTime > 0:
             tower.targetTimer = tower.reload
             tower.upgradeTimeElapsed += Player.player.frametime
-            tower.updateUpgradeStatusBar()
+            tower.updateUpgradeStatus()
         elif tower.type in ['Life', 'Fire']:
             tower.takeTurn()
     for type in Localdefs.towerGroupDict.values():
@@ -94,6 +95,7 @@ def updatePath():
 def updateIce():
     for group in Localdefs.towerGroupDict['Ice']:
         group.getAdjacentRoads()
+        group.getAdjacentRoads()
 
 def workShots():
     '''Update the shot location and hit the enemy'''
@@ -143,6 +145,12 @@ def workEnemies():
                 enemy.movelist = Map.mapvar.enemyflymovelists[enemy.movelistNum]
             else:
                 enemy.movelist = Map.mapvar.enemymovelists[enemy.movelistNum]
+        for road in Localdefs.burnroadlist:
+            if not enemy.isair and enemy.collide_widget(road):
+                road.burnEnemy(enemy)
+                if enemy.slowtime > 0:
+                    enemy.slowtime = 0
+                    enemy.workSlowTimers()
         enemy.takeTurn()
 
     Player.player.newMoveList = False
@@ -155,31 +163,21 @@ def updateGUI():
                     if button.instance.cost <= Player.player.money:
                         button.disabled = False
 
-
-def pauseGame(*args):
-    id = args[0].id
-    if Player.player.state == 'Playing':
-        if id == 'pause':
-            Player.player.state = 'Paused'
-        if id == 'menu':
-            Player.player.state = 'Menu'
-    elif Player.player.state == 'Paused':
-        Player.player.state = 'Playing'
-
-
 def stopAllAnimation():
     for enemy in Map.mapvar.enemycontainer.children:
         if enemy.anim:
             enemy.anim.cancel_all(enemy)
         if enemy.pushAnimation:
             enemy.pushAnimation.cancel_all(enemy)
+        if enemy.backToRoad:
+            enemy.backToRoad.cancel_all(enemy)
     for shot in Map.mapvar.shotcontainer.children:
         shot.anim.cancel(shot)
     for tower in Map.mapvar.towercontainer.children:
         if tower.type == 'Gravity' and tower.animation:
             tower.towerGroup.disable()
         if tower.type == 'Wind':
-            tower.turret.source = os.path.join('towerimgs', 'Wind', 'turret.png')
+            tower.turret.source = os.path.join('towerimgs', 'Wind', 'turret2.png')
     GUI.gui.waveAnimation.cancel_all(GUI.gui.waveScroller)
     if GUI.gui.catchUpWaveAnimation:
         GUI.gui.catchUpWaveAnimation.cancel_all(GUI.gui.waveScroller)
@@ -187,7 +185,8 @@ def stopAllAnimation():
 
 def startAllAnimation():
     for enemy in Map.mapvar.enemycontainer.children:
-        enemy.anim.start(enemy)
+        if enemy.stuntime <= 0:
+            enemy.anim.start(enemy)
     for shot in Map.mapvar.shotcontainer.children:
         shot.anim.start(shot)
     for tower in Map.mapvar.towercontainer.children:
@@ -219,6 +218,8 @@ def resetGame():
         enemy.anim.cancel(enemy)
         if enemy.pushAnimation:
             enemy.pushAnimation.cancel(enemy)
+        if enemy.backToRoad:
+            enemy.backToRoad.cancel_all(enemy)
     Map.mapvar.enemycontainer.clear_widgets()
     for road in Map.mapvar.roadcontainer.children:
         road.iceNeighbor = False
@@ -242,6 +243,7 @@ def resetGame():
     Player.player.analytics = Analytics.Analytics()
     GUI.gui.removeWaveStreamer()
     GUI.gui.nextwaveButton.text = 'Start'
+    GUI.gui.nextwaveButton.color = (0,1,0,1)
     if GUI.gui.bgrect:
         Map.mapvar.backgroundimg.canvas.after.remove(GUI.gui.bgrect)
         GUI.gui.bgrect = None

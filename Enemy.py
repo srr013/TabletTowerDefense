@@ -4,6 +4,8 @@ import random
 from kivy.animation import Animation
 from kivy.graphics import *
 from kivy.uix.widget import Widget
+from kivy.uix.image import Image
+from kivy.vector import Vector
 
 import GUI
 import Localdefs
@@ -14,7 +16,7 @@ import SenderClass
 import Utilities
 
 
-class Enemy(Widget):
+class Enemy(Image):
     """Enemies attack your base. This is a base class for specific enemy types below."""
     def __init__(self, **kwargs):
         super(Enemy, self).__init__()
@@ -29,8 +31,6 @@ class Enemy(Widget):
         if not self.specialSend:
             self.curnode = self.weightedcurnode = 0
             self.weightedcurnode = len(Map.mapvar.enemymovelists[0])- len(self.movelist)
-            self.direction = self.dirlist[self.curnode]
-            self.rect = Utilities.createRect(self.movelist[self.curnode], self.size, instance=self)
             self.pos = self.movelist[self.curnode]
             self.pushed = [0, 0]
             self.starthealth = self.health = self.wavedict['enemyhealth']
@@ -48,94 +48,91 @@ class Enemy(Widget):
                 self.reward = Crowd.reward * 1 + (self.curwave / 70)
                 self.mods = self.wavedict['enemymods']
                 self.isBoss = self.wavedict['isboss']
-        self.image.size = self.size
-        self.image.allow_stretch = True
-        self.add_widget(self.image)
+        self.direction = self.dirlist[self.curnode]
+        self.allow_stretch = True
         Map.mapvar.enemycontainer.add_widget(self)
         if self.isBoss:
             self.size = (self.size[0] * 1.3, self.size[1] * 1.3)
         self.gemImage = None
 
-        self.slowtimers = list()
-        self.slowpercent = 1
+        self.slowpercent = 100
         self.slowtime = 0
-        self.stuntimers = list()
         self.stuntime = 0
+        self.stunimage = Image(pos=(self.center_x, self.top + 8),size=(Map.mapvar.squsize/3,Map.mapvar.squsize/3))
+        self.burntime = 0
+        self.burnDmg = 0
+        self.bind(pos=self.bindStunImage)
         self.pushAnimation = None
-        # self.poisontimer = None
-
-        #self.distBase = self.distToBase()
-        self.explosionlength = 1
         self.isair = False
         self.isAlive = True
         self.hit = False
         self.recovering = False
+        self.roadUpdate = False
         self.pushtimer = .5
-        self.anim = self.move()
-        self.image.pos = self.pos
-        self.bind(pos=self.binding)
+        self.pushAnimation = None
+        self.backToRoad = None
+        self.anim = None
+        if not self.specialSend:
+            self.anim = self.move()
         self.drawHealthBar()
         Player.player.analytics.totalHP += self.health
 
     def takeTurn(self):
-        '''Moves the enemy and adjusts any slow applied to it
-        Frametime: the amount of time elapsed per frame'''
-        self.workSlowTimers()
-        self.workStunTimers()
+        '''Moves the enemy and adjusts any slow applied to it'''
+        if self.slowtime > 0:
+            self.workSlowTime()
+        if self.stuntime > 0:
+            self.workStunTime()
+        if self.burntime > 0:
+            self.workBurnTimer()
         if self.pushed[0] != 0 or self.pushed[1] != 0:
             self.pushMove()
             self.updateHealthBar()
         else:
             self.updateHealthBar()
 
-    def workSlowTimers(self):
-        '''Adjust slow already applied to enemy
-        Frametime: the amount of time elapsed per frame'''
-        for st in self.slowtimers:
-            st.slowtime -= Player.player.frametime
-            if st.slowtime <= 0:
-                self.slowpercent = 1
-                self.slowtimers.remove(st)
-                self.image.color = [1, 1, 1, 1]
+    def workSlowTime(self):
+        '''Adjust slow already applied to enemy'''
+        self.slowtime -= Player.player.frametime
+        if self.slowtime <= 0:
+            self.slowtime = 0
+            self.slowpercent = 100
+            self.color = [1, 1, 1, 1]
 
-    def workStunTimers(self):
-        for st in self.stuntimers:
-            st.stuntime -= Player.player.frametime
-            if st.stuntime <= 0:
-                self.stuntimers.remove(st)
-                self.remove_widget(self.stunimage)
-                self.anim = self.getNearestNode()
+    def workStunTime(self):
+        self.stuntime -= Player.player.frametime
+        if self.stuntime <= 0:
+            self.stuntime = 0
+            self.remove_widget(self.stunimage)
+            self.anim = self.getNearestRoad()
 
-    def addStunImage(self):
-        self.stunimage = Utilities.imgLoad(os.path.join('enemyimgs', "stunned.png"),
-                                           pos=(self.x + (self.width / 2), self.top + 8))
-        self.stunimage.size = (10, 10)
-        self.add_widget(self.stunimage)
-        self.bind(pos=self.bindStunImage)
+    def workBurnTimer(self):
+        self.burntime -= Player.player.frametime
+        self.health -= self.burnDmg * Player.player.frametime
+        if self.health <= 0:
+            self.die()
+        if self.burntime <= 0:
+            self.color = [1, 1, 1, 1]
 
     def bindStunImage(self, *args):
-        self.stunimage.pos = (self.x + (self.width / 2), self.top + 8)
-
-    # def distToBase(self):
-    #     '''Determine distance to the end point using hypotenuse of xs and ys. Returns the distance.'''
-    #     return math.sqrt(math.pow(Map.mapvar.basepoint[0] * Map.mapvar.squsize - self.rect_centerx, 2) + math.pow(
-    #         Map.mapvar.basepoint[1] * Map.mapvar.squsize - self.rect_centery, 2))
+        self.stunimage.center = (self.center_x, self.top + 8)
 
     def move(self, *args):
         '''Moves the enemy down the generated move list
         Frametime: the amount of time elapsed per frame'''
         if self.stuntime > 0:
             return
-        if self.curnode < len(self.movelist) - 1:
-            self.direction = self.dirlist[self.curnode]
+        if self.curnode < len(self.movelist) - 1 and not self.roadUpdate:
             self.curnode += 1
-            self.weightedcurnode +=1
+            self.weightedcurnode += 1
+        self.direction = self.dirlist[self.curnode-1]
+        self.roadUpdate = False
         distToTravel = int(
             abs(self.pos[0] - self.movelist[self.curnode][0] + self.pos[1] - self.movelist[self.curnode][1]))
-        duration = float(distToTravel) / (self.speed * self.slowpercent)
+        duration = float(distToTravel) / (self.speed * (self.slowpercent/100))
         self.anim = Animation(pos=self.movelist[self.curnode], duration=duration, transition="linear")
 
-        self.image.source = os.path.join("enemyimgs", self.type+ "_"+self.direction+".png")
+        self.source = os.path.join("enemyimgs", self.type+ "_"+self.direction+".png")
 
         if self.curnode >= len(self.movelist) - 1:
             self.anim.bind(on_complete=self.checkHit)
@@ -146,7 +143,7 @@ class Enemy(Widget):
         return self.anim
 
     def checkHit(self, *args):
-        if Map.mapvar.baseimg.collide_widget(self.image):
+        if Map.mapvar.baseimg.collide_widget(self):
             Player.player.sound.playSound(Player.player.sound.hitBase, start=.5)
             if self.isBoss:
                 Player.player.health -=5
@@ -165,8 +162,8 @@ class Enemy(Widget):
                 self.anim.cancel_all(self)
             self.pushAnimation = Animation(pos=(self.x - self.pushed[0], self.y - self.pushed[1]),
                                            duration=self.pushtimer, t="out_cubic")
+            self.pushAnimation.bind(on_complete=self.getNearestRoad)
             self.pushAnimation.start(self)
-            self.pushAnimation.bind(on_complete=self.getNearestNode)
             self.recovering = True
         self.pushtimer -= Player.player.frametime
         if self.pushtimer <= 0:
@@ -175,24 +172,71 @@ class Enemy(Widget):
             self.pushed = [0, 0]
             self.hit = False
 
-    def binding(self, *args):
-        self.image.pos = self.pos
-        self.image.size = self.size
-        self.rect_centerx, self.rect_centery = self.center
+    def getNearestRoad(self, *args):
+        if not self.isair:
+            self.roadUpdate = True
+            distToRoad = 0
+            destRoad = None
+            for road in Map.mapvar.roadcontainer.children:
+                dist = Vector(self.center).distance(road.center)
+                if dist < distToRoad or distToRoad == 0:
+                    distToRoad = dist
+                    destRoad = road
+            duration = float(distToRoad) / (self.speed * (self.slowpercent / 100))
+            self.backToRoad = Animation(pos = destRoad.pos, duration = duration, transition = 'linear')
+            self.backToRoad.bind(on_complete=self.getNextNode)
+            self.backToRoad.start(self)
+            self.curnode -= 1
+        else:
+            self.move()
 
-    def getNearestNode(self, *args):
-        curnodedist = math.sqrt((self.center[0] - self.movelist[self.curnode][0]) ** 2 + (
-                    self.center[1] - self.movelist[self.curnode][1]) ** 2)
+    def getNextNode(self, *args):
         x = self.curnode
-        for square in self.movelist[self.curnode:]:
-            dist = math.sqrt((self.center[0] - square[0]) ** 2 + (
-                    self.center[1] - square[1]) ** 2)
-            if dist < curnodedist:
-                self.curnode = x
-                curnodedist = dist
+        while x < len(self.movelist)-1:
+            priorpos = self.movelist[x]
+            nextpos = self.movelist[x+1]
+            if Vector.in_bbox((self.pos),priorpos,nextpos):
+                self.curnode = x+1
+                break
             x += 1
-        self.curnode -= 1
         self.move()
+
+    def getFuturePos(self,time):
+        '''time is in seconds'''
+        distToNode_x = self.movelist[self.curnode][0] - self.x
+        distToNode_y = self.movelist[self.curnode][1] - self.y
+        timeToNode = abs(distToNode_x + distToNode_y)/(self.speed * (self.slowpercent/100))
+        if time <= timeToNode:
+            change = (self.speed * (self.slowpercent/100)) * time
+            if distToNode_x != 0:
+                if distToNode_x > 0:
+                    return (self.x + change, self.y)
+                else:
+                    return (self.x - change, self.y)
+            else:
+                if distToNode_y > 0:
+                    return (self.x, self.y + change)
+                else:
+                    return (self.x, self.y - change)
+
+        else:
+            if self.curnode >= len(self.movelist) - 1:
+                return self.movelist[self.curnode]
+            else:
+                time = time-timeToNode
+                distToNode_x = self.movelist[self.curnode+1][0] - self.movelist[self.curnode][0]
+                distToNode_y = self.movelist[self.curnode+1][1] - self.movelist[self.curnode][1]
+                change = (self.speed * (self.slowpercent / 100)) * time
+                if distToNode_x != 0:
+                    if distToNode_x > 0:
+                        return (self.movelist[self.curnode][0] + change, self.movelist[self.curnode][1])
+                    else:
+                        return (self.movelist[self.curnode][0] - change, self.movelist[self.curnode][1])
+                else:
+                    if distToNode_y > 0:
+                        return (self.movelist[self.curnode][0], self.movelist[self.curnode][1] + change)
+                    else:
+                        return (self.movelist[self.curnode][0], self.movelist[self.curnode][1] - change)
 
     def checkHealth(self):
         '''Checks enemy health and kills the enemy if health <=0'''
@@ -211,6 +255,8 @@ class Enemy(Widget):
                 self.anim.cancel_all(self)
             if self.pushAnimation:
                 self.pushAnimation.cancel_all(self)
+            if self.backToRoad:
+                self.backToRoad.cancel_all(self)
             if self.isBoss:
                 x = random.randint(0, 100)
                 if x < 10:
@@ -218,7 +264,7 @@ class Enemy(Widget):
                     Player.player.gems += 1
                     GUI.gui.myDispatcher.Gems = str(Player.player.gems)
             self.startDeathAnim()
-            self.remove_widget(self.image)
+            # self.remove_widget(self.image)
             Map.mapvar.enemycontainer.remove_widget(self)
             Player.player.money += int(self.reward)
             Player.player.analytics.moneyEarned += self.reward
@@ -302,7 +348,7 @@ class Standard(Enemy):
         self.deploySpeed = Standard.deploySpeed
         self.points = Standard.points  # points granted per kill
         self.imagesrc = Standard.imagesrc
-        self.image = Utilities.imgLoad(self.imagesrc)
+        self.source = self.imagesrc
         self.movelistNum = random.randint(0, Map.mapvar.numpaths - 1)
         self.movelist = Map.mapvar.enemymovelists[self.movelistNum]  # 0 for ground, 1 for air
         self.dirlist = Map.mapvar.dirmovelists[self.movelistNum]
@@ -325,7 +371,7 @@ class Airborn(Enemy):
         self.deploySpeed = Airborn.deploySpeed
         self.points = Airborn.points  # points granted per kill
         self.imagesrc = Airborn.imagesrc
-        self.image = Utilities.imgLoad(self.imagesrc)
+        self.source = self.imagesrc
         self.movelistNum = random.randint(0, Map.mapvar.numpaths - 1)
         self.movelist = Map.mapvar.enemyflymovelists[self.movelistNum]  # 0 for ground, 1 for air
         self.dirlist = Map.mapvar.dirflymovelists[self.movelistNum]
@@ -350,7 +396,7 @@ class Splinter(Enemy):
         self.deploySpeed = Splinter.deploySpeed
         self.points = Splinter.points  # points granted per kill
         self.imagesrc = Splinter.imagesrc
-        self.image = Utilities.imgLoad(self.imagesrc)
+        self.source = self.imagesrc
         self.movelistNum = random.randint(0, Map.mapvar.numpaths - 1)
         self.movelist = Map.mapvar.enemymovelists[self.movelistNum]  # 0 for ground, 1 for air
         self.curwave = Player.player.wavenum
@@ -379,7 +425,7 @@ class Strong(Enemy):
         self.deploySpeed = Strong.deploySpeed
         self.points = Strong.points  # points granted per kill
         self.imagesrc = Strong.imagesrc
-        self.image = Utilities.imgLoad(self.imagesrc)
+        self.source = self.imagesrc
         self.movelistNum = random.randint(0, Map.mapvar.numpaths - 1)
         self.movelist = Map.mapvar.enemymovelists[self.movelistNum]  # 0 for ground, 1 for air
         self.dirlist = Map.mapvar.dirmovelists[self.movelistNum]
@@ -401,7 +447,7 @@ class Crowd(Enemy):
         self.defaultNum = Crowd.deploySpeed
         self.points = Crowd.points  # points granted per kill
         self.imagesrc = Crowd.imagesrc
-        self.image = Utilities.imgLoad(self.imagesrc)
+        self.source = self.imagesrc
         self.movelistNum = random.randint(0, Map.mapvar.numpaths - 1)
         self.movelist = Map.mapvar.enemymovelists[self.movelistNum]  # 0 for ground, 1 for air
         self.dirlist = Map.mapvar.dirmovelists[self.movelistNum]
@@ -410,11 +456,9 @@ class Crowd(Enemy):
             self.size = (Map.mapvar.squsize * .5, Map.mapvar.squsize * .5)
             self.pos = kwargs['pos']
             self.curwave = kwargs['wave']
-            pushx = random.randint(-75, 75)
-            pushy = random.randint(-75, 75)
+            pushx = random.randint(-Map.mapvar.squsize*3, Map.mapvar.squsize*3)
+            pushy = random.randint(-Map.mapvar.squsize*3, Map.mapvar.squsize*3)
             self.pushed = [pushx, pushy]
             self.curnode = self.weightedcurnode = kwargs['curnode']
-            print self.curnode, self.movelist
-            self.rect = Utilities.createRect(self.pos, self.size, instance=self)
 
         super(Crowd, self).__init__(**kwargs)

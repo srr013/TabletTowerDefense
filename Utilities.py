@@ -111,15 +111,19 @@ def get_rotation(obj, enemy):
     obj is an object to be rotated
     '''
     # distance between the image and the enemy. this is "A" and "B" in the arctan equation
-    x = obj.image.center[0] - enemy.rect_centerx
-    y = obj.image.center[1] - enemy.rect_centery
-    # calculates the rotation of the image.
+    x = obj.center[0] - enemy.center_x
+    y = obj.center[1] - enemy.center_y
     rotation = math.degrees(math.atan2(y, x))
     return rotation
 
 
 def in_range(tower, enemy):
     """Determines if an enemy is within the tower's defined range"""
+    if tower.rangeExclusion:
+        return (enemy.right > tower.center[0] - tower.range and enemy.pos[0] < tower.center[0] + tower.range) and \
+           (enemy.top > tower.center[1] - tower.range and enemy.pos[1] < tower.center[1] + tower.range) and not \
+            ((enemy.right > tower.center[0] - tower.rangeExclusion and enemy.pos[0] < tower.center[0] + tower.rangeExclusion) and
+            (enemy.top > tower.center[1] - tower.rangeExclusion and enemy.pos[1] < tower.center[1] + tower.rangeExclusion))
     return (enemy.right > tower.center[0] - tower.range and enemy.pos[0] < tower.center[0] + tower.range) and \
            (enemy.top > tower.center[1] - tower.range and enemy.pos[1] < tower.center[1] + tower.range)
 
