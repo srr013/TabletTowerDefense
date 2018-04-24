@@ -40,7 +40,7 @@ def resetEnemyPaths():
             try:
                 enemy.movelist = Map.mapvar.enemymovelists[enemy.movelistNum]
                 enemy.dirlist = Map.mapvar.dirmovelists[enemy.movelistNum]
-                enemy.getNearestNode()
+                enemy.getNearestRoad()
             except IndexError:
                 print "Indexerror", enemy.movelist, enemy.movelistNum, enemy.curnode
 

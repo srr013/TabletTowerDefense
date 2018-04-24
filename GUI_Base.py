@@ -1,3 +1,4 @@
+
 from kivy.core.window import Window
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.boxlayout import BoxLayout
@@ -17,7 +18,7 @@ import Localdefs
 import MainFunctions
 import Map
 import Player
-import main
+import __main__
 import TowerAbilities
 
 
@@ -56,7 +57,7 @@ class ButtonWithImage(Button, Image):
 
     def __init__(self, **kwargs):
         super(ButtonWithImage, self).__init__(**kwargs)
-        self.image = Image(text=" ")
+        self.image = Image()
         self.image.pos_hint = (None, None)
         self.add_widget(self.image)
         self.image.size = self.size
@@ -65,7 +66,7 @@ class ButtonWithImage(Button, Image):
         self.label = Label(text=' ', size_hint=(None, None), pos=self.pos, color=[1, 1, 1, 1], halign='center')
         self.add_widget(self.label)
         self.group = None
-        self.toplabel = Label(text='', size_hint=(1, .1), pos_hint=(None,None), text_size = (None, None), font_size = main.Window.size[0]*.01)
+        self.toplabel = Label(text='', size_hint=(1, .1), pos_hint=(None,None), text_size = (None, None), font_size = __main__.Window.size[0]*.01)
         self.add_widget(self.toplabel)
         self.toplabel.pos = (self.toplabel.x-(Map.mapvar.squsize*.35),self.toplabel.y + (Map.mapvar.squsize*.35))
 
@@ -81,10 +82,10 @@ class ButtonWithImage(Button, Image):
 
     def on_pressed(self, button, pos):
         if button.disabled == False:
-            if button.id == 'unpause':
-                MainFunctions.pauseGame(button)
-                return
-            elif button.id == 'enemyinfo':
+            # if button.id == 'unpause':
+            #     MainFunctions.pauseGame(button)
+            #     return
+            if button.id == 'enemyinfo':
                 GUI.gui.toggleEnemyPanel()
             elif button.id =='towerinfo':
                 GUI.gui.toggleTowerPanel()
@@ -140,7 +141,8 @@ class StackButtonWithImage(Button):
             return True
 
     def on_pressed(self, button, pos):
-        if self.id == 'LeaderPath' or self.id == 'DamagePath':
+        print 'Damage' in self.id
+        if self.id == 'LeaderPath' or 'Damage' in self.id:
             func = "TowerAbilities." + button.instance.type + "." + button.instance.func + "(id=self.id)"
             eval(func)
             Map.mapvar.background.removeAll()

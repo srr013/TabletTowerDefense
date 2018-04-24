@@ -1,3 +1,4 @@
+import os
 from kivy.animation import Animation
 from kivy.core.window import Window
 from kivy.graphics import *
@@ -24,8 +25,8 @@ import Map
 import Player
 import Utilities
 import Enemy
-import main
 import TowerAbilities
+import __main__
 import GUI_Base
 import GUI_Templates
 
@@ -35,21 +36,11 @@ class pauseMenu(GUI_Base.SmartMenu):
 
     def __init__(self, **kwargs):
         super(pauseMenu, self).__init__(**kwargs)
-        self.unpause = Button()
-        self.unpause.size_hint = (None, None)
-        self.unpause.size = (main.Window.width, main.Window.height)
-        self.unpause.pos = (0, 0)
-        self.unpause.id = 'unpause'
-        # self.unpause.bind(on_release = MainFunctions.pauseGame)
-        self.image = Utilities.imgLoad('backgroundimgs/play.png')
-        self.image.size = (Map.mapvar.squsize*2, Map.mapvar.squsize*2)
-        self.image.pos=(self.unpause.center[0]-.5*self.width, self.unpause.center[1]-.5*self.height)
-        self.unpause.add_widget(self.image)
-        self.unpause.background_color = [.2, .2, .2, .2]
-        self.add_widget(self.unpause)
-        # with self.unpause.canvas.before:
-        #   Color(.2,.2,.2,.1)
-        #   Rectangle(size = self.unpause.size, pos=self.unpause.pos)
+        self.image = Utilities.imgLoad('backgroundimgs/pause.png')
+        self.image.allow_stretch = True
+        self.image.size = (Map.mapvar.squsize*3, Map.mapvar.squsize*3)
+        self.image.center = (__main__.Window.width/2,__main__.Window.height/2)
+        self.add_widget(self.image)
 
 
 class mainMenu(GUI_Base.SmartMenu):
@@ -57,9 +48,9 @@ class mainMenu(GUI_Base.SmartMenu):
     def __init__(self, **kwargs):
         super(mainMenu, self).__init__(**kwargs)
 
-        self.layout = GridLayout(rows=4,size=(main.Window.width-3*Map.mapvar.squsize,main.Window.height-3*Map.mapvar.squsize),
+        self.layout = GridLayout(rows=5,size=(__main__.Window.width-3*Map.mapvar.squsize,__main__.Window.height-3*Map.mapvar.squsize),
                                  padding=[Map.mapvar.squsize/2], spacing=Map.mapvar.squsize)
-        self.layout.center = ((main.Window.width / 2), (main.Window.height/ 2))
+        self.layout.center = ((__main__.Window.width / 2), (__main__.Window.height/ 2))
         self.id = 'mainmenu'
         self.add_widget(self.layout)
 
@@ -112,7 +103,7 @@ class mainMenu(GUI_Base.SmartMenu):
         self.buttonLayout.add_widget(self.configLayout)
         self.layout.add_widget(self.buttonLayout)
         #Audio settings
-        self.settingsLayout = StackLayout(orientation = 'lr-tb', size_hint = (1,.05))
+        self.settingsLayout = StackLayout(orientation = 'lr-tb', size_hint = (.3,.05))
         self.soundCheckBox = GUI_Base.MyCheckBox(size_hint = (.15,1))
         self.soundCheckBox.label.text = "Play Sound: "
         self.soundCheckBox.checkbox.id = 'sound'
@@ -126,18 +117,29 @@ class mainMenu(GUI_Base.SmartMenu):
         self.soundCheckBox.checkbox.bind(active= Player.player.sound.on_sound)
         self.musicCheckBox.checkbox.bind(active= Player.player.sound.on_music)
         self.layout.add_widget(self.settingsLayout)
+        self.infoLayout = BoxLayout(orientation = 'horizontal', size_hint = (.6,.1), spacing = 50, padding = 10)
+        self.playerStatsButton = Button(text = "Statistics")
+        self.towerInfoButton = Button(text = "Tower Info")
+        self.enemyInfoButton = Button(text = "Enemy Info")
+        self.infoLayout.add_widget(self.playerStatsButton)
+        self.infoLayout.add_widget(self.towerInfoButton)
+        self.infoLayout.add_widget(self.enemyInfoButton)
+        self.layout.add_widget(self.infoLayout)
 
-
-        self.footerlayout = GridLayout(orientation= 'vertical', rows = 2, size_hint = (1,.15))
-        self.footerInfo = Label(text='On the web at tablettowerdefense.com and Twitter: @Tablettowerdef.  Property of Scott Rossignol.', font_size = main.Window.size[0]*.01)
-        self.footerDisc = Label(
-            text='Thanks to EmojiOne for providing free emoji icons: https://www.emojione.com. This game runs on the Kivy framework.', font_size = main.Window.size[0]*.01)
-        self.footerlayout.add_widget(self.footerInfo)
-        self.footerlayout.add_widget(self.footerDisc)
+        self.footerlayout = GridLayout(rows = 3, size_hint = (1,.15))
+        self.footer1 = Label(text='On the web at tablettowerdefense.com and Twitter: @Tablettowerdef.  Property of Scott Rossignol.', font_size = __main__.Window.size[0]*.01)
+        self.footer2 = Label(
+            text='Thanks to EmojiOne for providing free emoji icons: https://www.emojione.com. This game runs on the Kivy framework.', font_size = __main__.Window.size[0]*.01)
+        self.footer3 = Label(
+            text='Music by Adam Cook. The Wave Change sound is by Jobro https://freesound.org/people/jobro/.',
+            font_size=__main__.Window.size[0] * .01)
+        self.footerlayout.add_widget(self.footer1)
+        self.footerlayout.add_widget(self.footer2)
+        self.footerlayout.add_widget(self.footer3)
         self.layout.add_widget(self.footerlayout)
 
     def bindings(self):
-        Map.mapvar.scrwid, Map.mapvar.scrhei = main.Window.size
+        Map.mapvar.scrwid, Map.mapvar.scrhei = __main__.Window.size
         self.layout.center = ((Map.mapvar.scrwid / 2), (Map.mapvar.scrhei / 2))
         self.menurect.pos = self.layout.pos
 
@@ -155,10 +157,11 @@ class GUI():
         self.topBar_Boxlist = []
         self.myDispatcher = EventDispatcher.EventDisp()
         self.topBar = self.createTopBar()
+        self.tbbox = None
         self.rightSideButtons_layout = None
         self.bgrect = None
         self.messageCounter = None
-        self.towerMenuHeaders = [' ', 'Curr', 'Group+', 'Nxt']
+        self.towerMenuHeaders = [' ', 'Current', 'Group+', 'Next']
 
     def bindings(self, *args):
         if self.topBar:
@@ -167,24 +170,26 @@ class GUI():
             self.topBar.size = (Window.width, Map.mapvar.squsize*1.5)
             self.topBar.layout.size = self.topBar.size
         if self.rightSideButtons_layout:
-            self.rightSideButtons_layout.pos = (Window.width - 55, 2 * Map.mapvar.squsize)
+            self.rightSideButtons_layout.pos = (Window.width - 2*Map.mapvar.squsize, 4 * Map.mapvar.squsize)
+            self.rightSideButtons_layout.size = (Map.mapvar.squsize*2, Map.mapvar.squsize*4)
 
     def rightSideButtons(self):
-        self.rightSideButtons_layout = StackLayout(size_hint=(None, None), size=(55, 120),
+        self.rightSideButtons_layout = StackLayout(size_hint=(None, None), size=(Map.mapvar.squsize*2, Map.mapvar.squsize*4),
                                                    pos=(Window.width - 2*Map.mapvar.squsize, 4 * Map.mapvar.squsize), spacing = [0,20])
-        self.enemyInfoButton = GUI_Base.ButtonWithImage(text=" ", id='enemyinfo', size_hint=(None, None), width=50, height=50)
-        self.enemyInfoButton.image.source = "enemyimgs/Standard_r.png"
+        self.enemyInfoButton = GUI_Base.ButtonWithImage(text=" ", id='enemyinfo', size_hint=(None, None), size=(Map.mapvar.squsize*1.6,Map.mapvar.squsize*1.6))
+        self.enemyInfoButton.image.source = "enemyimgs/enemyinfo.png"
         self.enemyInfoButton.label.text = 'Info'
-        self.enemyInfoButton.label.size = (50, 20)
+        self.enemyInfoButton.label.size = (Map.mapvar.squsize*1.6, 20)
+        self.enemyInfoButton.label.font_size = __main__.Window.width*.016
         self.rightSideButtons_layout.add_widget(self.enemyInfoButton)
         self.enemyInfoButton.image.pos = self.enemyInfoButton.pos
         self.enemyInfoButton.label.pos = self.enemyInfoButton.pos
 
-        self.towerInfoButton = GUI_Base.ButtonWithImage(text=" ", id='towerinfo', size_hint=(None, None), width=50,
-                                                        height=50)
+        self.towerInfoButton = GUI_Base.ButtonWithImage(text=" ", id='towerinfo', size_hint=(None, None), size=(Map.mapvar.squsize*1.6,Map.mapvar.squsize*1.6))
         self.towerInfoButton.image.source = "towerimgs/0.png"
         self.towerInfoButton.label.text = 'Info'
-        self.towerInfoButton.label.size = (50, 20)
+        self.towerInfoButton.label.size = (Map.mapvar.squsize*1.6, 20)
+        self.towerInfoButton.label.font_size = __main__.Window.width * .016
         self.rightSideButtons_layout.add_widget(self.towerInfoButton)
         self.towerInfoButton.image.pos = self.towerInfoButton.pos
         self.towerInfoButton.label.pos = self.towerInfoButton.pos
@@ -211,13 +216,13 @@ class GUI():
         self.topBar = GUI_Templates.Bar(pos_hint = (None,None), size_hint=(None,None), pos=(0, Window.height - Map.mapvar.squsize*2), size=(Window.width, Map.mapvar.squsize*1.5))
         self.menuButton = Button(text='Menu', id='menu', size_hint=(None, None),
                                  width=Map.mapvar.squsize * 2.5, height=Map.mapvar.squsize * 2,
-                                 font_size=main.Window.size[0] * .02)
+                                 font_size=__main__.Window.size[0] * .02)
 
         self.pauseButton = Button(text='Pause', id='pause', size_hint=(None, None),
                                   width=Map.mapvar.squsize * 2.5, height=Map.mapvar.squsize * 2,
-                                  font_size=main.Window.size[0] * .018)
+                                  font_size=__main__.Window.size[0] * .018, color = [1,0,0,1])
         self.nextwaveButton = Button(text='Start', id='next', size_hint=(None, None), width=Map.mapvar.squsize * 3.5,
-                                     height=Map.mapvar.squsize * 2, font_size=main.Window.size[0] * .024)
+                                     height=Map.mapvar.squsize * 2, font_size=__main__.Window.size[0] * .018, color = [0,1,0,1])
         self.nextwaveButton.bind(on_release=self.nextWave)
         self.nextwaveButton.valign = 'top'
         self.topBar.layout.add_widget(self.menuButton)
@@ -227,18 +232,22 @@ class GUI():
         return self.topBar
 
     def initTopBar(self):
-        self.menuButton.bind(on_release=MainFunctions.pauseGame)
-        self.pauseButton.bind(on_release=MainFunctions.pauseGame)
         for label, var, source, icon in Localdefs.topBar_ElementList:
             GUI_Templates.topBarWidget(label, var, source, icon)
         Map.mapvar.backgroundimg.add_widget(self.topBar)
 
-    def toggleButtons(self, active = True):
-        list = [self.menuButton, self.pauseButton, self.nextwaveButton, self.enemyInfoButton]
-        if active:
+    def toggleButtons(self, active = True, pause = False):
+        list = [self.menuButton, self.pauseButton, self.nextwaveButton, self.enemyInfoButton, self.towerInfoButton]
+        if active: #unpause/unmenu
             for button in list:
                 button.disabled = False
-        else:
+            self.pauseButton.text = 'Pause'
+            self.pauseButton.color = [1,1,1,1]
+        elif not active and pause: #if paused
+            self.nextwaveButton.disabled = True
+            self.pauseButton.text = 'Resume'
+            self.pauseButton.color = [0,1,0,1]
+        else: #If menu state
             for button in list:
                 button.disabled = True
 
@@ -251,14 +260,14 @@ class GUI():
                                               pos=(Window.width - 12*Map.mapvar.squsize, Map.mapvar.playhei+5),
                                               size=(13 * Map.mapvar.squsize, Map.mapvar.squsize))
         self.waveStreamerLabel = Label(text="Next Waves:", size_hint=(None, 1), width = Map.mapvar.squsize*3,
-                                    color=[0, 0, 0, 1], font_size = main.Window.size[0]*.0125)
+                                    color=[0, 0, 0, 1], font_size = __main__.Window.size[0]*.0125)
         self.waveStreamerLayout.add_widget(self.waveStreamerLabel)
         self.waveStreamerEnemyLayout = GridLayout(rows=1, size_hint=(None, 1),
                                                   size=(18 * Map.mapvar.squsize, Map.mapvar.squsize))
         x = 0
         for wave in Player.player.waveTypeList:
             lbl = Label(size_hint=(None, None), text=wave[0], id='wave' + str(x), text_size=(None, None),
-                        size=(Map.mapvar.squsize * 2.25, Map.mapvar.squsize), color=[0, 0, 0, 1], font_size = main.Window.size[0]*.0125)
+                        size=(Map.mapvar.squsize * 2.25, Map.mapvar.squsize), color=[0, 0, 0, 1], font_size = __main__.Window.size[0]*.0125)
             x += 1
             if wave[1]:  # if boss
                 lbl.bold = True
@@ -279,7 +288,7 @@ class GUI():
         x = 0
         for wave in Player.player.waveTypeList:
             lbl = Label(size_hint=(None, None), text=wave[0], id='wave' + str(x), text_size=(None, None),
-                        size=(Map.mapvar.squsize * 2.3, Map.mapvar.squsize), color=[0, 0, 0, 1], font_size = main.Window.size[0]*.0125)
+                        size=(Map.mapvar.squsize * 2.3, Map.mapvar.squsize), color=[0, 0, 0, 1], font_size = __main__.Window.size[0]*.0125)
             x += 1
             if wave[1]:  # if boss
                 lbl.bold = True
@@ -300,7 +309,7 @@ class GUI():
                                         bar_inactive_color=[1, 1, 1, 0])
         self.alertLayout = GridLayout(rows=1, size_hint=(None, 1), width=Map.mapvar.scrwid*2)
         self.alertLabel = Label(text='', color=[0, 0, 0, 1], size_hint=(1, None),
-                                font_size=main.Window.size[0] * .05,
+                                font_size=__main__.Window.size[0] * .05,
                                 height=Map.mapvar.squsize * 2 - 10)
         self.alertLayout.add_widget((self.alertLabel))
         self.alertScroller.add_widget(self.alertLayout)
@@ -313,7 +322,7 @@ class GUI():
         self.alertScroller.width = Map.mapvar.scrwid - 10
         self.alertLayout.width = Map.mapvar.scrwid*2
         self.alertLabel.height = Map.mapvar.squsize*2-10
-        self.alertLabel.font_size = main.Window.size[0] * .025
+        self.alertLabel.font_size = __main__.Window.size[0] * .025
 
     def removeAlert(self, *args):
         if self.alertAnimation.have_properties_to_animate(self.alertScroller):
@@ -348,7 +357,7 @@ class GUI():
             self.messageCounter = 1
             self.messageLayout = BoxLayout(orientation='horizontal')
             self.messageLayout.pos = (Map.mapvar.scrwid / 2 - (self.messageLayout.size[0] / 2), Map.mapvar.scrhei / 1.5)
-            self.messageLabel = Label(text=msg, color=[.7, 0, 0, 1], size_hint=(None, None), font_size=main.Window.size[0]*.03)
+            self.messageLabel = Label(text=msg, color=[.7, 0, 0, 1], size_hint=(None, None), font_size=__main__.Window.size[0]*.03)
             self.messageLayout.add_widget(self.messageLabel)
             Map.mapvar.backgroundimg.add_widget(self.messageLayout)
 
@@ -366,6 +375,8 @@ class GUI():
             Player.player.tbbox.set_right(squarepos[0])
         if Player.player.tbbox.top > Map.mapvar.playhei:
             Player.player.tbbox.top = Map.mapvar.playhei
+        if Player.player.tbbox.y < 5:
+            Player.player.tbbox.y = 5
 
         Player.player.layout = GridLayout(size_hint=(None, None), size=Player.player.tbbox.size, pos=(0, 0), cols=2)
         with Player.player.tbbox.canvas.before:
@@ -375,20 +386,39 @@ class GUI():
         Player.player.tbbox.add_widget(Player.player.layout)
         Map.mapvar.background.popUpOpen = Player.player.tbbox
 
-    def towerMenu(self, squarepos):
-        self.createTBBox(squarepos, 7, 7)
-        range = Player.player.towerSelected.range
+    def drawRangeLines(self):
+        squarepos = Player.player.towerSelected.pos
+        towerRange = Player.player.towerSelected.range
+        if Player.player.towerSelected.rangeExclusion:
+            rangeExclusion = Player.player.towerSelected.rangeExclusion
+            with Map.mapvar.backgroundimg.canvas:
+                Color(1,0,0,1)
+                leftx = (squarepos[0] - rangeExclusion + Map.mapvar.squsize if
+                         squarepos[0] - rangeExclusion + Map.mapvar.squsize > Map.mapvar.border else Map.mapvar.border)
+                rightx = (squarepos[0] + rangeExclusion + Map.mapvar.squsize if
+                          squarepos[0] + rangeExclusion + Map.mapvar.squsize < Map.mapvar.playwid else Map.mapvar.playwid)
+                bottomy = (squarepos[1] - rangeExclusion + Map.mapvar.squsize if
+                           squarepos[1] - rangeExclusion + Map.mapvar.squsize > Map.mapvar.border else Map.mapvar.border)
+                topy = (squarepos[1] + rangeExclusion + Map.mapvar.squsize if
+                        squarepos[1] + rangeExclusion + Map.mapvar.squsize < Map.mapvar.playhei else Map.mapvar.playhei)
+                Map.mapvar.towerRangeExclusion = Line(
+                    points=[leftx, bottomy, leftx, topy, rightx, topy, rightx, bottomy, leftx, bottomy], width=.5)
         with Map.mapvar.backgroundimg.canvas:
             Color(0, 0, 0, 1)
-            leftx = (squarepos[0] - range + Map.mapvar.squsize if squarepos[0] - range + Map.mapvar.squsize > Map.mapvar.border else Map.mapvar.border)
-            rightx = (squarepos[0] + range + Map.mapvar.squsize if squarepos[0] + range + Map.mapvar.squsize < Map.mapvar.playwid else Map.mapvar.playwid)
-            bottomy = (squarepos[1] - range + Map.mapvar.squsize if squarepos[1] - range + Map.mapvar.squsize > Map.mapvar.border else Map.mapvar.border)
-            topy = (squarepos[1] + range + Map.mapvar.squsize if squarepos[1] + range + Map.mapvar.squsize < Map.mapvar.playhei else Map.mapvar.playhei)
+            leftx = (squarepos[0] - towerRange + Map.mapvar.squsize if squarepos[0] - towerRange + Map.mapvar.squsize > Map.mapvar.border else Map.mapvar.border)
+            rightx = (squarepos[0] + towerRange + Map.mapvar.squsize if squarepos[0] + towerRange + Map.mapvar.squsize < Map.mapvar.playwid else Map.mapvar.playwid)
+            bottomy = (squarepos[1] - towerRange + Map.mapvar.squsize if squarepos[1] - towerRange + Map.mapvar.squsize > Map.mapvar.border else Map.mapvar.border)
+            topy = (squarepos[1] + towerRange + Map.mapvar.squsize if squarepos[1] + towerRange + Map.mapvar.squsize < Map.mapvar.playhei else Map.mapvar.playhei)
             Map.mapvar.towerRange = Line(
                 points=[leftx,bottomy,leftx,topy,rightx,topy,rightx,bottomy,leftx,bottomy], width=.5)
+
+    def towerMenu(self, squarepos):
+        self.createTBBox(squarepos, 9, 9)
+        self.tbbox = 'Tower'
+        self.drawRangeLines()
         Player.player.layout.cols = 1
         # sell button
-        self.sellbtn = GUI_Base.ButtonWithImage(text=' ', size_hint=(1, None), pos_hint=(1, 1), height=40,id = 'Sell',font_size = main.Window.size[0]*.013)
+        self.sellbtn = GUI_Base.ButtonWithImage(text=' ', size_hint=(1, None), pos_hint=(1, 1), height=Map.mapvar.squsize*1.5,id = 'Sell',font_size = __main__.Window.size[0]*.013)
         self.sellbtn.group = None
         self.sellbtn.instance = Localdefs.towerabilitylist[0]
         self.sellbtn.instance.cost = int(Player.player.towerSelected.refund)
@@ -399,22 +429,25 @@ class GUI():
         self.sellbtn.text = self.sellbtn.instance.type + ':  $' + str(
             self.sellbtn.instance.cost)
         Player.player.layout.add_widget(self.sellbtn)
-        self.sellbtn.x = Player.player.tbbox.x
 
         # upgrade data grid
         dataLayout = GridLayout(size=(Map.mapvar.squsize * 6, Map.mapvar.squsize * 5), pos=(0, 0), cols=4)
         for h in self.towerMenuHeaders:
-            lbl = Label(text=str(h), text_size = (None,None), font_size = main.Window.size[0]*.013)
+            lbl = Label(text=str(h), text_size = (None,None), font_size = __main__.Window.size[0]*.013)
             dataLayout.add_widget(lbl)
-        for item in Player.player.towerSelected.upgradeData:
-            lbl = Label(text=str(item), text_size = (None,None), font_size = main.Window.size[0]*.013)
+        t = Player.player.towerSelected.setMenuData()
+        for key in t.keys():
+            lbl = Label(text=str(key), text_size = (None,None), font_size = __main__.Window.size[0]*.013)
             dataLayout.add_widget(lbl)
+            for value in t[key]:
+                lbl = Label(text=str(value), text_size=(None, None), font_size=__main__.Window.size[0] * .013)
+                dataLayout.add_widget(lbl)
         Player.player.layout.add_widget(dataLayout)
         # upgrade button
         if Player.player.towerSelected.level != Player.player.upgPathSelectLvl:
-            self.upgbtn = GUI_Base.ButtonWithImage(text=' ', size_hint=(1, None), height=40, id='Upgrade', font_size = main.Window.size[0]*.013)
+            self.upgbtn = GUI_Base.ButtonWithImage(text=' ', size_hint=(1, None), height=Map.mapvar.squsize*1.5, id='Upgrade', font_size = __main__.Window.size[0]*.013)
             self.upgbtn.instance = Localdefs.towerabilitylist[1]
-            self.upgbtn.instance.cost = Player.player.towerSelected.upgradeDict['Cost'][Player.player.towerSelected.level - 1]
+            self.upgbtn.instance.cost = Player.player.towerSelected.upgradeDict['Cost'][Player.player.towerSelected.level]
             self.upgbtn.group = 'Enableable'
             self.upgbtn.text = self.upgbtn.instance.type + ':  $' + str(self.upgbtn.instance.cost)
             self.upgbtn.image.source = self.upgbtn.instance.imgstr
@@ -424,58 +457,61 @@ class GUI():
                 self.disableBtn(self.upgbtn)
                 self.disableBtn(self.sellbtn)
         else:
-            upgradeLayout = StackLayout(size_hint=(1,None), height = 40)
-            self.upgbtn1 = GUI_Base.StackButtonWithImage(text=' ', size_hint=(.5, None), height=40, id='LeaderPath',
-                                                   font_size=main.Window.size[0] * .01)
+            Player.player.tbbox.height += Map.mapvar.squsize * 1.5
+            Player.player.layout.height = Player.player.tbbox.height
+            upgradeLayout = StackLayout(size_hint=(1,None), height = Map.mapvar.squsize*1.5)
+            self.upgbtn1 = GUI_Base.StackButtonWithImage(text=' ', size_hint=(.5, 1), id='LeaderPath',
+                                                   font_size=__main__.Window.size[0] * .01)
             self.upgbtn1.instance = Localdefs.towerabilitylist[1]
             self.upgbtn1.instance.cost = Player.player.towerSelected.upgradeDict['Cost'][
-                Player.player.towerSelected.level - 1]
+                Player.player.towerSelected.level]
             self.upgbtn1.group = 'Enableable'
             self.upgbtn1.layoutLbl.text = 'Leader Path  $' + str(self.upgbtn1.instance.cost[0]) \
                                +" + "+ str(self.upgbtn1.instance.cost[1]) + " Gems"
-            self.upgbtn1.layoutImg.source = "iconimgs/reddiamond.png"
+            self.upgbtn1.layoutImg.source = "towerimgs/crown.png"
             upgradeLayout.add_widget(self.upgbtn1)
-            self.upgbtn1.layoutImg.size = (30,40)
+            self.upgbtn1.layoutImg.size = (Map.mapvar.squsize,Map.mapvar.squsize*1.5)
             self.upgbtn1.layoutLbl.size = (self.upgbtn1.width*.8, self.upgbtn1.height)
             self.upgbtn1.layoutLbl.halign = 'center'
+            self.upgbtn1.layoutLbl.valign = 'center'
 
-            self.upgbtn2 = GUI_Base.StackButtonWithImage(text=' ', size_hint=(.5, None), height=40, id='DamagePath',
-                                                    font_size=main.Window.size[0] * .01)
+            self.upgbtn2 = GUI_Base.StackButtonWithImage(text=' ', size_hint=(.5, 1), id=str(Player.player.towerSelected.type)+'Damage',
+                                                    font_size=__main__.Window.size[0] * .01)
             self.upgbtn2.instance = Localdefs.towerabilitylist[1]
             self.upgbtn2.instance.cost = Player.player.towerSelected.upgradeDict['Cost'][
-                Player.player.towerSelected.level - 1]
+                Player.player.towerSelected.level]
             self.upgbtn2.group = 'Enableable'
             self.upgbtn2.layoutLbl.text = 'Damage Path  $' + str(self.upgbtn2.instance.cost[0]) \
                                + " + " +str(int(self.upgbtn2.instance.cost[1])) + " Gems"
-            self.upgbtn2.layoutImg.source = "iconimgs/reddiamond.png"
+            self.upgbtn2.layoutImg.source = os.path.join("towerimgs",Player.player.towerSelected.type,"icon.png")
             upgradeLayout.add_widget(self.upgbtn2)
-            self.upgbtn2.layoutImg.size = (30, 40)
+            self.upgbtn2.layoutImg.size = (Map.mapvar.squsize, Map.mapvar.squsize*1.5)
             self.upgbtn2.layoutLbl.size = (self.upgbtn1.width * .8, self.upgbtn1.height)
             self.upgbtn2.layoutLbl.halign = 'center'
+            self.upgbtn2.layoutLbl.valign = 'center'
             Player.player.layout.add_widget(upgradeLayout)
             self.toggleUpgBtn()
             if Player.player.towerSelected.percentComplete > 0:
                 self.disableBtn(self.upgbtn1)
                 self.disableBtn(self.upgbtn2)
                 self.disableBtn(self.sellbtn)
-            self.upginfobtn = GUI_Base.ButtonWithImage(text='', size_hint=(1, None), height = 40, id='towerinfo',
-                                                       font_size=main.Window.size[0] * .013)
+            self.upginfobtn = GUI_Base.ButtonWithImage(text='', size_hint=(1, None),height = Map.mapvar.squsize*1.5, id='towerinfo',
+                                                       font_size=__main__.Window.size[0] * .013)
             self.upginfobtn.text = "Upgrade Info"
             self.upginfobtn.image.source = "iconimgs/info.png"
             Player.player.layout.add_widget(self.upginfobtn)
 
         if Player.player.towerSelected.type == 'Wind':
-            self.rotatebtn = GUI_Base.ButtonWithImage(text=' ', size_hint=(1, None), height=40, id='Rotate', group = 'None', font_size = main.Window.size[0]*.013)
+            self.rotatebtn = GUI_Base.ButtonWithImage(text=' ', size_hint=(1, None), height=Map.mapvar.squsize*1.5, id='Rotate', group = 'None', font_size = __main__.Window.size[0]*.013)
             self.rotatebtn.instance = Localdefs.towerabilitylist[2]
             self.rotatebtn.text = "Rotate Group"
             self.rotatebtn.image.source = self.rotatebtn.instance.imgstr
-            #Player.player.tbbox.size = (Map.mapvar.squsize * 6, Map.mapvar.squsize * 6)
-            Player.player.tbbox.height += 60
+            Player.player.tbbox.height += Map.mapvar.squsize*1.5
             Player.player.layout.height = Player.player.tbbox.height
             self.tbBoxRect.size=Player.player.tbbox.size
             Player.player.layout.add_widget(self.rotatebtn)
             self.drawTriangle()
-
+        self.tbBoxRect.size = Player.player.tbbox.size
         Map.mapvar.backgroundimg.add_widget(Player.player.tbbox)
 
     def upgradeScreen(self):
@@ -536,11 +572,11 @@ class GUI():
 
     def toggleUpgBtn(self):
         if Player.player.towerSelected and Player.player.towerSelected.level != Player.player.upgPathSelectLvl\
-                and Player.player.money < Player.player.towerSelected.upgradeDict['Cost'][Player.player.towerSelected.level - 1]:
+                and Player.player.money < Player.player.towerSelected.upgradeDict['Cost'][Player.player.towerSelected.level]:
             self.disableBtn(self.upgbtn)
         elif Player.player.towerSelected and Player.player.towerSelected.level == Player.player.upgPathSelectLvl:
-            if (Player.player.money < Player.player.towerSelected.upgradeDict['Cost'][Player.player.towerSelected.level - 1][0] or\
-            Player.player.gems < Player.player.towerSelected.upgradeDict['Cost'][Player.player.towerSelected.level - 1][1]):
+            if (Player.player.money < Player.player.towerSelected.upgradeDict['Cost'][Player.player.towerSelected.level][0] or\
+            Player.player.gems < Player.player.towerSelected.upgradeDict['Cost'][Player.player.towerSelected.level][1]):
                 self.disableBtn(self.upgbtn1)
                 self.disableBtn(self.upgbtn2)
             elif Player.player.towerSelected.towerGroup.leader:
@@ -560,6 +596,7 @@ class GUI():
 
     def builderMenu(self, squarepos):
         self.createTBBox(squarepos, 4, 6)
+        self.tbbox = 'Builder'
 
         for button in Localdefs.iconlist:
             tmpbtn = GUI_Base.ButtonWithImage(text=' ', size_hint=(None, None),
@@ -576,7 +613,7 @@ class GUI():
                 tmpbtn.disabled = True
             Player.player.layout.add_widget(tmpbtn)
         self.total_cost = Label(text = '$15', size_hint=(None, None), size = (Map.mapvar.squsize*2, Map.mapvar.squsize * 2),
-                                font_size=main.Window.size[0]*.019, halign='center', color = [0,1,0,1])
+                                font_size=__main__.Window.size[0]*.019, halign='center', color = [0,1,0,1])
         self.myDispatcher.bind(totalCost=self.on_totalCost)
         Player.player.layout.add_widget(self.total_cost)
         Map.mapvar.backgroundimg.add_widget(Player.player.tbbox)
