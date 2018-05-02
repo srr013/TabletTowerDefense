@@ -141,6 +141,8 @@ def get_all_in_range(tower, list, flyingOnly = False):
                 results.append(x)
     return results
 
+def can_attack(tower, enemy):
+    return (enemy.isair and tower.attackair) or (not enemy.isair and tower.attackground)
 
 def get_pos(pos, h, w, num):
 

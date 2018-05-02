@@ -25,6 +25,8 @@ class Road(Image):
         self.setDirection()
         self.bind(size=self.bindings)
 
+
+
     def getRoadColor(self):
         if self.iceNeighbor:
             return os.path.join('backgroundimgs', 'blueroadarrow.png')
@@ -61,7 +63,6 @@ class Road(Image):
 
     def createBurnRoad(self, shot):
         self.burnDmg = shot.burnDmg
-        self.source = "backgroundimgs/orangeroadarrow.png"
         with self.canvas.before:
             self.rgba = Color(1, 0, 0, 1)
             self.rect = Rectangle(size=self.size, pos=self.pos)
@@ -71,7 +72,6 @@ class Road(Image):
         Localdefs.burnroadlist.append(self)
 
     def removeBurnRoad(self, *args):
-        self.source = "backgroundimgs/roadarrow.png"
         Localdefs.burnroadlist.remove(self)
         with self.canvas.before:
             self.rgba = Color(1, 1, 1, 1)

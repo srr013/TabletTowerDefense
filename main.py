@@ -52,6 +52,7 @@ class Game(Widget):
         self.framecount = -1
         self.frametime = 1 / 20.0
         Player.player.frametime = self.frametime
+        self.shaderRect = None
 
     def bindings(self, *args):
         self.size = Window.size
@@ -68,6 +69,7 @@ class Game(Widget):
         MainFunctions.buildNodeDicts()
         MainFunctions.updatePath()
         GUI.gui.removeAlert()
+        Player.player.setResources()
 
     def menuFuncs(self, obj):
         if obj.id == 'Play':
@@ -75,14 +77,14 @@ class Game(Widget):
             if Player.player.wavenum == 0 and obj.text == 'Play':
                 self.startFuncs()
             else:
-                self.Clock.schedule_interval(self.update, self.frametime)
+                self.clock = self.Clock.schedule_interval(self.update, self.frametime)
                 MainFunctions.startAllAnimation()
             GUI.gui.toggleButtons()
             self.remove_widget(self.mainMenu)
         elif obj.id == 'Restart':
             MainFunctions.resetGame()
             Player.player.state = 'Playing'
-            self.Clock.schedule_interval(self.update, self.frametime)
+            self.clock = self.Clock.schedule_interval(self.update, self.frametime)
             self.remove_widget(self.mainMenu)
             GUI.gui.toggleButtons()
             self.startFuncs()
@@ -96,7 +98,7 @@ class Game(Widget):
             if Player.player.state == 'Paused':
                 self.shaderRect.size = (0,0)
                 Player.player.state = 'Playing'
-                self.Clock.schedule_interval(self.update, self.frametime)
+                self.clock = self.Clock.schedule_interval(self.update, self.frametime)
                 MainFunctions.startAllAnimation()
                 GUI.gui.toggleButtons()
                 self.remove_widget(self.pauseMenu)
@@ -104,6 +106,9 @@ class Game(Widget):
                 Player.player.state = 'Paused'
         elif obj.id == 'menu':
             Player.player.state = 'Menu'
+            if self.shaderRect:
+                Map.mapvar.background.canvas.remove(self.shaderRect)
+                self.shaderRect = None
             self.dispMainMenu()
         elif obj.id == 'onepath':
             Map.mapvar.numpaths = 1
@@ -161,12 +166,12 @@ class Game(Widget):
             if Player.player.wavenum == 0 and not GUI.gui.alertQueue:
                 GUI.gui.addAlert("Welcome to Tablet TD!", 'repeat')
             if Player.player.wavenum > 0:
-                self.Clock.unschedule(self.update)
+                self.clock.cancel()
                 MainFunctions.stopAllAnimation()
             self.dispMainMenu()
         elif Player.player.state == 'Paused':
             self.dispPauseMenu()
-            self.Clock.unschedule(self.update)
+            self.clock.cancel()
             MainFunctions.stopAllAnimation()
         elif Player.player.state == 'Playing':
             if Player.player.gameover:
@@ -178,7 +183,6 @@ class Game(Widget):
                 GUI.gui.addAlert("You Lose!", 'repeat')
                 print Player.player.analytics._print()
                 MainFunctions.resetGame()
-                Player.player.gameover = False
             # Update path when appropriate
             if Map.mapvar.updatePath:
                 MainFunctions.updatePath()
@@ -214,8 +218,8 @@ class Main(App):
     def build(self):
         game = Game()
         if platform == 'linux':
-            #Window.size = (1334,750) #tablet
-            Window.size = (1280,720) #phone
+            #Window.size = (600,300) #phone
+            Window.size = (1280,720) #tablet
         else:
             Window.fullscreen = 'auto'
         Window.bind(size=game.bindings)
@@ -239,7 +243,7 @@ class Main(App):
         Player.player.sound.playMusic()
         # This runs the game.update loop, which is used for handling the entire game
         game.Clock = Clock
-        game.Clock.schedule_interval(game.update, game.frametime)
+        game.clock = game.Clock.schedule_interval(game.update, game.frametime)
         return game
 
 

@@ -2,18 +2,16 @@ from kivy.storage.dictstore import DictStore
 import Map
 import Wavegen
 import Analytics
+import GUI
 
 playerhealth = 20
-playermoney = 10000
-
 
 class Player():
     def __init__(self):
-        # self.name = "player"
         self.health = playerhealth
-        self.money = playermoney
-        self.gems = 5
-        self.upgPathSelectLvl = 2
+        self.money = 0
+        self.gems = 0
+        self.upgPathSelectLvl = 5
         self.abilities = list()
         self.wavenum = 0
         self.gameover = False
@@ -22,8 +20,6 @@ class Player():
         self.layout = None
         self.wavestart = 999
         self.next_wave = False
-        # self.game_speed = 3
-        # self.screen = None
         self.pausetime = 0
         self.state = "Menu"
         self.restart = False
@@ -39,6 +35,23 @@ class Player():
         else:
             self.soundOn = True
             self.musicOn = True
+
+    def setResources(self):
+        if Map.mapvar.difficulty == 'easy':
+            self.money = 2000
+            self.gems = 10
+            GUI.gui.myDispatcher.Money = str(self.money)
+            GUI.gui.myDispatcher.Gems = str(self.gems)
+        elif Map.mapvar.difficulty == 'medium':
+            self.money = 1000
+            self.gems = 10
+            GUI.gui.myDispatcher.Money = str(self.money)
+            GUI.gui.myDispatcher.Gems = str(self.gems)
+        else:
+            self.money = 300
+            self.gems = 5
+            GUI.gui.myDispatcher.Money = str(self.money)
+            GUI.gui.myDispatcher.Gems = str(self.gems)
 
     def die(self):
         '''Set gameover to True to reset the game'''

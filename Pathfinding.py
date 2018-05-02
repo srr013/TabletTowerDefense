@@ -136,25 +136,6 @@ class MapGrid():
 
         return id not in self.walls
 
-    # def neighbors(self, id):
-    #     '''Find neighboring spaces that the unit can move to'''
-    #     (x, y) = id
-    #     results = []
-    #     if x < Map.mapvar.squwid - Map.mapvar.squborder:
-    #         results.append((x+1,y))
-    #     if x > Map.mapvar.squborder:
-    #         results.append((x-1,y))
-    #     if y < Map.mapvar.squhei - Map.mapvar.squborder:
-    #         results.append((x,y+1))
-    #     if y > Map.mapvar.squborder:
-    #         results.append((x,y-1))
-    #
-    #     #if (x + y) % 2 == 0: results.reverse()  # aesthetics
-    #     # results = filter(self.in_bounds, results)
-    #     results = filter(self.passable, results)
-    #
-    #     return results
-
     def neighbors(self, id):
         '''Find neighboring spaces that the unit can move to'''
         (x, y) = id

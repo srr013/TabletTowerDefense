@@ -18,12 +18,12 @@ activeiceroadlist = list()
 burnroadlist = list()
 towerGroupDict = {'Life': [], 'Fire': [], 'Ice': [], 'Gravity': [], 'Wind': []}
 
-topBar_ElementList = [("Wave: ", "WaveNum", str(Player.player.wavenum), "enemyimgs/Crowd_r.png"),
-                      ("Score: ", "Score", int(Player.player.score), "iconimgs/100.png"),
-                      ("Money: ", "Money", Player.player.money, "iconimgs/coin20x24.png"),
-                      ("Gems: ", "Gems", Player.player.gems, "iconimgs/reddiamond.png"),
-                      ("Health: ", "Health", Player.player.health, "iconimgs/heart24x24.png"),
-                      ("Timer: ", "Timer", int(Map.mapvar.waveseconds), "iconimgs/clock.png")]
+topBar_ElementList = [
+                      ("Score: ", "Score", int(Player.player.score), "iconimgs/medal.png"),
+                      (" ", "Money", Player.player.money, "iconimgs/coin20x24.png"),
+                      (" ", "Gems", Player.player.gems, "iconimgs/gem.png"),
+                      (" ", "Health", Player.player.health, "iconimgs/heart24x24.png"),
+                      (" ", "Timer", int(Map.mapvar.waveseconds), "iconimgs/clock.png")]
 
 towerAttributes = ["[b]Damage(Dmg)[/b]: 1 damage results in an enemy's loss of 1 armor point or 1 enemy HP if no armor points remain.",
                    "[b]Range(Rng)[/b]: Towers can only shoot enemies inside their range. Range is calculated in pixels. ",
