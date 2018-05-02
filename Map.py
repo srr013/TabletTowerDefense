@@ -2,6 +2,7 @@ import os
 from kivy.core.window import Window
 from kivy.graphics import *
 from kivy.uix.widget import Widget
+from kivy.uix.image import Image
 
 import GUI
 import GUI_Templates
@@ -11,7 +12,7 @@ import Playfield
 import Road
 import Utilities
 import Wall
-import main
+import __main__
 
 wallrectlist = list()
 
@@ -76,7 +77,6 @@ class Map():
         self.squwid = int(self.scrwid / self.squsize) - 1  # Window is 33 squ wide
         self.squhei = int(self.scrhei / self.squsize) - 1  # Window is 20 squ high
 
-
     def genmovelists(self):
         '''Generate the movement list for enemys and path blitting'''
         ##zero out the lists to start fresh. Otherwise the append allows multiple lists.
@@ -129,7 +129,7 @@ class Map():
         self.waveOrder = 'standard'
         with self.backgroundimg.canvas:
             Color(.8,.8,.8,.3)
-            self.shaderRect = Rectangle(size=main.Window.size, pos=(0,0))
+            self.shaderRect = Rectangle(size=__main__.Window.size, pos=(0,0))
             Color(1,1,1,1)
             self.playfieldRect = Rectangle(size=(self.playwid - self.border, self.playhei-self.border), pos= (self.border, self.border))
             Color(0, 0, 0, .6)
@@ -140,7 +140,6 @@ class Map():
                                            self.playhei,
                                            self.playwid, self.squsize * self.squborder,
                                            self.squsize * self.squborder, self.squsize * self.squborder], width=1.3)
-
 
         self.background.bind(size=self.bindings)
 
@@ -171,8 +170,8 @@ class Map():
         self.backgroundimg.size = self.background.size
         with self.backgroundimg.canvas.before:
             self.shaderRect = Rectangle(size=self.backgroundimg.size, pos=self.backgroundimg.pos)
-        self.scrhei = main.Window.height
-        self.scrwid = main.Window.width
+        self.scrhei = __main__.Window.height
+        self.scrwid = __main__.Window.width
         self.squsize = self.scrwid / 34
         self.playhei = self.squsize * 16
         self.playwid = self.squsize * 32
@@ -193,8 +192,8 @@ class Map():
         GUI.gui.alertStreamerBinding()
         GUI.gui.bindings()
         self.genmovelists()
-        self.baseimg = None
-        self.roadGen()
+        if self.baseimg:
+            self.roadGen()
         # print "Mapvar squsize", self.squsize, self.borderLine.points, self.scrwid, self.scrhei
 
     def checkDupRoad(self, square):
@@ -217,12 +216,14 @@ class Map():
                 x += 1
 
         if not self.baseimg:
-            self.baseimg = Utilities.imgLoad(source=os.path.join('backgroundimgs', 'Base.png'))
-            self.baseimg.allow_stretch = True
-            self.baseimg.size = (self.squsize * 3-1, self.squsize * 3-1)
+            self.baseimg = Image(source=os.path.join('backgroundimgs', 'Base.png'),
+                                 allow_stretch = True, size = (self.squsize * 3-1, self.squsize * 3-1))
             self.baseimg.pos = (
                 self.basepoint[0] * self.squsize, self.basepoint[1] * self.squsize - (self.baseimg.size[1] / 3))
             self.backgroundimg.add_widget(self.baseimg)
+        else:
+            self.baseimg.pos = (
+                self.basepoint[0] * self.squsize, self.basepoint[1] * self.squsize - (self.baseimg.size[1] / 3))
         # Kivy hierarchy: background (scatter and float layouts)> backgroundimg (on float) > containers
 
     def loadMap(self):
@@ -237,11 +238,13 @@ class Map():
     def getStartPoints(self):
         if self.numpaths == 1:
             self.startpoint = [(1, 9)]
+            self.basepoint = (26, 9)
         elif self.numpaths == 2:
             self.startpoint = [(1, 9), (10, 16)]
+            self.basepoint = (24, 9)
         else:
             self.startpoint = [(1, 9), (10, 16), (10, 1)]
-        self.basepoint = (26, 9)  # update newPath/flyPath below too
+            self.basepoint = (23, 9)  # update newPath/flyPath below too
 
 
 mapvar = Map()

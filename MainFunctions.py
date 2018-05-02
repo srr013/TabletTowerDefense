@@ -1,4 +1,5 @@
 import os
+import operator
 from kivy.animation import Animation
 from kivy.graphics import *
 
@@ -10,14 +11,16 @@ import Pathfinding
 import Player
 import TowerAbilities
 import Towers
+import TowerIcon
 import Analytics
 import __main__
 
 
 def makeIcons():
     '''Creates an Icon from the class for each tower'''
-    for tower in Towers.baseTowerList:
-        Towers.Icon(tower)
+    for tower in TowerIcon.baseTowerList:
+        TowerIcon.Icon(tower)
+
 
 def makeUpgradeIcons():
     for ability in TowerAbilities.baseAbilityList:
@@ -150,9 +153,9 @@ def workEnemies():
                 road.burnEnemy(enemy)
                 if enemy.slowtime > 0:
                     enemy.slowtime = 0
-                    enemy.workSlowTimers()
+                    enemy.workSlowTime()
         enemy.takeTurn()
-
+    Player.player.sortedlist = sorted(Map.mapvar.enemycontainer.children, key=operator.attrgetter("priority"))
     Player.player.newMoveList = False
 
 
@@ -172,12 +175,11 @@ def stopAllAnimation():
         if enemy.backToRoad:
             enemy.backToRoad.cancel_all(enemy)
     for shot in Map.mapvar.shotcontainer.children:
-        shot.anim.cancel(shot)
+        if shot.anim:
+            shot.anim.cancel(shot)
     for tower in Map.mapvar.towercontainer.children:
         if tower.type == 'Gravity' and tower.animation:
             tower.towerGroup.disable()
-        if tower.type == 'Wind':
-            tower.turret.source = os.path.join('towerimgs', 'Wind', 'turret2.png')
     GUI.gui.waveAnimation.cancel_all(GUI.gui.waveScroller)
     if GUI.gui.catchUpWaveAnimation:
         GUI.gui.catchUpWaveAnimation.cancel_all(GUI.gui.waveScroller)
@@ -186,20 +188,22 @@ def stopAllAnimation():
 def startAllAnimation():
     for enemy in Map.mapvar.enemycontainer.children:
         if enemy.stuntime <= 0:
-            enemy.anim.start(enemy)
+            if enemy.anim:
+                enemy.anim.start(enemy)
     for shot in Map.mapvar.shotcontainer.children:
-        shot.anim.start(shot)
-    for tower in Map.mapvar.towercontainer.children:
-        if tower.type == 'Wind' and tower.towerGroup.active:
-            tower.turret.source = os.path.join('towerimgs', 'Wind', 'turret.gif')
+        if shot.anim:
+            shot.anim.start(shot)
     scroll = .25 - GUI.gui.waveScroller.scroll_x
-    GUI.gui.catchUpWaveAnimation = Animation(scroll_x=scroll, duration=Player.player.wavetimeInt)
-    GUI.gui.catchUpWaveAnimation.bind(on_complete=EventFunctions.updateAnim)
-    GUI.gui.catchUpWaveAnimation.start(GUI.gui.waveScroller)
+    if Player.player.wavenum > 0:
+        GUI.gui.catchUpWaveAnimation = Animation(scroll_x=scroll, duration=Player.player.wavetimeInt)
+        GUI.gui.catchUpWaveAnimation.bind(on_complete=EventFunctions.updateAnim)
+        GUI.gui.catchUpWaveAnimation.start(GUI.gui.waveScroller)
 
 
 def resetGame():
     '''Resets game variables so player can restart the game quickly.'''
+    stopAllAnimation()
+    Player.player.gameover = False
     Map.mapvar.getStartPoints()
     Map.mapvar.flylistgenerated = False
     Map.mapvar.flymovelists = []
@@ -214,12 +218,6 @@ def resetGame():
     for tower in Map.mapvar.towercontainer.children:
         tower.remove()
     Map.mapvar.towercontainer.clear_widgets()
-    for enemy in Map.mapvar.enemycontainer.children:
-        enemy.anim.cancel(enemy)
-        if enemy.pushAnimation:
-            enemy.pushAnimation.cancel(enemy)
-        if enemy.backToRoad:
-            enemy.backToRoad.cancel_all(enemy)
     Map.mapvar.enemycontainer.clear_widgets()
     for road in Map.mapvar.roadcontainer.children:
         road.iceNeighbor = False
@@ -227,18 +225,12 @@ def resetGame():
     Map.mapvar.shotcontainer.clear_widgets()
     Map.mapvar.wallcontainer.clear_widgets()
     Map.mapvar.towerdragimagecontainer.clear_widgets()
-    # Map.flyPath = Pathfinding.neighborGridwithWeights(Map.mapvar.squwid, Map.mapvar.squhei - 1, 0, (28, 9))
-    # Map.myGrid = Pathfinding.neighborGridwithWeights(Map.mapvar.squwid, Map.mapvar.squhei - 1, 0, (28, 9))
-    # buildNodeDicts()
     Player.player.wavenum = 0
     GUI.gui.myDispatcher.WaveNum = GUI.gui.myDispatcher.Wave = str(Player.player.wavenum)
     Player.player.wavetime = int(Map.mapvar.waveseconds)
     GUI.gui.myDispatcher.Timer = str(Player.player.wavetime)
-    Player.player.money = Player.playermoney
-    GUI.gui.myDispatcher.Money = str(Player.player.money)
     Player.player.health = Player.playerhealth
     GUI.gui.myDispatcher.Health = str(Player.player.health)
-    Player.player.score = 0
     GUI.gui.myDispatcher.Score = str(Player.player.score)
     Player.player.analytics = Analytics.Analytics()
     GUI.gui.removeWaveStreamer()

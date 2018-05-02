@@ -30,13 +30,19 @@ class playField(ScatterLayout):
             child.size = self.size
 
     def on_touch_down(self, touch):
+        if Player.player.state == 'Menu' or Player.player.state == 'Pause':
+            return
         self.squarepos = Utilities.getPos(touch.pos)
         self.squarepos = self.adjustInBounds(self.squarepos)
         # don't allow touches outside of play boundary if a menu isn't open
         if self.popUpOpen:
             if not self.popUpOpen.collide_point(*touch.pos):
-                self.removeAll()
-                return
+                if self.dragger and self.dragger.collide_point(*touch.pos):
+                    self.dragger.on_touch_down(touch)
+                    return
+                else:
+                    self.removeAll()
+                    return
             else:
                 return super(playField, self).on_touch_down(touch)
         # move the selected square if a neighboring tower overlaps
@@ -61,7 +67,7 @@ class playField(ScatterLayout):
         return super(playField, self).on_touch_down(touch)
 
     def towerSelected(self, touch):
-        for tower in Map.mapvar.towercontainer.walk(restrict=True):
+        for tower in Map.mapvar.towercontainer.children:
             if tower.collide_point(*touch.pos):
                 if Player.player.tbbox != None:
                     self.removeAll()
@@ -82,7 +88,7 @@ class playField(ScatterLayout):
         if pos[0] < Map.mapvar.playwid and pos[1] < Map.mapvar.playhei:
             if pos[0] + 2 * Map.mapvar.squsize > Map.mapvar.playwid:
                 pos[0] = Map.mapvar.playwid - Map.mapvar.squsize * 2
-                self.adjustForBase()
+                self.adjustForBase(pos)
             elif pos[0] < Map.mapvar.squsize * 2:
                 pos[0] = Map.mapvar.squsize * 2
             if pos[1] + 2 * Map.mapvar.squsize > Map.mapvar.playhei:

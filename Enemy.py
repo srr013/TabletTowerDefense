@@ -21,6 +21,7 @@ class Enemy(Image):
     def __init__(self, **kwargs):
         super(Enemy, self).__init__()
         self.specialSend = kwargs['specialSend']
+        self.enemyNumber = kwargs['enemyNum']
         if self.type == 'Crowd':
             self.size = (Map.mapvar.squsize/1.8, Map.mapvar.squsize/1.8)
         elif self.type == 'Standard' or self.type == 'Airborn':
@@ -29,8 +30,7 @@ class Enemy(Image):
             self.size = (Map.mapvar.squsize - 5, Map.mapvar.squsize - 5)
         self.wavedict = Player.player.waveList[kwargs['wave']]
         if not self.specialSend:
-            self.curnode = self.weightedcurnode = 0
-            self.weightedcurnode = len(Map.mapvar.enemymovelists[0])- len(self.movelist)
+            self.curnode = 0
             self.pos = self.movelist[self.curnode]
             self.pushed = [0, 0]
             self.starthealth = self.health = self.wavedict['enemyhealth']
@@ -54,31 +54,32 @@ class Enemy(Image):
         if self.isBoss:
             self.size = (self.size[0] * 1.3, self.size[1] * 1.3)
         self.gemImage = None
-
         self.slowpercent = 100
         self.slowtime = 0
         self.stuntime = 0
         self.stunimage = Image(pos=(self.center_x, self.top + 8),size=(Map.mapvar.squsize/3,Map.mapvar.squsize/3))
         self.burntime = 0
         self.burnDmg = 0
+        self.teleporting = None
         self.bind(pos=self.bindStunImage)
         self.pushAnimation = None
         self.isair = False
         self.isAlive = True
-        self.hit = False
         self.recovering = False
         self.roadUpdate = False
-        self.pushtimer = .5
+        self.roadPos = 0
         self.pushAnimation = None
         self.backToRoad = None
         self.anim = None
+        self.priority = self.getPriority()
         if not self.specialSend:
-            self.anim = self.move()
+            self.move()
         self.drawHealthBar()
         Player.player.analytics.totalHP += self.health
 
     def takeTurn(self):
         '''Moves the enemy and adjusts any slow applied to it'''
+        self.priority = self.getPriority()
         if self.slowtime > 0:
             self.workSlowTime()
         if self.stuntime > 0:
@@ -87,9 +88,7 @@ class Enemy(Image):
             self.workBurnTimer()
         if self.pushed[0] != 0 or self.pushed[1] != 0:
             self.pushMove()
-            self.updateHealthBar()
-        else:
-            self.updateHealthBar()
+        self.updateHealthBar()
 
     def workSlowTime(self):
         '''Adjust slow already applied to enemy'''
@@ -117,41 +116,56 @@ class Enemy(Image):
     def bindStunImage(self, *args):
         self.stunimage.center = (self.center_x, self.top + 8)
 
+    def getPriority(self):
+        distToBase = Vector(self.center).distance(Map.mapvar.baseimg.center)
+        if distToBase < Map.mapvar.squsize*2:
+            self.checkHit()
+        if distToBase > Map.mapvar.baseimg.x/1.5:
+            num = 10
+        elif distToBase > Map.mapvar.baseimg.x/2:
+            num = 6
+        elif distToBase > Map.mapvar.baseimg.x/3:
+            num = 2
+        else:
+            num = 0
+        boss = 0 if self.isBoss else 2
+        nodes = float(len(self.movelist) - self.curnode)
+        isair = 0 if self.isair else 1
+        senderNum = self.enemyNumber/10.0
+        return float(num + boss + nodes + isair + senderNum)
+
     def move(self, *args):
         '''Moves the enemy down the generated move list
         Frametime: the amount of time elapsed per frame'''
         if self.stuntime > 0:
             return
+        if self.anim:
+            if self.anim.have_properties_to_animate(self):
+                return
         if self.curnode < len(self.movelist) - 1 and not self.roadUpdate:
             self.curnode += 1
-            self.weightedcurnode += 1
         self.direction = self.dirlist[self.curnode-1]
         self.roadUpdate = False
-        distToTravel = int(
-            abs(self.pos[0] - self.movelist[self.curnode][0] + self.pos[1] - self.movelist[self.curnode][1]))
-        duration = float(distToTravel) / (self.speed * (self.slowpercent/100))
+        distToTravel = Vector(self.pos).distance(self.movelist[self.curnode])
+        duration = float(distToTravel) / (self.speed * (self.slowpercent/100.0))
         self.anim = Animation(pos=self.movelist[self.curnode], duration=duration, transition="linear")
 
         self.source = os.path.join("enemyimgs", self.type+ "_"+self.direction+".png")
-
-        if self.curnode >= len(self.movelist) - 1:
-            self.anim.bind(on_complete=self.checkHit)
-        else:
+        print self.curnode, len(self.movelist)
+        if self.curnode < len(self.movelist) - 1:
             self.anim.bind(on_complete=self.move)
         self.anim.start(self)
 
-        return self.anim
-
     def checkHit(self, *args):
-        if Map.mapvar.baseimg.collide_widget(self):
+        if Map.mapvar.baseimg.collide_widget(self) and self.isAlive:
+            self.die(base=True)
             Player.player.sound.playSound(Player.player.sound.hitBase, start=.5)
             if self.isBoss:
                 Player.player.health -=5
             else:
                 Player.player.health -= 1
             GUI.gui.myDispatcher.Health = str(Player.player.health)
-            Map.mapvar.enemycontainer.remove_widget(self)
-            MainFunctions.flashScreen('red', 3)
+            MainFunctions.flashScreen('red', 2)
             if Player.player.health <= 0:
                 Player.player.die()
             return
@@ -160,52 +174,72 @@ class Enemy(Image):
         if self.recovering == False:
             if self.anim:
                 self.anim.cancel_all(self)
+            if self.backToRoad:
+                self.backToRoad.cancel_all(self)
             self.pushAnimation = Animation(pos=(self.x - self.pushed[0], self.y - self.pushed[1]),
-                                           duration=self.pushtimer, t="out_cubic")
-            self.pushAnimation.bind(on_complete=self.getNearestRoad)
+                                           duration=.3, t="out_cubic")
+            if self.teleporting == None:
+                self.pushAnimation.bind(on_complete = self.pushRecover)
+            else:
+                self.recovering = False
+                self.pushAnimation.bind(on_complete = self.teleporting.teleport)
             self.pushAnimation.start(self)
             self.recovering = True
-        self.pushtimer -= Player.player.frametime
-        if self.pushtimer <= 0:
-            self.recovering = False
-            self.pushtimer = .5
             self.pushed = [0, 0]
-            self.hit = False
+
+    def pushRecover(self, *args):
+        self.recovering = False
+        self.getNearestRoad()
 
     def getNearestRoad(self, *args):
         if not self.isair:
             self.roadUpdate = True
+            if self.curnode == len(self.movelist)-1:
+                self.move()
+            for road in Map.mapvar.roadcontainer.children:
+                if self.collide_widget(road):
+                    self.roadPos = road.pos
+                    self.getNextNode()
+                    return
+            self.roadUpdate = True
             distToRoad = 0
             destRoad = None
             for road in Map.mapvar.roadcontainer.children:
-                dist = Vector(self.center).distance(road.center)
+                dist = Vector(self.right, self.y).distance(road.pos)
                 if dist < distToRoad or distToRoad == 0:
-                    distToRoad = dist
+                    distToRoad = Vector(self.pos).distance(road.pos)
                     destRoad = road
-            duration = float(distToRoad) / (self.speed * (self.slowpercent / 100))
+                    self.roadPos = road.pos
+            duration = float(distToRoad) / (self.speed * (self.slowpercent / 100.0))
             self.backToRoad = Animation(pos = destRoad.pos, duration = duration, transition = 'linear')
             self.backToRoad.bind(on_complete=self.getNextNode)
             self.backToRoad.start(self)
-            self.curnode -= 1
         else:
             self.move()
 
     def getNextNode(self, *args):
-        x = self.curnode
+        x = 0
         while x < len(self.movelist)-1:
             priorpos = self.movelist[x]
             nextpos = self.movelist[x+1]
-            if Vector.in_bbox((self.pos),priorpos,nextpos):
-                self.curnode = x+1
-                break
+            if self.roadPos:
+                if Vector.in_bbox((self.roadPos),priorpos,nextpos):
+                    self.roadPos = 0
+                    self.curnode = x+1
+                    break
+            else:
+                if Vector.in_bbox((self.pos),priorpos,nextpos):
+                    self.curnode = x+1
+                    break
             x += 1
+        self.roadUpdate = True
         self.move()
 
     def getFuturePos(self,time):
         '''time is in seconds'''
         distToNode_x = self.movelist[self.curnode][0] - self.x
         distToNode_y = self.movelist[self.curnode][1] - self.y
-        timeToNode = abs(distToNode_x + distToNode_y)/(self.speed * (self.slowpercent/100))
+        timeToNode = abs(distToNode_x + distToNode_y)/(self.speed * (self.slowpercent/100.0))
         if time <= timeToNode:
             change = (self.speed * (self.slowpercent/100)) * time
             if distToNode_x != 0:
@@ -243,12 +277,12 @@ class Enemy(Image):
         if self.health <= 0:
             self.die()
 
-    def die(self):
+    def die(self, base = False):
         '''If enemy runs out of health add them to explosions list, remove from enemy list, and add money to player's account'''
         if self.isAlive:
-            self.isAlive = False
-            if self.type == 'Splinter':
-                self.splinter()
+            self.canvas.remove(self.healthbar)
+            self.canvas.remove(self.remaininghealth)
+
             if self.isair == True:
                 Localdefs.flyinglist.remove(self)
             if self.anim:
@@ -257,25 +291,29 @@ class Enemy(Image):
                 self.pushAnimation.cancel_all(self)
             if self.backToRoad:
                 self.backToRoad.cancel_all(self)
-            if self.isBoss:
-                x = random.randint(0, 100)
-                if x < 10:
-                    self.gemImage = True
-                    Player.player.gems += 1
-                    GUI.gui.myDispatcher.Gems = str(Player.player.gems)
-            self.startDeathAnim()
-            # self.remove_widget(self.image)
+            self.clear_widgets()
             Map.mapvar.enemycontainer.remove_widget(self)
-            Player.player.money += int(self.reward)
-            Player.player.analytics.moneyEarned += self.reward
-            Player.player.score += self.points
-            GUI.gui.myDispatcher.Money = str(Player.player.money)
-            GUI.gui.myDispatcher.Score = str(Player.player.score)
-            MainFunctions.updateGUI()
+            if not base:
+                if self.type == 'Splinter' and self.isAlive:
+                    self.splinter()
+                if self.isBoss:
+                    x = random.randint(0, 100)
+                    if x < 10:
+                        self.gemImage = True
+                        Player.player.gems += 1
+                        GUI.gui.myDispatcher.Gems = str(Player.player.gems)
+                self.startDeathAnim()
+                Player.player.money += int(self.reward)
+                Player.player.analytics.moneyEarned += self.reward
+                Player.player.score += self.points
+                GUI.gui.myDispatcher.Money = str(Player.player.money)
+                GUI.gui.myDispatcher.Score = str(Player.player.score)
+                MainFunctions.updateGUI()
+            self.isAlive = False
 
     def startDeathAnim(self):
         if self.gemImage:
-            self.gemImage = Utilities.imgLoad(source=(os.path.join("iconimgs", "reddiamond.png")))
+            self.gemImage = Utilities.imgLoad(source=(os.path.join("iconimgs", "gem.png")))
             self.gemImage.size = (40, 40)
             self.gemImage.center = self.center
             Map.mapvar.backgroundimg.add_widget(self.gemImage)
@@ -287,7 +325,7 @@ class Enemy(Image):
         self.coinimage.size = (5, 7)
         self.coinimage.center = self.center
         Map.mapvar.backgroundimg.add_widget(self.coinimage)
-        self.deathanim = Animation(pos=(Map.mapvar.squsize*18, Map.mapvar.scrhei - Map.mapvar.squsize), size=(10, 12), duration=.3) + \
+        self.deathanim = Animation(pos=(Map.mapvar.squsize*12, Map.mapvar.scrhei - Map.mapvar.squsize), size=(15, 17), duration=.3) + \
                          Animation(size=(0, 0), duration=.1)
         self.deathanim.bind(on_complete=self.endDeathAnim)
         self.deathanim.start(self.coinimage)
@@ -337,7 +375,7 @@ class Standard(Enemy):
     deploySpeed = 1
     health = 80
     speed = 45
-    armor = 0
+    armor = 1
     reward = 1
     points = 1
     imagesrc = os.path.join("enemyimgs", "Standard_r.png")
@@ -360,7 +398,7 @@ class Airborn(Enemy):
     deploySpeed = 1
     health = 80
     speed = 50
-    armor = 0
+    armor = 1
     reward = 1
     points = 1
     imagesrc = os.path.join("enemyimgs", "Airborn_r.png")
@@ -399,13 +437,13 @@ class Splinter(Enemy):
         self.source = self.imagesrc
         self.movelistNum = random.randint(0, Map.mapvar.numpaths - 1)
         self.movelist = Map.mapvar.enemymovelists[self.movelistNum]  # 0 for ground, 1 for air
-        self.curwave = Player.player.wavenum
+        self.curwave = kwargs['wave']
         self.dirlist = Map.mapvar.dirmovelists[self.movelistNum]
         super(Splinter, self).__init__(**kwargs)
 
-    # break the Splinter apart when it dies. 15 Crowd are released.
+    # break the Splinter apart when it dies. 8 Crowd are released.
     def splinter(self):
-        SenderClass.Sender(specialSend=True, enemytype='Crowd', pos=self.pos, curnode=self.curnode, number=8,
+        SenderClass.Sender(specialSend=True, enemytype='Crowd', pos=self.pos, number=8,
                            deploySpeed=0, curwave=self.curwave)
 
 
@@ -414,7 +452,7 @@ class Strong(Enemy):
     deploySpeed = 3
     health = 200
     speed = 25
-    armor = 10
+    armor = 7
     reward = 2
     points = 2
     imagesrc = os.path.join("enemyimgs", "Strong_r.png")
@@ -459,6 +497,6 @@ class Crowd(Enemy):
             pushx = random.randint(-Map.mapvar.squsize*3, Map.mapvar.squsize*3)
             pushy = random.randint(-Map.mapvar.squsize*3, Map.mapvar.squsize*3)
             self.pushed = [pushx, pushy]
-            self.curnode = self.weightedcurnode = kwargs['curnode']
+            self.curnode = 0
 
         super(Crowd, self).__init__(**kwargs)

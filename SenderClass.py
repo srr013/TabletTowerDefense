@@ -10,15 +10,14 @@ class Sender():
 
     def __init__(self, **kwargs):
         self.specialSend = kwargs['specialSend']
-        self.wave = Player.player.wavenum
         if self.specialSend:
             self.enemytype = 'Crowd'
             self.pos = kwargs['pos']
-            self.curwave = kwargs['curwave']
-            self.curnode = kwargs['curnode']
+            self.wave = kwargs['curwave']
             self.numThisWave = kwargs['number']
             self.enemycounter = self.enemycounterinit = kwargs['deploySpeed']
         else:
+            self.wave = Player.player.wavenum
             self.enemytype = Player.player.waveList[self.wave]['enemytype']
             self.numThisWave = Player.player.waveList[self.wave]['enemynum']
             self.enemycounter = self.enemycounterinit = eval("Enemy." + self.enemytype + ".deploySpeed")
@@ -36,10 +35,11 @@ class Sender():
                 if self.enemytype == 'Crowd' and self.specialSend == True:
 
                     f = operator.methodcaller(self.enemytype, isBoss=self.isBoss, specialSend=self.specialSend,
-                                              pos=self.pos, curnode=self.curnode, wave = self.wave)
+                                              pos=self.pos, wave = self.wave, enemyNum = self.enemiesDeployed)
                     f(Enemy)
                 else:
-                    f = operator.methodcaller(self.enemytype, isBoss=self.isBoss, specialSend=self.specialSend, wave = self.wave)
+                    f = operator.methodcaller(self.enemytype, isBoss=self.isBoss, specialSend=self.specialSend, wave = self.wave,
+                                              enemyNum = self.enemiesDeployed)
                     f(Enemy)
                 self.enemiesDeployed += 1
             else:

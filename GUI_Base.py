@@ -141,12 +141,12 @@ class StackButtonWithImage(Button):
             return True
 
     def on_pressed(self, button, pos):
-        print 'Damage' in self.id
-        if self.id == 'LeaderPath' or 'Damage' in self.id:
-            func = "TowerAbilities." + button.instance.type + "." + button.instance.func + "(id=self.id)"
-            eval(func)
-            Map.mapvar.background.removeAll()
-        return True
+        if not self.disabled:
+            if self.id == 'LeaderPath' or 'Damage' in self.id:
+                func = "TowerAbilities." + button.instance.type + "." + button.instance.func + "(id=self.id)"
+                eval(func)
+                Map.mapvar.background.removeAll()
+            return True
 
     def on_pos(self, *args):
         self.layout.pos = self.pos
@@ -198,6 +198,7 @@ class MyCheckBox(BoxLayout):
     def __init__(self, **kwargs):
         super(MyCheckBox, self).__init__(**kwargs)
         self.orientation='horizontal'
+        self.padding = 10
         self.label = Label(text='')
         self.checkbox = CheckBox()
         self.checkbox.bind(active=self.on_checkbox_active)

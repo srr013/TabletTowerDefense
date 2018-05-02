@@ -40,14 +40,14 @@ def wavegen():
     waveDict = {}
     waveTypeList = []
     waveNum = 1
-    difficultyMod = 1
-    rewardMod = 2
+    difficultyMod = 1.5
+    rewardMod = 5
     if Map.mapvar.difficulty == 'medium':
-        difficultyMod = 1.2
-        rewardMod = 1.5
+        difficultyMod = 1.75
+        rewardMod = 4
     elif Map.mapvar.difficulty == 'hard':
-        difficultyMod = 1.6
-        rewardMod = 1
+        difficultyMod = 2
+        rewardMod = 3
     counter = 0
     while setNum < maxSets:
         while float(waveNum) / wavesPerSet <= setNum:
@@ -61,7 +61,7 @@ def wavegen():
                     counter = 0
             else:
                 enemyType = enemytypes[random.randint(0, len(enemytypes) - 1)]  # selects a random enemy type
-            numEnemies = round(int(eval("Enemy." + enemyType + ".defaultNum") * (1 + (setNum / 10.0)) * difficultyMod),1)
+            numEnemies = round(int(eval("Enemy." + enemyType + ".defaultNum") * (1 + (setNum / 10.0)) * (difficultyMod/2)),1)
             healthEnemies = int(eval("Enemy." + enemyType + ".health") * (1 + (setNum / 7.0)) * difficultyMod)
             speedEnemies = eval("Enemy." + enemyType + ".speed") * (1 + (setNum / 10.0))
             armorEnemies = eval("Enemy." + enemyType + ".armor") * (1 + (setNum / 10.0)) * difficultyMod
@@ -70,8 +70,8 @@ def wavegen():
             if isBoss:
                 healthEnemies *= 4
                 speedEnemies *= 1.3
-                armorEnemies *= 4
-                rewardEnemies *= 4
+                armorEnemies *= 2
+                rewardEnemies *= 10
 
             waveDict[waveNum]={'setnum': setNum, 'enemynum': numEnemies, 'enemyhealth': healthEnemies,
                     'enemyspeed': speedEnemies,

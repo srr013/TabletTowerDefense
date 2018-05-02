@@ -7,15 +7,17 @@ class MySound():
     def __init__(self, sound, music):
         self.sound = sound
         self.music = music
-        self.musicPlaying = False
-        self.gameMusic1 = self.loadSound(os.path.join("sounds","Submarine.mp3"))
-        self.gameMusic2 = self.loadSound(os.path.join("sounds", "Raw_Power.mp3"))
+        self.musicIndex = 0
+        self.gameMusic1 = self.loadSound(os.path.join("sounds","Submarine.ogg"))
+        self.gameMusic2 = self.loadSound(os.path.join("sounds", "Raw_Power.ogg"))
+        self.gameMusic1.bind(on_stop=self.playMusic)
+        self.gameMusic2.bind(on_stop=self.playMusic)
+        self.musicList = [self.gameMusic1, self.gameMusic2]
         self.gameMusic1.volume = .6
         self.gameMusic2.volume = .6
         self.waveBeep = self.loadSound(os.path.join("sounds", "WaveBeep.wav"))
         self.gameOver = self.loadSound(os.path.join("sounds", "GameOver.wav"))
-        self.hitBase = self.loadSound(os.path.join("sounds","hit.mp3"))
-        self.musicSelect = 0
+        self.hitBase = self.loadSound(os.path.join("sounds","hit.ogg"))
 
     def loadSound(self, path):
         #loads the sound to memory
@@ -41,18 +43,12 @@ class MySound():
 
     def playMusic(self, *args):
         if self.music:
-            self.gameMusic1.bind(on_stop=self.playMusic)
-            self.gameMusic2.bind(on_stop=self.playMusic)
-            self.musicPlaying = True
-            if not self.musicSelect:
-                x = str(random.randint(1, 2))
-                self.musicSelect = '1' if x == '2' else '1'
+            if self.musicIndex == 0:
+                self.musicIndex =  random.randint(0, 1)
             else:
-                x = self.musicSelect
-            eval("self.gameMusic" + x + ".play()")
+                self.musicIndex = 1 if self.musicIndex == 0 else 0
+            self.musicList[self.musicIndex].play()
 
-        if not self.music and self.musicPlaying:
-            self.gameMusic1.unbind(on_stop=self.playMusic)
-            self.gameMusic2.unbind(on_stop=self.playMusic)
-            self.gameMusic1.stop()
-            self.musicPlaying = False
+        if not self.music:
+            if self.musicList[self.musicIndex].state == 'play':
+                self.musicList[self.musicIndex].stop()

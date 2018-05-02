@@ -7,6 +7,11 @@ import Map
 import Player
 import SenderClass
 import Towers
+import FireTower
+import LifeTower
+import IceTower
+import GravityTower
+import WindTower
 
 
 def placeTowerFromList(*args):
@@ -78,7 +83,7 @@ def placeTower(*args):
             GUI.gui.createMessage("Can't Overlap")
 
     if sufficient_funds and not collide:
-        newTower = eval("Towers." + towerselected.type + towerselected.base)(pos)
+        newTower = eval(towerselected.type+"Tower." + towerselected.type + towerselected.base)(pos)
         Player.player.analytics.moneySpent += newTower.cost
         Map.mapvar.towercontainer.add_widget(newTower)
         Player.player.towerSelected = None
@@ -100,7 +105,6 @@ def nextWave(*args):
     Player.player.wavenum += 1
     GUI.gui.myDispatcher.WaveNum = str(Player.player.wavenum)
     Map.mapvar.enemypanel.CurrentWave = str(Player.player.wavenum)
-    # GUI.gui.myDispatcher.Wave = str(Player.player.wavenum)
     Player.player.wavetime = Map.mapvar.waveseconds
     Player.player.wavetimeInt = int(Map.mapvar.waveseconds)
     GUI.gui.myDispatcher.Timer = str(Player.player.wavetimeInt)

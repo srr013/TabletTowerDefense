@@ -8,6 +8,7 @@ import Localdefs
 import Map
 import Player
 import Utilities
+import Shot
 
 
 class TowerGroup():
@@ -21,39 +22,38 @@ class TowerGroup():
         self.active = False
         self.targetTimer = 0
         self.facing = 'l'
-        self.towersNeedingAnim = []
         self.animating = False
         self.needsUpdate = True
         self.leader = None
 
-        self.damageModifier = 1
-        self.reloadModifier = 1
-        self.rangeModifier = 1
-        self.pushModifier = 1
-        self.slowTimeModifier = 1
-        self.slowPercentModifier = 1
-        self.stunTimeModifier = 1
-        self.stunChanceModifier = 1
-        self.burnModifier = 1
-        self.blackHoleChanceModifier = 1
-        self.damageBonus = 0
-        self.reloadBonus = 0
-        self.rangeBonus = 0
-        self.pushBonus = 0
-        self.slowpercentBonus = 0
-        self.slowtimeBonus = 0
-        self.stuntimeBonus = 0
-        self.stunchanceBonus = 0
-        self.burnBonus = 0
+        self.DamageModifier = 1
+        self.ReloadModifier = 1
+        self.RangeModifier = 1
+        self.PushModifier = 1
+        self.StunTimeModifier = 1
+        self.StunChanceModifier = 1
+        self.SlowTimeModifier = 1
+        self.SlowPercentModifier = 1
+        self.BurnDamageModifier = 1
+        self.BlackHoleChanceModifier = 1
+        self.DamageBonus = 0
+        self.ReloadBonus = 0
+        self.RangeBonus = 0
+        self.PushBonus = 0
+        self.SlowPercentBonus = 0
+        self.SlowTimeBonus = 0
+        self.StunTimeBonus = 0
+        self.StunChanceBonus = 0
+        self.BurnDamageBonus = 0
         self.nextDamageBonus = 0
         self.nextReloadBonus = 0
         self.nextRangeBonus = 0
         self.nextPushBonus = 0
-        self.nextSlowpercentBonus = 0
-        self.nextSlowtimeBonus = 0
-        self.nextStuntimeBonus = 0
-        self.nextStunchanceBonus = 0
-        self.nextBurnBonus = 0
+        self.nextSlowPercentBonus = 0
+        self.nextSlowTimeBonus = 0
+        self.nextStunTimeBonus = 0
+        self.nextStunChanceBonus = 0
+        self.nextBurnDamageBonus = 0
 
     def updateTowerGroup(self):
         self.updateList()
@@ -80,52 +80,63 @@ class TowerGroup():
     def updateModifiers(self):
         if self.leader:
             #setup so each bonus can be altered by removing the for loops and coding in the % change.
-            self.damageBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
-            self.reloadBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
-            self.rangeBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
-            self.pushBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
-            self.slowpercentBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
-            self.slowtimeBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
-            self.stuntimeBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
-            self.stunchanceBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
-            self.burnBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.DamageBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.ReloadBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.RangeBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.PushBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.SlowPercentBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.SlowTimeBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.StunTimeBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.StunChanceBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.BurnDamageBonus = float((self.leader.level - Player.player.upgPathSelectLvl) * 20 / 100.0)
             self.nextDamageBonus = float((self.leader.level + 1 - Player.player.upgPathSelectLvl) * 20 / 100.0)
             self.nextReloadBonus = float((self.leader.level + 1 - Player.player.upgPathSelectLvl) * 20 / 100.0)
             self.nextRangeBonus = float((self.leader.level + 1 - Player.player.upgPathSelectLvl) * 20 / 100.0)
             self.nextPushBonus = float((self.leader.level + 1 - Player.player.upgPathSelectLvl) * 20 / 100.0)
-            self.nextSlowpercentBonus = float((self.leader.level + 1 - Player.player.upgPathSelectLvl) * 20 / 100.0)
-            self.nextSlowtimeBonus = float((self.leader.level + 1 - Player.player.upgPathSelectLvl) * 20 / 100.0)
-            self.nextStuntimeBonus = float((self.leader.level + 1 - Player.player.upgPathSelectLvl) * 20 / 100.0)
-            self.nextStunchanceBonus = float((self.leader.level + 1- Player.player.upgPathSelectLvl) * 20 / 100.0)
-            self.nextBurnBonus = float((self.leader.level + 1- Player.player.upgPathSelectLvl) * 20 / 100.0)
-        self.damageModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.damageBonus)
-        self.rangeModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.rangeBonus) if \
+            self.nextSlowPercentBonus = float((self.leader.level + 1 - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.nextSlowTimeBonus = float((self.leader.level + 1 - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.nextStunTimeBonus = float((self.leader.level + 1 - Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.nextStunChanceBonus = float((self.leader.level + 1- Player.player.upgPathSelectLvl) * 20 / 100.0)
+            self.nextBurnDamageBonus = float((self.leader.level + 1- Player.player.upgPathSelectLvl) * 20 / 100.0)
+        self.DamageModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.DamageBonus)
+        self.RangeModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.RangeBonus) if \
             self.towerType != 'Gravity' or self.towerType != 'Ice' else 0
-        self.pushModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.pushBonus)
-        self.slowTimeModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.slowtimeBonus)
-        self.slowPercentModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.slowpercentBonus)
-        self.stunTimeModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.stuntimeBonus)
-        self.stunChanceModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.stunchanceBonus)
-        self.reloadModifier = 1 + (self.reloadBonus)
-        self.burnModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.burnBonus)
+        self.PushModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.PushBonus)
+        self.SlowTimeModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.SlowTimeBonus)
+        self.SlowPercentModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.SlowPercentBonus)
+        self.StunTimeModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.StunTimeBonus)
+        self.StunChanceModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.StunChanceBonus)
+        self.ReloadModifier = 1 + (self.ReloadBonus)
+        self.BurnDamageModifier = 1 + (len(self.towerSet) - 1) * .05 + (self.BurnDamageBonus)
         for tower in self.towerSet:
-            tower.setTowerData()
+            if tower.totalUpgradeTime == 0:
+                tower.setTowerData()
 
     def takeTurn(self):
         if self.active:
             in_range_air = 0
             in_range_ground = 0
+            towersAnimating = 0
             for tower in self.towerSet:
-                if tower.targetedEnemy:
+                if tower.targetedEnemy and tower.turretRotates:
                     if not tower.turret.anim.have_properties_to_animate(tower.turret_rot):
                         tower.moveTurret(tower.targetedEnemy)
+                if tower.animating:
+                    towersAnimating += 1
                 list = Utilities.get_all_in_range(tower,Map.mapvar.enemycontainer.children)
                 if list:
                     for enemy in list:
                         if enemy.isair:
                             in_range_air += 1
+                            if tower.upgradePath == 'WindDamage':
+                                Shot.Shot(tower, enemy)
+                                tower.shotcount +=1
+                                if tower.shotcount >= tower.allowedshots:
+                                    break
                         else:
                             in_range_ground +=1
+            if self.animating and towersAnimating == 0:
+                self.animating = False
             if in_range_air == 0 and self.towerType == 'Wind':
                 self.disable()
                 return
@@ -155,7 +166,7 @@ class TowerGroup():
 
     def target(self):
         for tower in self.towerSet:
-            if tower.totalUpgradeTime == 0 and not tower.leader:
+            if tower.totalUpgradeTime == 0 and not tower.leader and tower.upgradePath != 'WindDamage':
                 tower.target()
 
 
@@ -170,6 +181,8 @@ class TowerGroup():
             for tower in self.towerSet:
                 if tower.level <= Player.player.upgPathSelectLvl:
                     tower.turret.source = os.path.join('towerimgs', self.towerType, "turret.gif")
+                    tower.turret.size = (Map.mapvar.squsize*.65,Map.mapvar.squsize*.65)
+                    tower.turret.center = tower.center
 
     def animateGravity(self, *args):
         tower = args[0]
@@ -208,6 +221,8 @@ class TowerGroup():
             for tower in self.towerSet:
                 if tower.level <= Player.player.upgPathSelectLvl:
                     tower.turret.source = os.path.join('towerimgs', self.towerType, "turret.png")
+                    tower.turret.size = (Map.mapvar.squsize, Map.mapvar.squsize)
+                    tower.turret.center = tower.center
 
     def getAdjacentRoads(self):
         self.adjacentRoads = set()
