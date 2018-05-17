@@ -8,12 +8,13 @@ import Map
 
 
 class Road(Image):
-    def __init__(self, pos, index, pathnum, **kwargs):
+    def __init__(self, localized,globalized, index, pathnum, **kwargs):
         super(Road, self).__init__(**kwargs)
-        self.pos = (pos[0], pos[1])
+        self.pos = (localized[0], localized[1])
+        self.globalized = (globalized[0], globalized[1])
         self.allow_stretch = True
         self.size = (Map.mapvar.squsize, Map.mapvar.squsize)
-        self.squpos = (self.pos[0] / Map.mapvar.squsize, self.pos[1] / Map.mapvar.squsize)
+        self.squpos = ((self.globalized[0] / Map.mapvar.squsize), (self.globalized[1] / Map.mapvar.squsize))
         Map.mapvar.roadcontainer.add_widget(self)
         Localdefs.roadlist.append(self)
         self.iceNeighbor = False
@@ -25,8 +26,6 @@ class Road(Image):
         self.setDirection()
         self.bind(size=self.bindings)
 
-
-
     def getRoadColor(self):
         if self.iceNeighbor:
             return os.path.join('backgroundimgs', 'blueroadarrow.png')
@@ -34,9 +33,7 @@ class Road(Image):
         for road in redlist:
             if road == (1, 9):
                 redlist.append((2, 9))
-            if road == (10, 16):
-                redlist.append((10, 15))
-            if road == (10, 1):
+            elif road == (10, 1):
                 redlist.append((10, 2))
         if self.squpos in redlist:
             return os.path.join('backgroundimgs', 'redroadarrow.png')
@@ -66,7 +63,7 @@ class Road(Image):
         with self.canvas.before:
             self.rgba = Color(1, 0, 0, 1)
             self.rect = Rectangle(size=self.size, pos=self.pos)
-        self.animation = Animation(rgba=[1,.7,0,1], duration = 2.5) + Animation(rgba=[1, .4, 0, .4], duration= 2.5)
+        self.animation = Animation(rgba=[1,.7,0,1], duration = 2.5) + Animation(rgba=[1, .4, 0, .4], duration= 2.5) + Animation(rgba=[1,1,1,0], duration = .1)
         self.animation.bind(on_complete = self.removeBurnRoad)
         self.animation.start(self.rgba)
         Localdefs.burnroadlist.append(self)
@@ -74,7 +71,7 @@ class Road(Image):
     def removeBurnRoad(self, *args):
         Localdefs.burnroadlist.remove(self)
         with self.canvas.before:
-            self.rgba = Color(1, 1, 1, 1)
+            self.rgba = Color(1, 1, 1, 0)
             self.rect = Rectangle(size=self.size, pos=self.pos)
 
     def bindings(self):

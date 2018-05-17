@@ -31,119 +31,119 @@ import GUI_Base
 import GUI_Templates
 
 
-class pauseMenu(GUI_Base.SmartMenu):
-    # setup the menu button names
-
-    def __init__(self, **kwargs):
-        super(pauseMenu, self).__init__(**kwargs)
-        self.image = Utilities.imgLoad('backgroundimgs/pause.png')
-        self.image.allow_stretch = True
-        self.image.size = (Map.mapvar.squsize*3, Map.mapvar.squsize*3)
-        self.image.center = (__main__.Window.width/2,__main__.Window.height/2)
-        self.add_widget(self.image)
-
-
-class mainMenu(GUI_Base.SmartMenu):
-    # setup the menu button names
-    def __init__(self, **kwargs):
-        super(mainMenu, self).__init__(**kwargs)
-
-        self.layout = GridLayout(rows=4,size=(__main__.Window.width-3*Map.mapvar.squsize,__main__.Window.height-3*Map.mapvar.squsize),
-                                 padding=[Map.mapvar.squsize/2], spacing=Map.mapvar.squsize)
-        self.layout.center = ((__main__.Window.width / 2), (__main__.Window.height/ 2))
-        self.id = 'mainmenu'
-        self.add_widget(self.layout)
-
-        # use pos_hint to set the position relative to its parent by percentage.
-        self.menulabel = Label(text='Tablet Tower Defense', size_hint = (1,.3))
-        self.layout.add_widget(self.menulabel)
-        self.menulabel.font_size = Window.width * 0.04
-
-        with self.layout.canvas.before:
-            Color(.3, .3, .3)
-            self.menurect = Rectangle(size=self.layout.size, pos=self.layout.pos)
-        self.configLayout = GridLayout(cols=3)
-        self.buttonLayout = GridLayout(cols=2)
-        self.gameplayButtons = BoxLayout(orientation='vertical', spacing=10, padding=20)
-        self.startButton = Button(text='Play', id='Play')
-        self.gameplayButtons.add_widget(self.startButton)
-        self.restartButton = Button(text='Restart', id='Restart')
-        self.gameplayButtons.add_widget(self.restartButton)
-        self.quitButton = Button(text='Quit', id='Quit')
-        self.gameplayButtons.add_widget(self.quitButton)
-        self.pathLayout = BoxLayout(orientation='vertical', spacing=10, padding=10)
-        self.pathLabel = Label(text="# Paths:")
-        self.onePath = ToggleButton(text='One', id='onepath', group='path', state='down')
-        self.twoPath = ToggleButton(text='Two', id='twopath', group='path')
-        self.threePath = ToggleButton(text='Three', id='threepath', group='path')
-        self.pathLayout.add_widget(self.pathLabel)
-        self.pathLayout.add_widget(self.onePath)
-        self.pathLayout.add_widget(self.twoPath)
-        self.pathLayout.add_widget(self.threePath)
-        self.difficultyLayout = BoxLayout(orientation='vertical', spacing=10, padding=10)
-        self.difficultyLabel = Label(text="Difficulty:")
-        self.easy = ToggleButton(text='Easy', id='easy', group='difficulty', state='down')
-        self.medium = ToggleButton(text='Med', id='medium', group='difficulty')
-        self.hard = ToggleButton(text='Hard', id='hard', group='difficulty')
-        self.difficultyLayout.add_widget(self.difficultyLabel)
-        self.difficultyLayout.add_widget(self.easy)
-        self.difficultyLayout.add_widget(self.medium)
-        self.difficultyLayout.add_widget(self.hard)
-        self.enemyOrderLayout = BoxLayout(orientation='vertical', spacing=10, padding=10)
-        self.enemyOrderLabel = Label(text="Order:", size_hint=(1,.6))
-        self.standardOrder = ToggleButton(text='Standard', id='standard', group='order', state='down')
-        self.randomOrder = ToggleButton(text='Random', id='random', group='order')
-        self.enemyOrderLayout.add_widget(self.enemyOrderLabel)
-        self.enemyOrderLayout.add_widget(self.standardOrder)
-        self.enemyOrderLayout.add_widget(self.randomOrder)
-        self.buttonLayout.add_widget(self.gameplayButtons)
-        self.configLayout.add_widget(self.pathLayout)
-        self.configLayout.add_widget(self.difficultyLayout)
-        self.configLayout.add_widget(self.enemyOrderLayout)
-        self.buttonLayout.add_widget(self.configLayout)
-        self.layout.add_widget(self.buttonLayout)
-        #Audio settings
-        self.settingsLayout = StackLayout(orientation = 'lr-tb', size_hint = (.3,.2))
-        self.soundCheckBox = GUI_Base.MyCheckBox(size_hint = (.3,1))
-        self.soundCheckBox.label.text = "Play Sound: "
-        self.soundCheckBox.label.font_size = __main__.Window.size[0]*.015
-        self.soundCheckBox.checkbox.id = 'sound'
-        self.soundCheckBox.checkbox.active = True if Player.player.soundOn else False
-        self.musicCheckBox = GUI_Base.MyCheckBox(size_hint = (.3,1))
-        self.musicCheckBox.label.text = "Play Music: "
-        self.musicCheckBox.label.font_size = __main__.Window.size[0]*.015
-        self.musicCheckBox.checkbox.id = 'music'
-        self.musicCheckBox.checkbox.active = True if Player.player.musicOn else False
-        self.settingsLayout.add_widget(self.soundCheckBox)
-        self.settingsLayout.add_widget(self.musicCheckBox)
-        self.soundCheckBox.checkbox.bind(active= Player.player.sound.on_sound)
-        self.musicCheckBox.checkbox.bind(active= Player.player.sound.on_music)
-        self.layout.add_widget(self.settingsLayout)
-        # self.infoLayout = BoxLayout(orientation = 'horizontal', size_hint = (.6,.1), spacing = 50, padding = 10)
-        # self.playerStatsButton = Button(text = "Statistics")
-        # self.towerInfoButton = Button(text = "Tower Info")
-        # self.enemyInfoButton = Button(text = "Enemy Info")
-        # self.infoLayout.add_widget(self.playerStatsButton)
-        # self.infoLayout.add_widget(self.towerInfoButton)
-        # self.infoLayout.add_widget(self.enemyInfoButton)
-        # self.layout.add_widget(self.infoLayout)
-
-        self.footerlayout = GridLayout(rows = 3, size_hint = (1,.15))
-        self.footer1 = Label(text='On the web at tablettowerdefense.com and Twitter: @Tablettowerdef.  Property of Scott Rossignol.', font_size = __main__.Window.size[0]*.01)
-        self.footer2 = Label(
-            text='Thanks to EmojiOne for providing free emoji icons: https://www.emojione.com. This game runs on the Kivy framework.', font_size = __main__.Window.size[0]*.01)
-        self.footer3 = Label(
-            text='Music by Adam Cook. The Wave Change sound is by Jobro https://freesound.org/people/jobro/.',
-            font_size=__main__.Window.size[0] * .01)
-        self.footerlayout.add_widget(self.footer1)
-        self.footerlayout.add_widget(self.footer2)
-        self.footerlayout.add_widget(self.footer3)
-        self.layout.add_widget(self.footerlayout)
-
-    def bindings(self):
-        Map.mapvar.scrwid, Map.mapvar.scrhei = __main__.Window.size
-        self.layout.center = ((Map.mapvar.scrwid / 2), (Map.mapvar.scrhei / 2))
-        self.menurect.pos = self.layout.pos
+# class pauseMenu(GUI_Base.SmartMenu):
+#     # setup the menu button names
+#
+#     def __init__(self, **kwargs):
+#         super(pauseMenu, self).__init__(**kwargs)
+#         self.image = Utilities.imgLoad('backgroundimgs/pause.png')
+#         self.image.allow_stretch = True
+#         self.image.size = (Map.mapvar.squsize*3, Map.mapvar.squsize*3)
+#         self.image.center = (__main__.Window.width/2,__main__.Window.height/2)
+#         self.add_widget(self.image)
+#
+#
+# class mainMenu(GUI_Base.SmartMenu):
+#     # setup the menu button names
+#     def __init__(self, **kwargs):
+#         super(mainMenu, self).__init__(**kwargs)
+#
+#         self.layout = GridLayout(rows=4,size=(__main__.Window.width-3*Map.mapvar.squsize,__main__.Window.height-3*Map.mapvar.squsize),
+#                                  padding=[Map.mapvar.squsize/2], spacing=Map.mapvar.squsize)
+#         self.layout.center = ((__main__.Window.width / 2), (__main__.Window.height/ 2))
+#         self.id = 'mainmenu'
+#         self.add_widget(self.layout)
+#
+#         # use pos_hint to set the position relative to its parent by percentage.
+#         self.menulabel = Label(text='Tablet Tower Defense', size_hint = (1,.3))
+#         self.layout.add_widget(self.menulabel)
+#         self.menulabel.font_size = Window.width * 0.04
+#
+#         with self.layout.canvas.before:
+#             Color(.3, .3, .3)
+#             self.menurect = Rectangle(size=self.layout.size, pos=self.layout.pos)
+#         self.configLayout = GridLayout(cols=3)
+#         self.buttonLayout = GridLayout(cols=2)
+#         self.gameplayButtons = BoxLayout(orientation='vertical', spacing=10, padding=20)
+#         self.startButton = Button(text='Play', id='Play')
+#         self.gameplayButtons.add_widget(self.startButton)
+#         self.restartButton = Button(text='Restart', id='Restart')
+#         self.gameplayButtons.add_widget(self.restartButton)
+#         self.quitButton = Button(text='Quit', id='Quit')
+#         self.gameplayButtons.add_widget(self.quitButton)
+#         self.pathLayout = BoxLayout(orientation='vertical', spacing=10, padding=10)
+#         self.pathLabel = Label(text="# Paths:")
+#         self.onePath = ToggleButton(text='One', id='onepath', group='path', state='down')
+#         self.twoPath = ToggleButton(text='Two', id='twopath', group='path')
+#         self.threePath = ToggleButton(text='Three', id='threepath', group='path')
+#         self.pathLayout.add_widget(self.pathLabel)
+#         self.pathLayout.add_widget(self.onePath)
+#         self.pathLayout.add_widget(self.twoPath)
+#         self.pathLayout.add_widget(self.threePath)
+#         self.difficultyLayout = BoxLayout(orientation='vertical', spacing=10, padding=10)
+#         self.difficultyLabel = Label(text="Difficulty:")
+#         self.easy = ToggleButton(text='Easy', id='easy', group='difficulty', state='down')
+#         self.medium = ToggleButton(text='Med', id='medium', group='difficulty')
+#         self.hard = ToggleButton(text='Hard', id='hard', group='difficulty')
+#         self.difficultyLayout.add_widget(self.difficultyLabel)
+#         self.difficultyLayout.add_widget(self.easy)
+#         self.difficultyLayout.add_widget(self.medium)
+#         self.difficultyLayout.add_widget(self.hard)
+#         self.enemyOrderLayout = BoxLayout(orientation='vertical', spacing=10, padding=10)
+#         self.enemyOrderLabel = Label(text="Order:", size_hint=(1,.6))
+#         self.standardOrder = ToggleButton(text='Standard', id='standard', group='order', state='down')
+#         self.randomOrder = ToggleButton(text='Random', id='random', group='order')
+#         self.enemyOrderLayout.add_widget(self.enemyOrderLabel)
+#         self.enemyOrderLayout.add_widget(self.standardOrder)
+#         self.enemyOrderLayout.add_widget(self.randomOrder)
+#         self.buttonLayout.add_widget(self.gameplayButtons)
+#         self.configLayout.add_widget(self.pathLayout)
+#         self.configLayout.add_widget(self.difficultyLayout)
+#         self.configLayout.add_widget(self.enemyOrderLayout)
+#         self.buttonLayout.add_widget(self.configLayout)
+#         self.layout.add_widget(self.buttonLayout)
+#         #Audio settings
+#         self.settingsLayout = StackLayout(orientation = 'lr-tb', size_hint = (.3,.2))
+#         self.soundCheckBox = GUI_Base.MyCheckBox(size_hint = (.3,1))
+#         self.soundCheckBox.label.text = "Play Sound: "
+#         self.soundCheckBox.label.font_size = __main__.Window.size[0]*.015
+#         self.soundCheckBox.checkbox.id = 'sound'
+#         self.soundCheckBox.checkbox.active = True if Player.player.soundOn else False
+#         self.musicCheckBox = GUI_Base.MyCheckBox(size_hint = (.3,1))
+#         self.musicCheckBox.label.text = "Play Music: "
+#         self.musicCheckBox.label.font_size = __main__.Window.size[0]*.015
+#         self.musicCheckBox.checkbox.id = 'music'
+#         self.musicCheckBox.checkbox.active = True if Player.player.musicOn else False
+#         self.settingsLayout.add_widget(self.soundCheckBox)
+#         self.settingsLayout.add_widget(self.musicCheckBox)
+#         self.soundCheckBox.checkbox.bind(active= Player.player.sound.on_sound)
+#         self.musicCheckBox.checkbox.bind(active= Player.player.sound.on_music)
+#         self.layout.add_widget(self.settingsLayout)
+#         # self.infoLayout = BoxLayout(orientation = 'horizontal', size_hint = (.6,.1), spacing = 50, padding = 10)
+#         # self.playerStatsButton = Button(text = "Statistics")
+#         # self.towerInfoButton = Button(text = "Tower Info")
+#         # self.enemyInfoButton = Button(text = "Enemy Info")
+#         # self.infoLayout.add_widget(self.playerStatsButton)
+#         # self.infoLayout.add_widget(self.towerInfoButton)
+#         # self.infoLayout.add_widget(self.enemyInfoButton)
+#         # self.layout.add_widget(self.infoLayout)
+#
+#         self.footerlayout = GridLayout(rows = 3, size_hint = (1,.15))
+#         self.footer1 = Label(text='On the web at tablettowerdefense.com and Twitter: @Tablettowerdef.  Property of Scott Rossignol.', font_size = __main__.Window.size[0]*.01)
+#         self.footer2 = Label(
+#             text='Thanks to EmojiOne for providing free emoji icons: https://www.emojione.com. This game runs on the Kivy framework.', font_size = __main__.Window.size[0]*.01)
+#         self.footer3 = Label(
+#             text='Music by Adam Cook. The Wave Change sound is by Jobro https://freesound.org/people/jobro/.',
+#             font_size=__main__.Window.size[0] * .01)
+#         self.footerlayout.add_widget(self.footer1)
+#         self.footerlayout.add_widget(self.footer2)
+#         self.footerlayout.add_widget(self.footer3)
+#         self.layout.add_widget(self.footerlayout)
+#
+#     def bindings(self):
+#         Map.mapvar.scrwid, Map.mapvar.scrhei = __main__.Window.size
+#         self.layout.center = ((Map.mapvar.scrwid / 2), (Map.mapvar.scrhei / 2))
+#         self.menurect.pos = self.layout.pos
 
 class GUI():
     def on_totalCost(self, instance, value):
@@ -157,7 +157,6 @@ class GUI():
     def __init__(self):
 
         self.topBar_Boxlist = []
-        self.myDispatcher = EventDispatcher.EventDisp()
         self.topBar = self.createTopBar()
         self.tbbox = None
         self.rightSideButtons_layout = None
@@ -200,19 +199,19 @@ class GUI():
 
     def toggleEnemyPanel(self):
         if not Map.mapvar.enemypanel.parent:
-            Map.mapvar.backgroundimg.add_widget(Map.mapvar.enemypanel)
+            Map.mapvar.background.add_widget(Map.mapvar.enemypanel)
             Map.mapvar.enemypanel.switch_to(Map.mapvar.enemypanel.getDefaultTab())
             Map.mapvar.background.popUpOpen = Map.mapvar.enemypanel
         else:
-            Map.mapvar.backgroundimg.remove_widget(Map.mapvar.enemypanel)
+            Map.mapvar.background.remove_widget(Map.mapvar.enemypanel)
 
     def toggleTowerPanel(self):
         if not Map.mapvar.towerpanel.parent:
-            Map.mapvar.backgroundimg.add_widget(Map.mapvar.towerpanel)
+            Map.mapvar.background.add_widget(Map.mapvar.towerpanel)
             Map.mapvar.towerpanel.switch_to(Map.mapvar.towerpanel.getDefaultTab())
             Map.mapvar.background.popUpOpen = Map.mapvar.towerpanel
         else:
-            Map.mapvar.backgroundimg.remove_widget(Map.mapvar.towerpanel)
+            Map.mapvar.background.remove_widget(Map.mapvar.towerpanel)
 
     def createTopBar(self):
         self.topBar = GUI_Templates.Bar(pos_hint = (None,None), size_hint=(None,None), pos=(0, Map.mapvar.playhei), size=(Window.width, __main__.Window.height - Map.mapvar.playhei))
@@ -236,7 +235,7 @@ class GUI():
     def initTopBar(self):
         for label, var, source, icon in Localdefs.topBar_ElementList:
             GUI_Templates.topBarWidget(label, var, source, icon)
-        Map.mapvar.backgroundimg.add_widget(self.topBar)
+        Map.mapvar.background.add_widget(self.topBar)
 
     def toggleButtons(self, active = True, pause = False):
         list = [self.menuButton, self.pauseButton, self.nextwaveButton, self.enemyInfoButton, self.towerInfoButton]
@@ -363,12 +362,12 @@ class GUI():
             self.messageLayout.pos = (Map.mapvar.scrwid / 2 - (self.messageLayout.size[0] / 2), Map.mapvar.scrhei / 1.5)
             self.messageLabel = Label(text=msg, color=[.7, 0, 0, 1], size_hint=(None, None), font_size=__main__.Window.size[0]*.03)
             self.messageLayout.add_widget(self.messageLabel)
-            Map.mapvar.backgroundimg.add_widget(self.messageLayout)
+            Map.mapvar.background.add_widget(self.messageLayout)
 
     def removeMessage(self):
         self.messageLabel.text = ' '
         self.messageLayout.remove_widget(self.messageLabel)
-        Map.mapvar.backgroundimg.remove_widget(self.messageLayout)
+        Map.mapvar.background.remove_widget(self.messageLayout)
         self.messageCounter = None
 
     def createTBBox(self, squarepos, squwid, squhei):
@@ -395,7 +394,7 @@ class GUI():
         towerRange = Player.player.towerSelected.range
         if Player.player.towerSelected.rangeExclusion:
             rangeExclusion = Player.player.towerSelected.rangeExclusion
-            with Map.mapvar.backgroundimg.canvas:
+            with Map.mapvar.background.canvas:
                 Color(1,0,0,1)
                 leftx = (squarepos[0] - rangeExclusion + Map.mapvar.squsize if
                          squarepos[0] - rangeExclusion + Map.mapvar.squsize > Map.mapvar.border else Map.mapvar.border)
@@ -407,7 +406,7 @@ class GUI():
                         squarepos[1] + rangeExclusion + Map.mapvar.squsize < Map.mapvar.playhei else Map.mapvar.playhei)
                 Map.mapvar.towerRangeExclusion = Line(
                     points=[leftx, bottomy, leftx, topy, rightx, topy, rightx, bottomy, leftx, bottomy], width=.5)
-        with Map.mapvar.backgroundimg.canvas:
+        with Map.mapvar.background.canvas:
             Color(0, 0, 0, 1)
             leftx = (squarepos[0] - towerRange + Map.mapvar.squsize if squarepos[0] - towerRange + Map.mapvar.squsize > Map.mapvar.border else Map.mapvar.border)
             rightx = (squarepos[0] + towerRange + Map.mapvar.squsize if squarepos[0] + towerRange + Map.mapvar.squsize < Map.mapvar.playwid else Map.mapvar.playwid)
@@ -518,14 +517,14 @@ class GUI():
             Player.player.layout.add_widget(self.rotatebtn)
             self.drawTriangle()
         self.tbBoxRect.size = Player.player.tbbox.size
-        Map.mapvar.backgroundimg.add_widget(Player.player.tbbox)
+        Map.mapvar.background.add_widget(Player.player.tbbox)
 
     def upgradeScreen(self):
         Map.mapvar.background.removeAll()
 
 
     def drawTriangle(self):
-        with Map.mapvar.backgroundimg.canvas.after:
+        with Map.mapvar.background.canvas.after:
             Color(1, 1, 0, 1)
             if Player.player.towerSelected.towerGroup.facing == 'l':
                 Map.mapvar.triangle = self.getTriangle('l')
@@ -542,7 +541,7 @@ class GUI():
 
     def removeTriangle(self):
         if Map.mapvar.triangle:
-            Map.mapvar.backgroundimg.canvas.after.remove(Map.mapvar.triangle)
+            Map.mapvar.background.canvas.after.remove(Map.mapvar.triangle)
             Map.mapvar.triangle = None
 
     def getTriangle(self, dir):
@@ -622,6 +621,6 @@ class GUI():
                                 font_size=__main__.Window.size[0]*.019, halign='center', color = [0,1,0,1])
         self.myDispatcher.bind(totalCost=self.on_totalCost)
         Player.player.layout.add_widget(self.total_cost)
-        Map.mapvar.backgroundimg.add_widget(Player.player.tbbox)
+        Map.mapvar.background.add_widget(Player.player.tbbox)
 
 gui = GUI()

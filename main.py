@@ -8,39 +8,42 @@ from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.widget import Widget
+from kivy.uix.button import Button
+from kivy.uix.image import Image
 from kivy.utils import platform
 from kivy.graphics import *
+from kivy.properties import NumericProperty, ObjectProperty
+from kivy.factory import Factory
 
 import EventFunctions
-import GUI
+#import GUI
+import Kvgui
 import MainFunctions
 import Map
 import Player
 import Sound
+import Messenger
 
 import sys
 import time
 # import cProfile
 # import pstats
 
-class Background(Widget):
-    '''the Background widget contains the basic Playfield'''
-
-    def __init__(self, **kwargs):
-        super(Background, self).__init__(**kwargs)
-        self.size = Window.width, Window.height
-        self.size_hint = (1, 1)
-        self.layout = FloatLayout()
-        self.layout.size = self.size
-        self.add_widget(self.layout)
-
-    def bindings(self, *args):
-        self.size = Window.size
-        self.layout.size = Window.size
-
+global app, ids
 
 class Game(Widget):
-    '''The Game class handles menu actions and includes the games main Update loop'''
+    '''The Game class handles menu actions and includes the game's main Update loop'''
+    score = NumericProperty(0)
+    scrwid = NumericProperty(0)
+    squsize = NumericProperty(0)
+    playhei = NumericProperty(0)
+    playwid = NumericProperty(0)
+    border = NumericProperty(0)
+    squborder = NumericProperty(0)
+    playfield = ObjectProperty(None)
+    menuBtn = ObjectProperty(None)
+    pauseBtn = ObjectProperty(None)
+    playBtn = ObjectProperty(None)
 
     def __init__(self, **kwargs):
         super(Game, self).__init__(**kwargs)
@@ -53,156 +56,159 @@ class Game(Widget):
         self.frametime = 1 / 20.0
         Player.player.frametime = self.frametime
         self.shaderRect = None
+        self.scrwid = Window.width
+        self.scrhei = Window.height
+        self.size = (self.scrwid, self.scrhei)
+        self.squsize = self.scrwid / 34
+        self.playhei = self.squsize * 16  # the top line of the play area should always be 16 squsize from the bottom
+        self.playwid = self.squsize * 32
+        self.border = 2 * self.squsize
+        self.squborder = 1
+        self.test = 0
 
     def bindings(self, *args):
         self.size = Window.size
-        if self.mainMenu:
-            self.mainMenu.bindings()
-            Map.mapvar.shaderRect.size = self.size
+        self.scrwid = Window.width
+        self.scrhei = Window.height
+        self.size = (self.scrwid, self.scrhei)
+        self.squsize = self.scrwid / 34
+        self.playhei = self.squsize * 16  # the top line of the play area should always be 16 squsize from the bottom
+        self.playwid = self.squsize * 32
+        self.border = 2 * self.squsize
+        self.squborder = 1
+
 
     def startFuncs(self):
+        global app, ids
+        app = App.get_running_app()
+        ids = self.ids
+        if Player.player.state == 'Restart':
+            print "here"
+            self.pause_game()
+            self.clock = self.Clock.schedule_interval(self.update, self.frametime)
+        Player.player.state = 'Playing'
         Player.player.analytics.gameTimeStart = time.time()
         Map.mapvar.getStartPoints()
+        Messenger.messenger.createAlertStreamer()
         Player.player.genWaveList()
-        GUI.gui.createWaveStreamer()
+        ids.wavestreamer.createWaveStreamer()
         Map.path.createPath()
         MainFunctions.buildNodeDicts()
         MainFunctions.updatePath()
-        GUI.gui.removeAlert()
+        Messenger.messenger.removeAlert()
         Player.player.setResources()
+        Player.player.setupCoinAnim()
+        Player.player.storeSettings()
 
-    def menuFuncs(self, obj):
-        if obj.id == 'Play':
-            Player.player.state = 'Playing'
-            if Player.player.wavenum == 0 and obj.text == 'Play':
-                self.startFuncs()
-            else:
-                self.clock = self.Clock.schedule_interval(self.update, self.frametime)
-                MainFunctions.startAllAnimation()
-            GUI.gui.toggleButtons()
-            self.remove_widget(self.mainMenu)
-        elif obj.id == 'Restart':
-            MainFunctions.resetGame()
-            Player.player.state = 'Playing'
-            self.clock = self.Clock.schedule_interval(self.update, self.frametime)
-            self.remove_widget(self.mainMenu)
-            GUI.gui.toggleButtons()
-            self.startFuncs()
-        elif obj.id == 'Quit':
-            Player.player.analytics.finalWave= Player.player.wavenum
-            Player.player.analytics.gameTimeEnd = time.time()
-            print Player.player.analytics._print()
-            Main.get_running_app().stop()
-            sys.exit()
-        elif obj.id == 'pause':
-            if Player.player.state == 'Paused':
-                self.shaderRect.size = (0,0)
+    def start_game(self):
+        self.screenmanager.current = 'game'
+        self.startFuncs()
+
+    def togglePauseShader(self):
+        if Player.player.state == 'Paused':
+            with Map.mapvar.background.canvas.before:
+                Color(.2,.2,.2,.2)
+                self.shaderRect = Rectangle(size=(Map.mapvar.playwid-Map.mapvar.squsize*2, Map.mapvar.playhei-Map.mapvar.squsize*2),
+                          pos = (0,0))
+            self.pauseImage= Image(source = "backgroundimgs/pausebw.png", center = (0,2 * self.squsize))
+            Map.mapvar.background.add_widget(self.pauseImage)
+        elif Player.player.state == 'Playing' or Player.player.state == 'Start' or Player.player.state == 'Restart':
+            if self.shaderRect:
+                Map.mapvar.background.canvas.before.remove(self.shaderRect)
+                self.shaderRect = None
+                Map.mapvar.background.remove_widget(self.pauseImage)
+
+    def pause_game(self):
+        if Player.player.state == 'Playing':
+            Player.player.state = 'Paused'
+            if self.screenmanager.current_screen.name == 'game':
+                ids.play.disabled = True
+                ids.play.opacity = 0
+            ids.pause.text = 'Resume'
+        elif Player.player.state == 'Restart':
+            if self.screenmanager.current_screen.name == 'game':
+                ids.play.disabled = False
+                ids.play.opacity = 1
+            ids.pause.text = 'Pause'
+        else: #unpause
+            if self.screenmanager.current_screen.name == 'game':
                 Player.player.state = 'Playing'
                 self.clock = self.Clock.schedule_interval(self.update, self.frametime)
                 MainFunctions.startAllAnimation()
-                GUI.gui.toggleButtons()
-                self.remove_widget(self.pauseMenu)
+                ids.pause.text = 'Pause'
+                if ids.play.disabled == True:
+                    ids.play.disabled = False
+                    ids.play.opacity = 1
+        self.togglePauseShader()
+
+    def change_screens(self, to_screen):
+        current_screen = self.screenmanager.current_screen.name
+        if current_screen == to_screen:
+            return
+        if current_screen == 'game':
+            if Player.player.state == 'Playing':
+                self.pause_game()
+            self.screenmanager.current = to_screen
+        if to_screen == 'game':
+            if Player.player.state == 'Start' or Player.player.state == 'Restart':
+                self.start_game()
+                return
+        self.screenmanager.current = to_screen
+        if to_screen == 'info':
+            if current_screen == 'game':
+                Map.mapvar.background.removeAll()
+            self.screenmanager.current_screen.ids.infopanel.switch_to(
+                self.screenmanager.current_screen.ids.infopanel.getDefaultTab())
+        elif to_screen == 'mainmenu':
+            if Player.player.state != 'Start':
+                self.screenmanager.current_screen.ids.startbutton.text = 'Resume Current Game'
+                self.screenmanager.current_screen.ids.restartbutton.disabled = False
+                self.screenmanager.current_screen.ids.restartbutton.opacity = 1
             else:
-                Player.player.state = 'Paused'
-        elif obj.id == 'menu':
-            Player.player.state = 'Menu'
-            if self.shaderRect:
-                Map.mapvar.background.canvas.remove(self.shaderRect)
-                self.shaderRect = None
-            self.dispMainMenu()
-        elif obj.id == 'onepath':
-            Map.mapvar.numpaths = 1
-        elif obj.id == 'twopath':
-            Map.mapvar.numpaths = 2
-        elif obj.id == 'threepath':
-            Map.mapvar.numpaths = 3
-        elif obj.id == 'easy':
-            Map.mapvar.difficulty = 'easy'
-        elif obj.id == 'medium':
-            Map.mapvar.difficulty = 'medium'
-        elif obj.id == 'hard':
-            Map.mapvar.difficulty = 'hard'
-        elif obj.id == 'standard':
-            Map.mapvar.waveOrder = 'standard'
-        elif obj.id == 'random':
-            Map.mapvar.waveOrder = 'random'
-        return
+                self.screenmanager.current_screen.ids.startbutton.text = 'Play'
+                self.screenmanager.current_screen.ids.restartbutton.disabled = True
+                self.screenmanager.current_screen.ids.restartbutton.opacity = 0
 
-    def dispMainMenu(self):
-        if self.mainMenu == None:
-            self.mainMenu = GUI.mainMenu()
-            for button in self.mainMenu.walk(restrict=True):
-                button.bind(on_release=self.menuFuncs)
-            self.mainMenu.restartButton.disabled = True
-            self.add_widget(self.mainMenu)
-        elif self.mainMenu.parent == None:
-            self.mainMenu.restartButton.disabled = False
-            self.mainMenu.restartButton.text = 'Start New'
-            self.mainMenu.startButton.text = 'Resume'
-            self.add_widget(self.mainMenu)
-        if self.pauseMenu != None:
-            if self.pauseMenu.parent:
-                self.remove_widget(self.pauseMenu)
-        GUI.gui.toggleButtons(active=False)
-        MainFunctions.dispMessage()
+    def nextWave(self):
+        if ids.play.text == 'Start':
+            ids.play.text = 'Next Wave'
+        ids.wavestreamer.nextWave()
 
-    def dispPauseMenu(self):
-        GUI.gui.toggleButtons(active=False, pause=True)
-        if self.pauseMenu == None:
-            self.pauseMenu = GUI.pauseMenu()
-            for button in self.pauseMenu.walk(restrict=True):
-                button.bind(on_release=self.menuFuncs)
-            self.add_widget(self.pauseMenu)
-        elif self.pauseMenu.parent == None:
-            self.add_widget(self.pauseMenu)
-        with Map.mapvar.background.canvas:
-            Color(.2,.2,.2,.2)
-            self.shaderRect = Rectangle(size=(Map.mapvar.playwid-Map.mapvar.squsize*2, Map.mapvar.playhei-Map.mapvar.squsize*2),
-                      pos = (Map.mapvar.squsize*2, Map.mapvar.squsize*2))
 
     def update(self, dt):
         #print self.Clock.get_fps()
-        if Player.player.state == 'Menu':
-            if Player.player.wavenum == 0 and not GUI.gui.alertQueue:
-                GUI.gui.addAlert("Welcome to Tablet TD!", 'repeat')
-            if Player.player.wavenum > 0:
-                self.clock.cancel()
-                MainFunctions.stopAllAnimation()
-            self.dispMainMenu()
-        elif Player.player.state == 'Paused':
-            self.dispPauseMenu()
+        if Player.player.state == 'Paused':
             self.clock.cancel()
             MainFunctions.stopAllAnimation()
         elif Player.player.state == 'Playing':
             if Player.player.gameover:
+                Player.player.state = 'Start'
                 Player.player.sound.playSound(Player.player.sound.gameOver)
                 Player.player.analytics.finalWave = Player.player.wavenum
+                Player.player.analytics.score = Player.player.score
                 Player.player.analytics.gameTimeEnd = time.time()
                 self.mainMenu = None
-                Player.player.state = 'Menu'
-                GUI.gui.addAlert("You Lose!", 'repeat')
-                print Player.player.analytics._print()
+                self.change_screens('mainmenu')
+                Player.player.analytics.updateData()
+                Player.player.analytics.store_data()
+                Player.player.analytics._print()
                 MainFunctions.resetGame()
-            # Update path when appropriate
             if Map.mapvar.updatePath:
                 MainFunctions.updatePath()
             if Player.player.next_wave:
                 EventFunctions.nextWave()
             MainFunctions.workSenders()
             MainFunctions.workTowers()
-            # MainFunctions.dispExplosions()
             MainFunctions.workEnemies()
             MainFunctions.workShots()
             MainFunctions.workDisp()
             if Player.player.wavenum > 0:
-                GUI.gui.nextwaveButton.text = 'Next Wave'
-                GUI.gui.nextwaveButton.color = [1,1,0,1]
                 Player.player.wavetime -= Player.player.frametime
                 Player.player.wavetimeInt = int(Player.player.wavetime)
-                GUI.gui.myDispatcher.Timer = str(Player.player.wavetimeInt)
+                Player.player.myDispatcher.Timer = str(Player.player.wavetimeInt)
             if Player.player.wavetime < .05:
                 Player.player.wavetime = int(Map.mapvar.waveseconds)
-                GUI.gui.myDispatcher.Timer = str(Player.player.wavetime)
+                Player.player.myDispatcher.Timer = str(Player.player.wavetime)
                 Player.player.next_wave = True
 
 
@@ -211,8 +217,7 @@ class Main(App):
     def on_pause(self):
         if Player.player.sound.music:
             Player.player.sound.music.stop()
-        Player.player.state = 'Menu'
-
+        Player.player.state = 'Paused'
         return True
 
     def build(self):
@@ -223,22 +228,13 @@ class Main(App):
         else:
             Window.fullscreen = 'auto'
         Window.bind(size=game.bindings)
-        # general appearance updates
-        background = Background()
-        game.add_widget(background)
-        map = Map.mapvar.loadMap()  # map is Map.mapvar.background
-        background.add_widget(map)
-        Window.bind(size=background.bindings)
-        Window.bind(size=map.bindings)
-        Window.bind(size=GUI.gui.bindings)
-        ##create a list of available towers and icons for touch interaction
+        Map.mapvar.background = game.ids.playfield
+        Map.mapvar.loadMap()
         MainFunctions.makeIcons()
         MainFunctions.makeUpgradeIcons()
-        GUI.gui.initTopBar()
-        GUI.gui.pauseButton.bind(on_release=game.menuFuncs)
-        GUI.gui.menuButton.bind(on_release=game.menuFuncs)
-        Map.mapvar.backgroundimg.add_widget(GUI.gui.rightSideButtons())
+        #Map.mapvar.backgroundimg.add_widget(GUI.gui.rightSideButtons())
         game.bindings()
+        game.screenmanager = game.ids.sm
         Player.player.sound = Sound.MySound(Player.player.soundOn, Player.player.musicOn)
         Player.player.sound.playMusic()
         # This runs the game.update loop, which is used for handling the entire game

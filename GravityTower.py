@@ -7,6 +7,7 @@ from kivy.graphics import *
 import Towers
 import Map
 import Player
+import __main__
 
 class GravityTower(Towers.Tower):
     type = "Gravity"
@@ -17,14 +18,14 @@ class GravityTower(Towers.Tower):
     initstuntime = 2
     initstunchance = 6
     initpush = -10
-    initblackholechance = 3
+    initblackholechance = 10
     attacks = "Ground"
     imagestr = os.path.join('towerimgs', 'Gravity', 'icon.png')
     upgradeDict = {'Damage': [1, 1.2, 1.4, 1.5, 1.7, 3.0, 3.4,3.8,4.2,4.6,5, 'NA'], 'StunChance': [1, 1.1, 1.2, 1.4, 1.6, 2, 2.3, 2.6, 2.9, 3.2, 3.5, 'NA'],
      'Reload': [1, 1, 1, 1, 1, 1, 1,1,1,1,1,'NA'], 'StunTime': [1, 1, 1.2, 1.3, 1.4, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 'NA'], "BlackHoleChance": [0,0,0,0,0,1,1.5,2,2.5,3,4, 'NA'],
-     'Cost': [0, 5, 50, 100, 200, (350, 1), 500, 700, 800, 900, 1000, 'NA']}
+     'Cost': [0, 5, 50, 100, 175, (250, 1), 400, 500, 600, 800, 1000, 'NA']}
     upgradeName = "Black Hole"
-    upgradeDescription = " At times the tower may form a black hole, dealing 5x damage and teleporting an enemy to the start of its path."
+    upgradeDescription = " At times the tower may form a black hole, dealing 5x damage and stunning all enemies in range."
     "Does not attack Airborn enemies. Increases damage. All Gravity attacks ignore the effects of armor, and so are especially effective against Strong and Splinter enemies. "
     upgradeStats = ['Black Hole %: The percent chance that a Black Hole will occur during a shot.']
 
@@ -48,64 +49,41 @@ class GravityTower(Towers.Tower):
         self.turretRotations = False
         self.loadTurret()
         self.upgradeDict = GravityTower.upgradeDict
-        self.menu = [('Damage', 1, ' DPH'), ('StunChance', 0, '%'), ('StunTime', 1, 's')]
-        self.dmgMenu = [('Damage', 1, ' DPH'), ('StunChance', 0, '%'), ('StunTime', 1, 's'), ('BlackHoleChance', 0, '%')]
-        self.leaderMenu = [('Damage', 0, '%'), ('StunChance', 0, '%'), ('StunTime', 0, '%$')]
-        self.setTowerData()
+        self.menu = [('Damage', 1, ' DPH', 'Damage'), ('StunChance', 0, '%', 'Stun Chance'), ('StunTime', 1, 's', 'Stun Time')]
+        self.dmgMenu = [('Damage', 1, ' DPH', 'Damage'), ('StunChance', 0, '%', 'Stun Chance'), ('StunTime', 1, 's', 'Stun Time'), ('BlackHoleChance', 0, '%', 'Black Hole Chance')]
+        self.leaderMenu = [('Damage', 0, '%', 'Damage'), ('StunChance', 0, '%', 'Stun Chance'), ('StunTime', 0, '%', 'Stun Time')]
+        #self.setTowerData()
+        self.black_hole_list = []
         self.blackhole = Image(source='towerimgs/Gravity/blackhole.png',
-                               size=(5,5), center=self.center)
-        self.blackholeTwo = Image(source='towerimgs/Gravity/blackhole.png',
-                               size=(Map.mapvar.squsize * 1.5, Map.mapvar.squsize * 1.5))
-        self.teleAnimation = Animation(size=(Map.mapvar.squsize * 1.5, Map.mapvar.squsize * 1.5), center=self.center,
-                                       duration=.2)
-        self.teleAnimation.bind(on_complete=self.moveEnemy)
-
-    def teleport(self, *args):
-        self.add_widget(self.blackhole)
-        self.teleAnimation.start(self.blackhole)
-        self.appearAnimation = Animation(size=(0, 0),
-                                         center=self.teleEnemy.center, duration=.2)
-        self.appearAnimation.bind(on_complete=self.removeBlackHole)
-
-    def moveEnemy(self, *args):
-        self.blackhole.size = (0,0)
-        self.blackhole.center = self.center
-        self.remove_widget(self.blackhole)
-        self.teleEnemy.curnode = 0
-        telePos = self.teleEnemy.movelist[self.teleEnemy.curnode]
-        self.teleEnemy.pos = telePos
-        print "teleported", self.teleEnemy.pos
-        self.blackholeTwo.pos = telePos
-        Map.mapvar.backgroundimg.add_widget(self.blackholeTwo)
-        self.appearAnimation.start(self.blackholeTwo)
-        self.teleEnemy.move()
+                               size=(5,5), center=self.center, allow_stretch = True)
+        self.black_hole_Animation = Animation(size=(__main__.app.root.squsize * 6, __main__.app.root.squsize * 6), center=self.center,
+                                       duration=.4)
+        self.black_hole_Animation.bind(on_complete=self.removeBlackHole)
 
     def removeBlackHole(self,*args):
-        self.teleEnemy.teleporting = None
-        Map.mapvar.backgroundimg.remove_widget(self.blackholeTwo)
-        self.blackholeTwo.size = (Map.mapvar.squsize * 1.5, Map.mapvar.squsize * 1.5)
-        self.blackholeTwo.center = self.center
-        self.blackhole_in_progress = False
+        self.blackhole.size = (5, 5)
+        self.blackhole.center = self.center
+        self.remove_widget(self.blackhole)
 
-    def hitEnemy(self, enemy = None):
+    def black_hole(self):
+        if not self.blackhole.parent:
+            self.add_widget(self.blackhole)
+            self.blackhole.center = self.center
+            self.black_hole_Animation.start(self.blackhole)
+            for enemy in self.black_hole_list:
+                self.hitEnemy(enemy, dmg_modifier = 1, stun = True)
+
+
+    def hitEnemy(self, enemy = None, dmg_modifier = 1, stun = False):
         Player.player.analytics.gameDamage += self.damage
-        enemy.health -= self.damage
+        enemy.health -= self.damage * dmg_modifier
         enemy.checkHealth()
         self.shotcount += 1
-        if self.upgradePath == 'GravityDamage' and not self.blackhole_in_progress:
-            blackhole = random.randint(0,100)
-            if blackhole <= self.blackHoleChance:
-                self.blackhole_in_progress = True
-                self.teleEnemy = enemy
-                enemy.teleporting = self
-                enemy.pushed = [enemy.center_x - self.center_x, enemy.center_y - self.center_y]
-                enemy.health -= self.damage * 5
-                enemy.checkHealth()
-                if not enemy.isAlive:
-                    self.blackhole_in_progress = False
-                return
-        stun = random.randint(0, 100)
-        if stun <= self.stunChance:
+        if not stun:
+            s = random.randint(0, 100)
+        else:
+            s = 1
+        if s <= self.stunChance:
             enemy.stuntime = self.stunTime
             if enemy.anim:
                 enemy.anim.cancel_all(enemy)
@@ -126,7 +104,6 @@ class GravityTower(Towers.Tower):
 
 
     def setupUpgradePath(self):
-        print "leader?", self.leader
         if self.leader:
             self.menu = self.leaderMenu
             self.loadTurret()
@@ -138,7 +115,7 @@ class GravityTower(Towers.Tower):
 
     def loadTurret(self):
         if self.leader:
-            self.turret.size = (0,0)
+            self.remove_widget(self.turret)
             self.leaderturret = Image(source="towerimgs/leaderturret.png",
                                       size=(Map.mapvar.squsize, Map.mapvar.squsize), center=self.center)
             self.add_widget(self.leaderturret)
@@ -163,3 +140,4 @@ class GravityTower(Towers.Tower):
             self.stunTime = self.stats['StunTime'][0]
             if self.upgradePath == 'GravityDamage':
                 self.blackHoleChance = self.stats['BlackHoleChance'][0]
+

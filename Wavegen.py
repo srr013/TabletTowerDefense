@@ -40,13 +40,13 @@ def wavegen():
     waveDict = {}
     waveTypeList = []
     waveNum = 1
-    difficultyMod = 1.5
+    difficultyMod = 1.75
     rewardMod = 5
     if Map.mapvar.difficulty == 'medium':
-        difficultyMod = 1.75
+        difficultyMod = 2
         rewardMod = 4
     elif Map.mapvar.difficulty == 'hard':
-        difficultyMod = 2
+        difficultyMod = 2.5
         rewardMod = 3
     counter = 0
     while setNum < maxSets:

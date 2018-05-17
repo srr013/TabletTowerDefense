@@ -4,6 +4,8 @@ from kivy.uix.image import Image
 import Towers
 import Shot
 import Map
+import Player
+import __main__
 
 class WindTower(Towers.Tower):
     type = "Wind"
@@ -15,7 +17,7 @@ class WindTower(Towers.Tower):
     attacks = 'Air'
     imagestr = os.path.join('towerimgs', 'Wind', 'icon.png')
     upgradeDict = {'Push': [1, 1.1, 1.2, 1.4, 1.5, 0, 0,0,0,0,0,'NA'], 'Range': [1, 1, 1 , 1.1, 1.2, .25, .3, .35, .4, .45, .5, 'NA'],
-                   'Reload': [1, 1, 1, .9, .9, 0, 0, 0, 0, 0, 0, 'NA'], 'Cost': [0, 5, 50, 100, 200, (350, 1), 500, 700, 800, 900, 1000, 'NA'],
+                   'Reload': [1, 1, 1, .9, .9, 0, 0, 0, 0, 0, 0, 'NA'], 'Cost': [0, 5, 50, 100, 175, (250, 1), 400, 500, 600, 800, 1000, 'NA'],
                    'Damage': [1, 1, 1, 1, 1, .4, .5, .6, .7, .8, .9, 'NA']}
     upgradeName = "Lightning"
     upgradeDescription = "Targets nearyby enemies with a stream of electricity that deals a constant high damage. Targets up to 5 Airborn units in range."
@@ -27,7 +29,8 @@ class WindTower(Towers.Tower):
         Towers.Tower.__init__(self, pos, **kwargs)
         self.pos = pos
         self.cost = WindTower.cost
-        self.initRange = self.range = WindTower.initrange * Map.mapvar.squsize
+        self.squsize = __main__.app.root.squsize
+        self.initRange = self.range = WindTower.initrange * self.squsize
         self.initDamage = self.damage = WindTower.initdamage
         self.initReload = self.reload = WindTower.initreload
         self.initPush = self.push = WindTower.initpush
@@ -39,18 +42,18 @@ class WindTower(Towers.Tower):
         self.hasTurret = True
         self.turretRotates = False
         self.loadTurret()
-        if self.towerGroup.active:
-            self.turret.source = os.path.join('towerimgs', self.type, "turret.gif")
-            self.turret.size = (Map.mapvar.squsize * .65, Map.mapvar.squsize * .65)
-            self.turret.center = self.center
+        # if self.towerGroup.active:
+        #     self.turret.source = os.path.join('towerimgs', self.type, "turret.gif")
+        #     self.turret.size = (self.squsize * .65, self.squsize * .65)
+        #     self.turret.center = self.center
         self.active = False
         self.allowedshots = 1
 
         self.upgradeDict = WindTower.upgradeDict
-        self.menu = [('Push', 0, 'px'),('Damage', 1, ' DPH'), ('Range', 0, 'px'), ('Reload', 1, 's')]
-        self.dmgMenu = [('Damage', 1, ' DPS'), ('Range', 0, 'px'), ('Reload', 1, 's')]
-        self.leaderMenu = [('Push', 0, 'px'),('Damage', 0, '%'), ('Range', 0, '%'), ('Reload', 0, '%')]
-        self.setTowerData()
+        self.menu = [('Push', 0, 'px', 'Push'),('Damage', 1, ' DPH', 'Damage'), ('Range', 0, 'px', 'Range'), ('Reload', 1, 's', 'Reload')]
+        self.dmgMenu = [('Damage', 1, ' DPS', 'Damage'), ('Range', 0, 'px', 'Range'), ('Reload', 1, 's', 'Reload')]
+        self.leaderMenu = [('Push', 0, 'px', 'Push'),('Damage', 0, '%', 'Damage'), ('Range', 0, '%', 'Range'), ('Reload', 0, '%', 'Reload')]
+        #self.setTowerData()
 
     def hitEnemy(self, enemy):
         self.shotcount += 1
@@ -65,7 +68,7 @@ class WindTower(Towers.Tower):
             self.allowedshots = 5
             self.menu = self.dmgMenu
             self.turret.source = os.path.join("towerimgs", self.type, "turret2.gif")
-            self.turret.size = (Map.mapvar.squsize*.62,Map.mapvar.squsize*.62)
+            self.turret.size = (self.squsize*.62,self.squsize*.62)
             self.turret.center = self.center
 
     def loadTurret(self):
@@ -73,11 +76,11 @@ class WindTower(Towers.Tower):
             if self.hasTurret:
                 self.remove_widget(self.turret)
                 self.hasTurret = False
-            self.leaderturret = Image(source = "towerimgs/leaderturret.png", allow_stretch = True, size = (Map.mapvar.squsize, Map.mapvar.squsize))
+            self.leaderturret = Image(source = "towerimgs/leaderturret.png", allow_stretch = True, size = (self.squsize, self.squsize))
             self.leaderturret.center = self.center
             self.add_widget(self.leaderturret)
         else:
-            self.turret = Image(source = os.path.join('towerimgs', self.type, 'turret.png'), allow_stretch = True, size = (Map.mapvar.squsize, Map.mapvar.squsize))
+            self.turret = Image(source = os.path.join('towerimgs', self.type, 'turret.png'), allow_stretch = True, size = (self.squsize, self.squsize))
             self.turret.center = self.center
             self.add_widget(self.turret)
 
@@ -89,3 +92,62 @@ class WindTower(Towers.Tower):
             if self.upgradePath != 'WindDamage':
                 self.push = self.stats['Push'][0]
 
+    def updateTriangle(self):
+        self.removeTriangle()
+        self.drawTriangle()
+
+    def drawTriangle(self):
+        with Map.mapvar.background.canvas.after:
+            Color(1, 1, 0, 1)
+            if Player.player.towerSelected.towerGroup.facing == 'l':
+                Map.mapvar.triangle = self.getTriangle('l')
+                if Player.player.tbbox.x < Player.player.towerSelected.x and \
+                        Player.player.tbbox.right > Player.player.towerSelected.x - self.squsize:
+                    Player.player.tbbox.pos = (Player.player.tbbox.x - self.squsize, Player.player.tbbox.pos[1])
+            elif Player.player.towerSelected.towerGroup.facing == 'r':
+                Map.mapvar.triangle = self.getTriangle('r')
+                if Player.player.tbbox.x > Player.player.towerSelected.x and \
+                        Player.player.tbbox.x < Player.player.towerSelected.right + self.squsize:
+                    Player.player.tbbox.pos = (Player.player.tbbox.x + self.squsize, Player.player.tbbox.pos[1])
+            elif Player.player.towerSelected.towerGroup.facing == 'u':
+                Map.mapvar.triangle = self.getTriangle('u')
+            else:
+                Map.mapvar.triangle = self.getTriangle('d')
+
+    def removeTriangle(self):
+        if Map.mapvar.triangle:
+            Map.mapvar.background.canvas.after.remove(Map.mapvar.triangle)
+            Map.mapvar.triangle = None
+
+    def getTriangle(self, dir):
+        # triangles for display around a tower indicating its direction
+        x, y, top, right = self.x + __main__.app.root.border, self.y + __main__.app.root.border, \
+                           self.top + __main__.app.root.border, self.right + __main__.app.root.border
+        if dir == 'l':
+            return Triangle(points=(x - self.squsize / 6,
+                                    y + self.squsize / 6,
+                                    x - self.squsize,
+                                    y + self.squsize,
+                                    x - self.squsize / 6,
+                                    top - self.squsize / 6))
+        if dir == 'r':
+            return Triangle(points=(right + self.squsize / 6,
+                                    y + self.squsize / 6,
+                                    right + self.squsize,
+                                    y + self.squsize,
+                                    right + self.squsize / 6,
+                                    top - self.squsize / 6))
+        if dir == 'u':
+            return Triangle(points=(x + self.squsize / 6,
+                                    top + self.squsize / 6,
+                                    x + self.squsize,
+                                    top + self.squsize,
+                                    right - self.squsize / 6,
+                                    top + self.squsize / 6))
+        if dir == 'd':
+            return Triangle(points=(x + self.squsize / 6,
+                                    y - self.squsize / 6,
+                                    x + self.squsize,
+                                    y - self.squsize,
+                                    right - self.squsize / 6,
+                                    y - self.squsize / 6))

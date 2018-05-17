@@ -8,7 +8,7 @@ from kivy.uix.label import Label
 
 from kivy.properties import NumericProperty
 
-import GUI
+import Kvgui
 import Localdefs
 import Map
 import Player
@@ -33,13 +33,13 @@ class Tower(Image):
         self.pos = pos
         self.targetTimer = 0
         Player.player.money -= self.cost
-        GUI.gui.myDispatcher.Money = str(Player.player.money)
+        Player.player.myDispatcher.Money = str(Player.player.money)
         Localdefs.towerlist.append(self)
         self.size = (Map.mapvar.squsize * 2 - 1, Map.mapvar.squsize * 2 - 1)
         self.rect = Utilities.createRect(self.pos, self.size, instance=self)
         self.squareheight = 2
         self.squarewidth = 2
-        self.towerwalls = Utilities.genWalls(self.pos, self.squarewidth, self.squareheight)
+        self.towerwalls = Utilities.genWalls(Map.mapvar.background.to_parent(*self.pos), self.squarewidth, self.squareheight)
         self.imageNum = 0
         self.imagestr = os.path.join('towerimgs', self.type, str(self.imageNum) + '.png')
         self.source = self.imagestr
@@ -52,9 +52,9 @@ class Tower(Image):
         self.lastNeighborCount = 0
         self.neighborFlag = 'update'
         self.neighborList = []
-        self.neighbors = TowerNeighbors.getNeighbors(self)  # neighbors is a directional dict 'left':towerobj
+        # self.neighbors = TowerNeighbors.getNeighbors(self)  # neighbors is a directional dict 'left':towerobj
         self.towerGroup = None
-        TowerNeighbors.getGroup(self)
+        # TowerNeighbors.getGroup(self)
         self.adjacentRoadPos = Utilities.adjacentRoadPos(self.pos)
         self.adjacentRoads = list()
         self.adjacentRoadFlag = False
@@ -80,13 +80,14 @@ class Tower(Image):
         self.leader = False
         self.recharging = False
         self.bind(size=self.bindings)
-        self.towerGroup.needsUpdate = True
+        # self.towerGroup.needsUpdate = True
+        self.root = __main__.app.root
 
     def bindings(self):
-        self.size = (Map.mapvar.squsize * 2 - 1, Map.mapvar.squsize * 2 - 1)
+        self.size = (__main__.app.root.squsize * 2 - 1, __main__.app.root.squsize * 2 - 1)
         if self.turret:
-            self.turret.size = (Map.mapvar.squsize, Map.mapvar.squsize)
-        self.range = self.range / 30 * Map.mapvar.squsize
+            self.turret.size = (__main__.app.root.squsize, __main__.app.root.squsize)
+        self.range = self.range * __main__.app.root.squsize
 
     def remove(self, sell=False):
         for wall in self.towerwalls:
@@ -118,10 +119,10 @@ class Tower(Image):
             self.remove_widget(self.turret)
         with self.canvas:  # draw upgrade bars
             Color(1, 1, 1, 1)
-            self.statusbar = Line(points=[self.x + .5*Map.mapvar.squsize, self.y + Map.mapvar.squsize/3, self.x + self.width - .5*Map.mapvar.squsize, self.y + Map.mapvar.squsize/3], width=4,
+            self.statusbar = Line(points=[self.x + .5*self.root.squsize, self.y + self.root.squsize/3, self.x + self.width - .5*self.root.squsize, self.y + self.root.squsize/3], width=4,
                                   cap='none')
             Color(0, 0, 0, 1)
-            self.remainingtime = Line(points=[self.x + .5*Map.mapvar.squsize, self.y + Map.mapvar.squsize/3, self.x + .5*Map.mapvar.squsize, self.y + Map.mapvar.squsize/3], width=4, cap='none')
+            self.remainingtime = Line(points=[self.x + .5*self.root.squsize, self.y + self.root.squsize/3, self.x + .5*self.root.squsize, self.y + self.root.squsize/3], width=4, cap='none')
         self.refund = self.totalspent * .8
         self.upgradeTimeElapsed = 0
         self.totalUpgradeTime = self.level #############UPDATE############
@@ -130,6 +131,7 @@ class Tower(Image):
         self.percentComplete = self.upgradeTimeElapsed / self.totalUpgradeTime
         if self.percentComplete >= 1:
             self.level += 1
+            self.towerGroup.needsUpdate = True
             if Player.player.analytics.maxTowerLevel < self.level:
                 Player.player.analytics.maxTowerLevel = self.level
             self.canvas.remove(self.remainingtime)
@@ -138,6 +140,7 @@ class Tower(Image):
             if self.hasTurret:
                 self.add_widget(self.turret)
             if self.level == Player.player.upgPathSelectLvl + 1:
+                #print self.upgradePath
                 if self.upgradePath == 'LeaderPath':
                     self.leader = True
                 self.setupUpgradePath()
@@ -145,13 +148,14 @@ class Tower(Image):
             if self.leader:
                 self.towerGroup.updateModifiers()
             self.setTowerData()
-            if Map.mapvar.background.popUpOpen and GUI.gui.tbbox == 'Tower':
+            if Map.mapvar.background.popUpOpen and Player.player.tbbox.type == 'Tower' and self == Player.player.towerSelected:
                 Map.mapvar.background.removeAll()
-                GUI.gui.towerMenu(Player.player.towerSelected.pos)
+                Kvgui.PopUpBox(self.pos, 9, 9)
+                Player.player.tbbox.createTowerMenu()
             return
         else:
-            self.remainingtime.points = [self.x + .5*Map.mapvar.squsize, self.y + Map.mapvar.squsize/3, self.x + .5*Map.mapvar.squsize + ((self.width - Map.mapvar.squsize) * self.percentComplete),
-                                     self.y + Map.mapvar.squsize/3]
+            self.remainingtime.points = [self.x + .5*self.root.squsize, self.y + self.root.squsize/3, self.x + .5*self.root.squsize + ((self.width - self.root.squsize) * self.percentComplete),
+                                     self.y + self.root.squsize/3]
 
     def setTowerData(self):
         self.stats = {}
@@ -173,7 +177,8 @@ class Tower(Image):
                 val = str(val) + x[2]
                 nextval = str(nextval) + x[2]
                 tgmod = str(int(tgmod*100)) + '%'
-                self.menuStats[x[0]] = [val, tgmod, nextval]
+                name = x[3]
+                self.menuStats[x[0]] = [val, tgmod, nextval, name]
         else:
             for x in list:
                 bonus = int(eval("self.towerGroup."+x[0]+"Bonus") * 100) #units are always percent except slow/stuntime??
@@ -182,7 +187,8 @@ class Tower(Image):
                 mod = str(mod)+ '%'
                 nextbonus = int(eval("self.towerGroup.next"+x[0]+"Bonus") * 100)
                 nextbonus = str(nextbonus) + '%'
-                self.menuStats[x[0]] = [bonus, mod, nextbonus]
+                name = x[3]
+                self.menuStats[x[0]] = [bonus, mod, nextbonus, name]
         self.updateStats()
 
     def takeTurn(self):
@@ -215,9 +221,21 @@ class Tower(Image):
                         return
         elif self.attacktype == 'multi' and not self.leader:
             sortedlist = Utilities.get_all_in_range(self,Map.mapvar.enemycontainer.children)
-            for enemy in sortedlist:
-                if Utilities.can_attack(self, enemy):
-                    self.hitEnemy(enemy)
+            if self.upgradePath == 'GravityDamage':
+                blackhole = random.randint(0,100)
+                if blackhole <= self.blackHoleChance:
+                    for enemy in sortedlist:
+                        if Utilities.can_attack(self,enemy):
+                            self.black_hole_list.append(enemy)
+                    self.black_hole()
+                else:
+                    for enemy in sortedlist:
+                        if Utilities.can_attack(self, enemy):
+                            self.hitEnemy(enemy)
+            else:
+                for enemy in sortedlist:
+                    if Utilities.can_attack(self, enemy):
+                            self.hitEnemy(enemy)
             if self.shotcount > 0:
                 self.targetTimer = self.towerGroup.targetTimer = self.reload
 
@@ -233,12 +251,12 @@ class Tower(Image):
             if self.hasTurret:
                 self.remove_widget(self.turret)
                 self.hasTurret = False
-            self.leaderturret = Image(source = "towerimgs/leaderturret.png", allow_stretch = True, size = (Map.mapvar.squsize, Map.mapvar.squsize))
+            self.leaderturret = Image(source = "towerimgs/leaderturret.png", allow_stretch = True, size = (self.root.squsize, self.root.squsize))
             self.leaderturret.center = self.center
             self.add_widget(self.leaderturret)
         else:
             self.turretstr = os.path.join('towerimgs', self.type, 'turret.png')
-            self.turret = Image(source = self.turretstr, allow_stretch = True, size = (Map.mapvar.squsize, Map.mapvar.squsize))
+            self.turret = Image(source = self.turretstr, allow_stretch = True, size = (self.root.squsize, self.root.squsize))
             self.turret.center = self.center
             self.turret.anim = None
             self.add_widget(self.turret)
@@ -251,4 +269,37 @@ class Tower(Image):
             with self.turret.canvas.after:
                 PopMatrix()
 
-
+    def drawRangeLines(self):
+        tower = Player.player.towerSelected
+        x,y = tower.center
+        towerRange = Player.player.towerSelected.range
+        if tower.rangeExclusion:
+            rangeExclusion = tower.rangeExclusion
+            with Map.mapvar.background.canvas.before:
+                Color(1, 0, 0, 1)
+                leftx = (x - rangeExclusion if
+                         x - rangeExclusion > self.root.border else 0)
+                rightx = (x + rangeExclusion if
+                          x + rangeExclusion < self.root.playwid - self.root.border
+                          else self.root.playwid - self.root.border)
+                bottomy = (y - rangeExclusion if
+                           y - rangeExclusion > self.root.border else 0)
+                topy = (y + rangeExclusion if
+                        y + rangeExclusion < self.root.playhei - self.root.border
+                        else self.root.playhei - self.root.border)
+                Map.mapvar.towerRangeExclusion = Line(
+                    points=[leftx, bottomy, leftx, topy, rightx, topy, rightx, bottomy, leftx, bottomy], width=1.5)
+        with Map.mapvar.background.canvas.before:
+            Color(0, 0, .6, .5)
+            leftx = (x - towerRange if
+                     x - towerRange > 0 else 0)
+            rightx = (x + towerRange if
+                      x + towerRange < self.root.playwid- self.root.border
+                      else self.root.playwid - self.root.border)
+            bottomy = (y - towerRange if
+                       y - towerRange > 0 else 0)
+            topy = (y + towerRange if
+                    y + towerRange < self.root.playhei- self.root.border
+                    else self.root.playhei - self.root.border)
+            Map.mapvar.towerRange = Line(
+                points=[leftx, bottomy, leftx, topy, rightx, topy, rightx, bottomy, leftx, bottomy], width=1.5)

@@ -69,22 +69,24 @@ def getNeighbors(tower):
 
     return neighbors
 
-def getGroup(tower):
-    '''Sets the appropriate tower group for the tower given its neighbor's groups'''
-    if not tower.neighbors: #create a new towerGroup
-        tower.towerGroup = TowerGroup.TowerGroup(tower)
-        getImage(tower)
+# def getGroup(tower):
+#     '''Sets the appropriate tower group for the tower given its neighbor's groups'''
+#     if not tower.neighbors: #create a new towerGroup
+#         tower.towerGroup = TowerGroup.TowerGroup(tower)
+#         getImage(tower)
+#
+#     else: #use the existing one from a neighbor and set all
+#         letter = tower.neighborList[0]
+#         tower.towerGroup = tower.neighbors[letter].towerGroup
+#         #fetchGroup(tower, tower.towerGroup.towerSet)
+#         getImage(tower)
+#         if len(tower.neighborList) >= 1:
+#             x = 0
+#             while x < len(tower.neighborList):
+#                 letter = tower.neighborList[x]
+#                 getData(tower,letter)
+#                 x += 1
 
-    else: #use the existing one from a neighbor and set all
-        letter = tower.neighborList[0]
-        tower.towerGroup = tower.neighbors[letter].towerGroup
-        getImage(tower)
-        if len(tower.neighborList) >= 1:
-            x = 0
-            while x < len(tower.neighborList):
-                letter = tower.neighborList[x]
-                getData(tower,letter)
-                x += 1
 
 def updateNeighbors(tower):
     '''Creates a new group or groups for the remaining towers after a tower is sold'''
@@ -112,13 +114,26 @@ def setGroup(tower, removed, set):
                 set.add(value)
                 setGroup(value,removed, set)
 
-def getData(t, string):
-    '''Sets the tower group and updates the tower's appearance. Only used when tower is purchased (not sold)'''
-    tower = t.neighbors[string]
+
+def initNeighbors(tower, tset, tgset):
+    '''Iterates through all connected towers and returns a list of all towers and their towergroups.
+    Used primarily in EventFunctions when multiple towers are placed.'''
     tower.neighbors = getNeighbors(tower)
-    getImage(tower)
-    for element in tower.towerGroup.towerSet:
-        element.towerGroup = t.towerGroup
+    for n in tower.neighbors.values():
+        if n not in tset:
+            tset.add(n)
+            if n.towerGroup != None:
+                tgset.add(n.towerGroup)
+            initNeighbors(n, tset, tgset)
+
+
+# def getData(t, string):
+#     '''Sets the tower group and updates the tower's appearance. Only used when tower is purchased (not sold)'''
+#     tower = t.neighbors[string]
+#     tower.neighbors = getNeighbors(tower)
+#     getImage(tower)
+#     for element in tower.towerGroup.towerSet:
+#         element.towerGroup = t.towerGroup
 
 
 def getImage(tower):

@@ -52,68 +52,68 @@ class MyButton(ButtonBehavior, Image):
         # print('pressed at {pos}'.format(pos=pos))
 
 
-class ButtonWithImage(Button, Image):
-    pressed = ListProperty()
-
-    def __init__(self, **kwargs):
-        super(ButtonWithImage, self).__init__(**kwargs)
-        self.image = Image()
-        self.image.pos_hint = (None, None)
-        self.add_widget(self.image)
-        self.image.size = self.size
-        self.image.pos = self.pos
-        self.bind(pos=self.on_pos)
-        self.label = Label(text=' ', size_hint=(None, None), pos=self.pos, color=[1, 1, 1, 1], halign='center')
-        self.add_widget(self.label)
-        self.group = None
-        self.toplabel = Label(text='', size_hint=(1, .1), pos_hint=(None,None), text_size = (None, None), font_size = __main__.Window.size[0]*.01)
-        self.add_widget(self.toplabel)
-        self.toplabel.pos = (self.toplabel.x-(Map.mapvar.squsize*.35),self.toplabel.y + (Map.mapvar.squsize*.35))
-
-    def on_touch_down(self, touch):
-        if self.collide_point(*touch.pos):
-            self.pressed = touch.pos
-            if self.id == 'enemyinfo' or self.id == 'Rotate':
-                pass
-            else:
-                pass
-                # Map.mapvar.background.removeAll()
-            return True
-
-    def on_pressed(self, button, pos):
-        if button.disabled == False:
-            # if button.id == 'unpause':
-            #     MainFunctions.pauseGame(button)
-            #     return
-            if button.id == 'enemyinfo':
-                GUI.gui.toggleEnemyPanel()
-            elif button.id =='towerinfo':
-                GUI.gui.toggleTowerPanel()
-            # tower abilities like upgrade and sell
-            elif button.instance in Localdefs.towerabilitylist:
-                func = "TowerAbilities." + button.instance.type + "." + button.instance.func + "()"
-                eval(func)
-                if button.id == 'Rotate':
-                    GUI.gui.removeTriangle()
-                    GUI.gui.drawTriangle()
-                    return
-                Map.mapvar.background.removeAll()
-                return
-            else:
-                if not button.disabled:
-                    EventFunctions.placeTowerFromList(button)
-                    Map.mapvar.background.popUpOpen = None
-                    Map.mapvar.background.removeAll()
-                else:
-                    return
-            # print('pressed at {pos}'.format(pos=pos))
-
-    def on_pos(self, *args):
-        self.image.pos = self.pos
-        self.image.size = self.size
-        self.label.pos = self.pos
-        self.toplabel.size = (self.width, self.height*.2)
-        self.toplabel.pos = (self.x, self.top - self.toplabel.size[1] - Map.mapvar.squsize/8)
+# class ButtonWithImage(Button, Image):
+#     pressed = ListProperty()
+#
+#     def __init__(self, **kwargs):
+#         super(ButtonWithImage, self).__init__(**kwargs)
+#         self.image = Image()
+#         self.image.pos_hint = (None, None)
+#         self.add_widget(self.image)
+#         self.image.size = self.size
+#         self.image.pos = self.pos
+#         self.bind(pos=self.on_pos)
+#         self.label = Label(text=' ', size_hint=(None, None), pos=self.pos, color=[1, 1, 1, 1], halign='center')
+#         self.add_widget(self.label)
+#         self.group = None
+#         self.toplabel = Label(text='', size_hint=(1, .1), pos_hint=(None,None), text_size = (None, None), font_size = __main__.Window.size[0]*.01)
+#         self.add_widget(self.toplabel)
+#         self.toplabel.pos = (self.toplabel.x-(Map.mapvar.squsize*.35),self.toplabel.y + (Map.mapvar.squsize*.35))
+#
+#     def on_touch_down(self, touch):
+#         if self.collide_point(*touch.pos):
+#             self.pressed = touch.pos
+#             if self.id == 'enemyinfo' or self.id == 'Rotate':
+#                 pass
+#             else:
+#                 pass
+#                 # Map.mapvar.background.removeAll()
+#             return True
+#
+#     def on_pressed(self, button, pos):
+#         if button.disabled == False:
+#             # if button.id == 'unpause':
+#             #     MainFunctions.pauseGame(button)
+#             #     return
+#             if button.id == 'enemyinfo':
+#                 GUI.gui.toggleEnemyPanel()
+#             elif button.id =='towerinfo':
+#                 GUI.gui.toggleTowerPanel()
+#             # tower abilities like upgrade and sell
+#             elif button.instance in Localdefs.towerabilitylist:
+#                 func = "TowerAbilities." + button.instance.type + "." + button.instance.func + "()"
+#                 eval(func)
+#                 if button.id == 'Rotate':
+#                     GUI.gui.removeTriangle()
+#                     GUI.gui.drawTriangle()
+#                     return
+#                 Map.mapvar.background.removeAll()
+#                 return
+#             else:
+#                 if not button.disabled:
+#                     EventFunctions.placeTowerFromList(button)
+#                     Map.mapvar.background.popUpOpen = None
+#                     Map.mapvar.background.removeAll()
+#                 else:
+#                     return
+#             # print('pressed at {pos}'.format(pos=pos))
+#
+#     def on_pos(self, *args):
+#         self.image.pos = self.pos
+#         self.image.size = self.size
+#         self.label.pos = self.pos
+#         self.toplabel.size = (self.width, self.height*.2)
+#         self.toplabel.pos = (self.x, self.top - self.toplabel.size[1] - Map.mapvar.squsize/8)
 
 class StackButtonWithImage(Button):
     pressed = ListProperty()

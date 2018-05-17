@@ -14,6 +14,7 @@ import Towers
 import TowerIcon
 import Analytics
 import __main__
+import Messenger
 
 
 def makeIcons():
@@ -107,36 +108,35 @@ def workShots():
 
 def dispMessage(*args):
     '''Display any alerts in the queue, then remove them'''
-    if GUI.gui.alertQueue and not GUI.gui.alertAnimation.have_properties_to_animate(GUI.gui.alertScroller):
-        GUI.gui.alertLabel.text = GUI.gui.alertQueue[0][0]
-        GUI.gui.alertAnimation.start(GUI.gui.alertScroller)
+    if Messenger.messenger.alertQueue and not Messenger.messenger.alertAnimation.have_properties_to_animate(Messenger.messenger.alertScroller):
+        Messenger.messenger.alertLabel.text = Messenger.messenger.alertQueue[0][0]
+        Messenger.messenger.alertAnimation.start(Messenger.messenger.alertScroller)
 
 def flashScreen(color, numframes):
-    if not GUI.gui.bgrect:
-        with Map.mapvar.backgroundimg.canvas.after:
+    if not Messenger.messenger.bgrect:
+        with Map.mapvar.background.canvas.after:
             if color == 'red':
                 x = float(1.0 - (Player.player.health / 20.0))
                 Color(1, 0, 0, x)
             else:
                 Color(0, 0, 0, .5)
-            GUI.gui.bgrect = Rectangle(size=(Map.mapvar.scrwid, Map.mapvar.scrhei), pos=(0, 0))
-
+            Messenger.messenger.bgrect = Rectangle(size=(__main__.app.root.scrwid, __main__.app.root.scrhei), pos=(0, 0))
         Map.mapvar.dispFlashCounter = 0
         Map.mapvar.dispFlashLimit = numframes
 
 
 def workDisp():
-    if GUI.gui.bgrect:
+    if Messenger.messenger.bgrect:
         Map.mapvar.dispFlashCounter += 1
         if Map.mapvar.dispFlashCounter >= Map.mapvar.dispFlashLimit:
-            Map.mapvar.backgroundimg.canvas.after.remove(GUI.gui.bgrect)
-            GUI.gui.bgrect = None
+            Map.mapvar.background.canvas.after.remove(Messenger.messenger.bgrect)
+            Messenger.messenger.bgrect = None
             Map.mapvar.dispFlashCounter = 0
     dispMessage()
-    if GUI.gui.messageCounter > 0:
-        GUI.gui.messageCounter += 1
-        if GUI.gui.messageCounter >= 20:
-            GUI.gui.removeMessage()
+    if Messenger.messenger.messageCounter > 0:
+        Messenger.messenger.messageCounter += 1
+        if Messenger.messenger.messageCounter >= 20:
+            Messenger.messenger.removeMessage()
 
 
 def workEnemies():
@@ -160,11 +160,21 @@ def workEnemies():
 
 
 def updateGUI():
-    if Player.player.layout:
-        for button in Player.player.layout.children:
-                if button.disabled == True and button.group == 'Enableable':
-                    if button.instance.cost <= Player.player.money:
-                        button.disabled = False
+    if Player.player.tbbox:
+        for button in Player.player.tbbox.enableList:
+            if Player.player.towerSelected:
+                if Player.player.towerSelected.totalUpgradeTime != 0:
+                    return
+            if isinstance(button.instance.cost,tuple):
+                if button.instance.cost[0] <= Player.player.money and button.instance.cost[1] <= Player.player.gems:
+                    button.disabled = False
+                else:
+                    button.disabled = True
+                return
+            if button.instance.cost <= Player.player.money:
+                button.disabled = False
+            else:
+                button.disabled = True
 
 def stopAllAnimation():
     for enemy in Map.mapvar.enemycontainer.children:
@@ -180,28 +190,24 @@ def stopAllAnimation():
     for tower in Map.mapvar.towercontainer.children:
         if tower.type == 'Gravity' and tower.animation:
             tower.towerGroup.disable()
-    GUI.gui.waveAnimation.cancel_all(GUI.gui.waveScroller)
-    if GUI.gui.catchUpWaveAnimation:
-        GUI.gui.catchUpWaveAnimation.cancel_all(GUI.gui.waveScroller)
+    __main__.ids.wavestreamer.waveAnimation.cancel_all(__main__.ids.wavescroller)
 
 
 def startAllAnimation():
     for enemy in Map.mapvar.enemycontainer.children:
-        if enemy.stuntime <= 0:
-            if enemy.anim:
-                enemy.anim.start(enemy)
+        enemy.getNearestRoad()
     for shot in Map.mapvar.shotcontainer.children:
         if shot.anim:
             shot.anim.start(shot)
-    scroll = .25 - GUI.gui.waveScroller.scroll_x
     if Player.player.wavenum > 0:
-        GUI.gui.catchUpWaveAnimation = Animation(scroll_x=scroll, duration=Player.player.wavetimeInt)
-        GUI.gui.catchUpWaveAnimation.bind(on_complete=EventFunctions.updateAnim)
-        GUI.gui.catchUpWaveAnimation.start(GUI.gui.waveScroller)
+        __main__.ids.wavestreamer.waveAnimation = Animation(scroll_x=.3, duration=Player.player.wavetimeInt)
+        __main__.ids.wavestreamer.waveAnimation.bind(on_complete=EventFunctions.updateAnim)
+        __main__.ids.wavestreamer.waveAnimation.start(__main__.ids.wavescroller)
 
 
 def resetGame():
     '''Resets game variables so player can restart the game quickly.'''
+    Player.player.state = 'Restart'
     stopAllAnimation()
     Player.player.gameover = False
     Map.mapvar.getStartPoints()
@@ -216,7 +222,9 @@ def resetGame():
         while i < len(list):
             list.pop()
     for tower in Map.mapvar.towercontainer.children:
-        tower.remove()
+        if tower.type != 'Base':
+            tower.remove()
+    Map.mapvar.baseimg = None
     Map.mapvar.towercontainer.clear_widgets()
     Map.mapvar.enemycontainer.clear_widgets()
     for road in Map.mapvar.roadcontainer.children:
@@ -226,18 +234,17 @@ def resetGame():
     Map.mapvar.wallcontainer.clear_widgets()
     Map.mapvar.towerdragimagecontainer.clear_widgets()
     Player.player.wavenum = 0
-    GUI.gui.myDispatcher.WaveNum = GUI.gui.myDispatcher.Wave = str(Player.player.wavenum)
     Player.player.wavetime = int(Map.mapvar.waveseconds)
-    GUI.gui.myDispatcher.Timer = str(Player.player.wavetime)
+    Player.player.myDispatcher.Timer = str(Player.player.wavetime)
     Player.player.health = Player.playerhealth
-    GUI.gui.myDispatcher.Health = str(Player.player.health)
-    GUI.gui.myDispatcher.Score = str(Player.player.score)
+    Player.player.myDispatcher.Health = str(Player.player.health)
+    Player.player.score = 0
+    Player.player.myDispatcher.Score = str(Player.player.score)
     Player.player.analytics = Analytics.Analytics()
-    GUI.gui.removeWaveStreamer()
-    GUI.gui.nextwaveButton.text = 'Start'
-    GUI.gui.nextwaveButton.color = (0,1,0,1)
-    if GUI.gui.bgrect:
-        Map.mapvar.backgroundimg.canvas.after.remove(GUI.gui.bgrect)
-        GUI.gui.bgrect = None
-    GUI.gui.addAlert("New Game - Play Again", 'repeat')
+    __main__.ids.wavestreamer.removeWaveStreamer()
+    __main__.ids.wavescroller.scroll_x = 0
+    __main__.ids.play.text = 'Start'
+    if Messenger.messenger.bgrect:
+        Map.mapvar.background.canvas.after.remove(Messenger.messenger.bgrect)
+        Messenger.messenger.bgrect = None
 
