@@ -123,7 +123,8 @@ class Enemy(Image):
         if self.stuntime <= 0:
             self.stuntime = 0
             self.remove_widget(self.stunimage)
-            self.anim = self.getNearestRoad()
+            if not Player.player.state == 'Paused':
+                self.anim = self.getNearestRoad()
 
     def workBurnTimer(self):
         self.burntime -= Player.player.frametime

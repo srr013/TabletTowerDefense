@@ -61,13 +61,14 @@ Builder.load_string("""
         orientation: 'tb-lr'
         size_hint: .3, 1
         Label
-            size_hint: 1, .3
+            size_hint: 1, .5
             text: "Upgrade All?"
             text_size: self.size
-            font_size: self.width * .135
+            font_size: self.width * .15
             halign: 'center'
+            valign: 'top'
         CheckBox
-            size_hint: 1, .7
+            size_hint: 1, .5
             id: upgradeall
             on_active: upgradelayout.updateUpgradeAll()
             
@@ -94,13 +95,14 @@ Builder.load_string("""
         orientation: 'tb-lr'
         size_hint: .3, .5
         Label
-            size_hint: 1, .4
+            size_hint: 1, .5
             text: "Upgrade All?"
             text_size: self.size
-            font_size: self.width * .135
+            font_size: self.width * .145
             halign: 'center'
+            valign: 'top'
         CheckBox
-            size_hint: 1, .6
+            size_hint: 1, .5
             id: upgradeall
             on_active: upgradelayout.updateUpgradeAll()
     TowerButton

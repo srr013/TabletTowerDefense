@@ -118,8 +118,9 @@ class Game(Widget):
                 self.shaderRect = None
                 Map.mapvar.background.remove_widget(self.pauseImage)
 
-    def pause_game(self):
-        if Player.player.state == 'Playing':
+    def pause_game(self, pause = False):
+        print "pause_game"
+        if Player.player.state == 'Playing' or pause:
             Player.player.state = 'Paused'
             if self.screenmanager.current_screen.name == 'game':
                 ids.play.disabled = True
@@ -150,6 +151,7 @@ class Game(Widget):
                 self.pause_game()
             self.screenmanager.current = to_screen
         if to_screen == 'game':
+            print "Playing"
             if Player.player.state == 'Start' or Player.player.state == 'Restart':
                 self.start_game()
                 return
@@ -217,7 +219,8 @@ class Main(App):
     def on_pause(self):
         if Player.player.sound.music:
             Player.player.sound.music.stop()
-        Player.player.state = 'Paused'
+        self.root.pause_game(pause = True)
+        print "pausing"
         return True
 
     def build(self):
