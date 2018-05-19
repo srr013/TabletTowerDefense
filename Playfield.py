@@ -1,7 +1,6 @@
 from kivy.uix.scatterlayout import ScatterLayout
 from kivy.app import App
 
-import GUI
 import Kvgui
 import Map
 import TowerDragging

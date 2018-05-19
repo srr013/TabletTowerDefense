@@ -2,32 +2,25 @@
 # This code is the work of Scott Rossignol (srr0132@gmail.com)
 # Additional credits for artwork and algorithms are in the Content Sources document
 ############################################################################
+import time
+# import cProfile
+# import pstats
 
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
-from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.widget import Widget
-from kivy.uix.button import Button
-from kivy.uix.image import Image
+from kivy.uix.label import Label
 from kivy.utils import platform
 from kivy.graphics import *
 from kivy.properties import NumericProperty, ObjectProperty
-from kivy.factory import Factory
 
 import EventFunctions
-#import GUI
-import Kvgui
 import MainFunctions
 import Map
 import Player
 import Sound
 import Messenger
-
-import sys
-import time
-# import cProfile
-# import pstats
 
 global app, ids
 
@@ -83,7 +76,6 @@ class Game(Widget):
         app = App.get_running_app()
         ids = self.ids
         if Player.player.state == 'Restart':
-            print "here"
             self.pause_game()
             self.clock = self.Clock.schedule_interval(self.update, self.frametime)
         Player.player.state = 'Playing'
@@ -106,31 +98,31 @@ class Game(Widget):
 
     def togglePauseShader(self):
         if Player.player.state == 'Paused':
-            with Map.mapvar.background.canvas.before:
-                Color(.2,.2,.2,.2)
-                self.shaderRect = Rectangle(size=(Map.mapvar.playwid-Map.mapvar.squsize*2, Map.mapvar.playhei-Map.mapvar.squsize*2),
-                          pos = (0,0))
-            self.pauseImage= Image(source = "backgroundimgs/pausebw.png", center = (0,2 * self.squsize))
-            Map.mapvar.background.add_widget(self.pauseImage)
+            if not self.shaderRect:
+                with Map.mapvar.background.canvas.before:
+                    Color(.2,.2,.2,.2)
+                    self.shaderRect = Rectangle(size=(Map.mapvar.playwid-Map.mapvar.squsize*2, Map.mapvar.playhei-Map.mapvar.squsize*2),
+                              pos = (0,0))
+                self.pauseLabel = Label(text='Game Paused. Press Resume.', font_size = self.scrwid * .05, color = (1,0,0,1), pos = (0,self.scrhei*-.3))
+            Map.mapvar.background.add_widget(self.pauseLabel)
         elif Player.player.state == 'Playing' or Player.player.state == 'Start' or Player.player.state == 'Restart':
             if self.shaderRect:
                 Map.mapvar.background.canvas.before.remove(self.shaderRect)
                 self.shaderRect = None
-                Map.mapvar.background.remove_widget(self.pauseImage)
+                Map.mapvar.background.remove_widget(self.pauseLabel)
 
     def pause_game(self, pause = False):
-        print "pause_game"
         if Player.player.state == 'Playing' or pause:
             Player.player.state = 'Paused'
             if self.screenmanager.current_screen.name == 'game':
                 ids.play.disabled = True
                 ids.play.opacity = 0
-            ids.pause.text = 'Resume'
+                ids.pause.text = 'Resume'
         elif Player.player.state == 'Restart':
             if self.screenmanager.current_screen.name == 'game':
                 ids.play.disabled = False
                 ids.play.opacity = 1
-            ids.pause.text = 'Pause'
+                ids.pause.text = 'Pause'
         else: #unpause
             if self.screenmanager.current_screen.name == 'game':
                 Player.player.state = 'Playing'
@@ -151,7 +143,6 @@ class Game(Widget):
                 self.pause_game()
             self.screenmanager.current = to_screen
         if to_screen == 'game':
-            print "Playing"
             if Player.player.state == 'Start' or Player.player.state == 'Restart':
                 self.start_game()
                 return
@@ -163,7 +154,7 @@ class Game(Widget):
                 self.screenmanager.current_screen.ids.infopanel.getDefaultTab())
         elif to_screen == 'mainmenu':
             if Player.player.state != 'Start':
-                self.screenmanager.current_screen.ids.startbutton.text = 'Resume Current Game'
+                self.screenmanager.current_screen.ids.startbutton.text = 'Resume'
                 self.screenmanager.current_screen.ids.restartbutton.disabled = False
                 self.screenmanager.current_screen.ids.restartbutton.opacity = 1
             else:
@@ -219,9 +210,13 @@ class Main(App):
     def on_pause(self):
         if Player.player.sound.music:
             Player.player.sound.music.stop()
-        self.root.pause_game(pause = True)
-        print "pausing"
+        if Player.player.state == 'Playing':
+            Map.mapvar.background.removeAll()
+            self.root.pause_game(pause = True)
+            print "pausing on suspend"
         return True
+    def on_resume(self):
+        print "Resuming game",self.root.shaderRect
 
     def build(self):
         game = Game()
@@ -235,7 +230,6 @@ class Main(App):
         Map.mapvar.loadMap()
         MainFunctions.makeIcons()
         MainFunctions.makeUpgradeIcons()
-        #Map.mapvar.backgroundimg.add_widget(GUI.gui.rightSideButtons())
         game.bindings()
         game.screenmanager = game.ids.sm
         Player.player.sound = Sound.MySound(Player.player.soundOn, Player.player.musicOn)

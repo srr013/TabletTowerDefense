@@ -4,13 +4,11 @@ from kivy.animation import Animation
 from kivy.graphics import *
 
 import EventFunctions
-import GUI
 import Localdefs
 import Map
 import Pathfinding
 import Player
 import TowerAbilities
-import Towers
 import TowerIcon
 import Analytics
 import __main__
@@ -170,8 +168,7 @@ def updateGUI():
                     button.disabled = False
                 else:
                     button.disabled = True
-                return
-            if button.instance.cost <= Player.player.money:
+            elif button.instance.cost <= Player.player.money:
                 button.disabled = False
             else:
                 button.disabled = True

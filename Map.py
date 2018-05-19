@@ -4,8 +4,6 @@ from kivy.graphics import *
 from kivy.uix.widget import Widget
 from kivy.uix.image import Image
 
-import GUI
-import GUI_Templates
 import Localdefs
 import Pathfinding
 import Playfield
@@ -13,8 +11,6 @@ import Road
 import Utilities
 import Wall
 import __main__
-import Messenger
-import InfoPanel
 import Player
 
 wallrectlist = list()
@@ -75,7 +71,7 @@ class Map():
         self.flylistgenerated = False
         self.movelistnum = -1
         self.blockedSquare = None
-        # The following variables control game and field sizing
+        # The following variables control game and field sizing. They have been replaced by main, but are still in use some places
         self.scrwid = Window.width
         self.scrhei = Window.height
         self.squsize = self.scrwid / 34
@@ -89,7 +85,7 @@ class Map():
 
     def genmovelists(self):
         '''Generate the movement list for enemys and path blitting'''
-        ##zero out the lists to start fresh. Otherwise the append allows multiple lists.
+        #zero out the lists to start fresh. Otherwise the append allows multiple lists.
         self.pointmovelists = []
         self.pathrectlists = []
         self.dirmovelists = []
@@ -213,9 +209,9 @@ class Map():
         if self.numpaths == 1:
             self.startpoint = [(1, 9)]
         elif self.numpaths == 2:
-            self.startpoint = [(1, 9), (10, 15)]
+            self.startpoint = [(1, 9), (10, 16)]
         else:
-            self.startpoint = [(1, 9), (10, 15), (10, 1)]
+            self.startpoint = [(1, 9), (10, 16), (10, 1)]
         if self.difficulty == 'easy':
             self.basepoint = (26, 9)
         elif self.difficulty == 'medium':
@@ -241,7 +237,6 @@ class Path():
 
 
 path = Path()
-# newPath = Pathfinding.GridWithWeights(mapvar.squwid, mapvar.squhei - 1, 0, (28, 9))
 flyPath = Pathfinding.neighborGridwithWeights(mapvar.squwid, mapvar.squhei - 1, 0, (28, 9))
 myGrid = Pathfinding.neighborGridwithWeights(mapvar.squwid, mapvar.squhei - 1, 0, (28, 9))
 

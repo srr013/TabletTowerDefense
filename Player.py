@@ -1,11 +1,9 @@
 from kivy.storage.dictstore import DictStore
 from kivy.animation import Animation
-from kivy.app import App
 
 import Map
 import Wavegen
 import Analytics
-import GUI
 import EventDispatcher
 import __main__
 
@@ -45,7 +43,7 @@ class Player():
     def setResources(self):
         if Map.mapvar.difficulty == 'easy':
             self.money = 2000
-            self.gems = 5
+            self.gems = 3
             self.myDispatcher.Money = str(self.money)
             self.myDispatcher.Gems = str(self.gems)
         elif Map.mapvar.difficulty == 'medium':
@@ -55,7 +53,7 @@ class Player():
             self.myDispatcher.Gems = str(self.gems)
         else:
             self.money = 300
-            self.gems = 3
+            self.gems = 2
             self.myDispatcher.Money = str(self.money)
             self.myDispatcher.Gems = str(self.gems)
         self.myDispatcher.Score = str(self.score)

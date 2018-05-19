@@ -37,19 +37,17 @@ Builder.load_string("""
         GridLayout
             id: buttonlayout
             cols:3
-            size_hint: 1, .4
+            size_hint: 1, .6
             BoxLayout
                 id:gameplaybuttons
                 orientation: 'vertical'
-                spacing: self.parent.height/50
+                padding: 20
+                size_hint: .4, 1
                 Button
                     id:startbutton
                     text:"Play"
+                    font_size: self.width*.17
                     on_release: app.root.change_screens('game')
-                Button
-                    id:quitbutton
-                    text:"Quit"
-                    on_release: app.stop();sys.exit()
             StackLayout
                 orientation: 'tb-lr'
                 padding: 10

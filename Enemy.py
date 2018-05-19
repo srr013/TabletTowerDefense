@@ -1,24 +1,16 @@
-import math
+
 import os
 import random
-import copy
 from kivy.animation import Animation
 from kivy.graphics import *
-from kivy.uix.widget import Widget
 from kivy.uix.image import Image
 from kivy.vector import Vector
-from kivy.lang import Builder
 
-# from kivy.graphics.texture import Texture
-# from kivy.core.image import Image as NewImage
-
-import GUI
 import Localdefs
 import MainFunctions
 import Map
 import Player
 import SenderClass
-import Utilities
 import __main__
 
 
@@ -28,7 +20,6 @@ class Enemy(Image):
         super(Enemy, self).__init__(**kwargs)
         self.specialSend = kwargs['specialSend']
         self.enemyNumber = kwargs['enemyNum']
-        #self.texture = NewImage(self.imagesrc).texture
         if self.type == 'Crowd':
             self.size = (Map.mapvar.squsize/1.8, Map.mapvar.squsize/1.8)
         elif self.type == 'Standard' or self.type == 'Airborn':
@@ -56,6 +47,7 @@ class Enemy(Image):
                 self.mods = self.wavedict['enemymods']
                 self.isBoss = self.wavedict['isboss']
         self.direction = self.dirlist[self.curnode]
+        self.previous_direction = self.direction
         self.allow_stretch = True
         Map.mapvar.enemycontainer.add_widget(self)
         if self.isBoss:
@@ -81,7 +73,6 @@ class Enemy(Image):
         self.priority = self.getPriority()
         self.percentHealthRemaining = self.health / self.starthealth
         self.percentArmorRemaining = self.armor / self.armor_start
-
         if not self.specialSend:
             self.move()
 
@@ -165,26 +156,19 @@ class Enemy(Image):
                 return
         if self.curnode < len(self.movelist) - 1 and not self.useOldNode:
             self.curnode += 1
-        # if self.direction == 'l': #re-flip to normalize
-        #     print "deflipping"
-        #     self.texture.flip_horizontal()
         self.direction = self.dirlist[self.curnode-1]
+        if self.previous_direction == 'l' and self.direction != 'l':
+            self.source = self.imagesrc
         if self.direction == 'r':
-            # self.texture.uvpos = (0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0)
             self.angle = 0
         elif self.direction == 'u':
             self.angle = 90
         elif self.direction == 'd':
             self.angle = 270
         elif self.direction == 'l':
-            # self.texture.uvpos = (1,0)
-            # self.texture.uvsize = (-1, 1)
-            self.texture.flip_horizontal()
-            self.texture_update()
-            # eval(self.__class__.__name__+ ".texture.dispatch(self)")
-            # self.texture.uvpos = (1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0)
-            # self.texture.ask_update(self.texture)
+            self.source = "enemyimgs/"+ str(self.type)+"_l.png"
             self.angle = 0
+        self.previous_direction = self.direction
         distToTravel = Vector(self.pos).distance(self.movelist[self.curnode])
         duration = float(distToTravel) / (self.speed * (self.slowpercent/100.0))
         self.anim = Animation(pos=self.movelist[self.curnode], duration=duration, transition="linear")
@@ -334,7 +318,7 @@ class Enemy(Image):
                     self.splinter()
                 if self.isBoss:
                     x = random.randint(0, 100)
-                    if x < 10:
+                    if x < 3:
                         self.gemImage = True
                 self.startDeathAnim()
                 Player.player.money += int(self.reward)

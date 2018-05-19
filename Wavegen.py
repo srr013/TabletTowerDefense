@@ -68,10 +68,10 @@ def wavegen():
             rewardEnemies = round(int(eval("Enemy." + enemyType + ".reward") * (1 + (setNum / 10.0))*rewardMod),1)
 
             if isBoss:
-                healthEnemies *= 4
-                speedEnemies *= 1.3
-                armorEnemies *= 2
-                rewardEnemies *= 10
+                healthEnemies *= 3.8
+                speedEnemies *= 1.1
+                armorEnemies *= 1.7
+                rewardEnemies *= 15
 
             waveDict[waveNum]={'setnum': setNum, 'enemynum': numEnemies, 'enemyhealth': healthEnemies,
                     'enemyspeed': speedEnemies,

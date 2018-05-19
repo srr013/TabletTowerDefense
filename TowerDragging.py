@@ -5,7 +5,6 @@ from kivy.app import App
 import Map
 import Player
 import Utilities
-import GUI
 
 
 class TowerDragger(DragBehavior, Image):

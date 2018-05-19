@@ -2,15 +2,9 @@ import os
 
 from kivy.uix.tabbedpanel import TabbedPanel, TabbedPanelHeader, TabbedPanelItem
 from kivy.lang import Builder
-from kivy.properties import StringProperty, NumericProperty, ObjectProperty
 from kivy.uix.label import Label
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.stacklayout import StackLayout
-from kivy.uix.image import Image
 
-import __main__
-import Player #in use
-import Map
+import Player
 import Enemy
 import Localdefs
 import FireTower
@@ -160,8 +154,7 @@ Builder.load_string("""
                     text: "Go to Game"
                     on_release: app.root.change_screens('game')
 <DataLayoutLabel>
-    size_hint: 1, .5
-    text_size: self.size
+    text_size: self.width, None
 
 <GeneralInfoLabel>
     size_hint: 1, None
@@ -273,8 +266,10 @@ class InfoPanel(TabbedPanel):
             th.ids.towerheader.text = tower + "Tower"
             th.ids.path2image.source = eval(tower + "Tower." + tower + "Tower.imagestr")
             th.ids.path2description.text = eval(tower + "Tower." + tower + "Tower.upgradeDescription")
-            for i in eval(tower + "Tower." + tower + "Tower.upgradeStats"):
-                lbl = DataLayoutLabel(text=i, color= (1,1,1,1))
+            stats = eval(tower + "Tower." + tower + "Tower.upgradeStats")
+            for i in stats:
+                lbl = DataLayoutLabel(text=i, size_hint = (1, .5), color= (1,1,1,1))
+                lbl.text_size = (lbl.width, lbl.height)
                 th.ids.path2data.add_widget(lbl)
 
     def updateContent(self):
@@ -298,75 +293,76 @@ class InfoPanelHeader(TabbedPanelHeader):
         self.pos = (0,0)
 
 
-    def createTowerPanelContent(self, tower):
-        self.towerPanel_header = Label(text=str(tower)+" Tower Upgrades", width=self.width - Map.mapvar.squsize,
-                                       height=Map.mapvar.squsize * 1.3, size_hint=(None, None), font_size=__main__.Window.size[0]*.016,
-                                       text_size=(Map.mapvar.squsize * 7, Map.mapvar.squsize * 1.3), halign='center')
-        self.towerPanel_towerinfo = GridLayout(cols=2)
+    # def createTowerPanelContent(self, tower):
+    #     self.towerPanel_header = Label(text=str(tower)+" Tower Upgrades", width=self.width - Map.mapvar.squsize,
+    #                                    height=Map.mapvar.squsize * 1.3, size_hint=(None, None), font_size=__main__.Window.size[0]*.016,
+    #                                    text_size=(Map.mapvar.squsize * 7, Map.mapvar.squsize * 1.3), halign='center')
+    #     self.towerPanel_towerinfo = GridLayout(cols=2)
+    #
+    #     path1 = StackLayout(orientation='lr-tb', size_hint=(.5,1))
+    #     path1title = Label(text = "Leader", size_hint= (1,.1), font_size = __main__.Window.size[0]*.013)
+    #     path1image = Image(source = "towerimgs/crown.png", size_hint = (1,.1))
+    #     path1desc = Label(text = "Grants all other connected towers a bonus to all stats, but this tower loses the ability to attack."
+    #                              "You may only build one leader per Tower Group. A Tower Group is a set of connected towers of the same type.",
+    #                       size_hint = (1,.43), valign = 'center', halign = 'left')
+    #     path1desc.text_size = (self.width/2.5, self.height)
+    #     path1.add_widget(path1title)
+    #     path1.add_widget(path1image)
+    #     path1.add_widget(path1desc)
+    #     self.towerPanel_towerinfo.add_widget(path1)
+    #
+    #     path2 = StackLayout(orientation='lr-tb', size_hint = (.45,1))
+    #     path2title = Label(text=eval(tower+"Tower."+tower+"Tower."+"upgradeName"), size_hint=(1, .1), font_size=__main__.Window.size[0] * .013)
+    #     path2image = Image(source=eval(tower+"Tower."+tower+"Tower.imagestr"), size_hint=(1, .1))
+    #     path2desc = Label(text=eval(tower+"Tower."+tower+"Tower.upgradeDescription"),
+    #                       size_hint = (1,.4), valign = 'center', halign = 'left')
+    #     path2desc.text_size = (self.width/2.5, self.height)
+    #     path2.add_widget(path2title)
+    #     path2.add_widget(path2image)
+    #     path2.add_widget(path2desc)
+    #     path2data = GridLayout(cols=1, size_hint = (1, .3), spacing = 0)
+    #     for i in eval(tower+"Tower."+tower+"Tower.upgradeStats"):
+    #         lbl = Label(text=i, size_hint=(1, None), halign='left')
+    #         lbl.height = lbl.text_size[1]
+    #         lbl.text_size = (self.width / 2.5, lbl.height)
+    #         path2data.add_widget(lbl)
+    #     path2.add_widget(path2data)
+    #     self.towerPanel_towerinfo.add_widget(path2)
+    #     self.panelLayout.add_widget(self.towerPanel_header)
+    #     self.panelLayout.add_widget(self.towerPanel_towerinfo)
+    #     return self.panelLayout
 
-        path1 = StackLayout(orientation='lr-tb', size_hint=(.5,1))
-        path1title = Label(text = "Leader", size_hint= (1,.1), font_size = __main__.Window.size[0]*.013)
-        path1image = Image(source = "towerimgs/crown.png", size_hint = (1,.1))
-        path1desc = Label(text = "Grants all other connected towers a bonus to all stats, but this tower loses the ability to attack."
-                                 "You may only build one leader per Tower Group. A Tower Group is a set of connected towers of the same type.",
-                          size_hint = (1,.43), valign = 'center', halign = 'left')
-        path1desc.text_size = (self.width/2.5, self.height)
-        path1.add_widget(path1title)
-        path1.add_widget(path1image)
-        path1.add_widget(path1desc)
-        self.towerPanel_towerinfo.add_widget(path1)
-
-        path2 = StackLayout(orientation='lr-tb', size_hint = (.45,1))
-        path2title = Label(text=eval(tower+"Tower."+tower+"Tower."+"upgradeName"), size_hint=(1, .1), font_size=__main__.Window.size[0] * .013)
-        path2image = Image(source=eval(tower+"Tower."+tower+"Tower.imagestr"), size_hint=(1, .1))
-        path2desc = Label(text=eval(tower+"Tower."+tower+"Tower.upgradeDescription"),
-                          size_hint = (1,.4), valign = 'center', halign = 'left')
-        path2desc.text_size = (self.width/2.5, self.height)
-        path2.add_widget(path2title)
-        path2.add_widget(path2image)
-        path2.add_widget(path2desc)
-        path2data = GridLayout(cols=1, size_hint = (1, .3), spacing = 0)
-        for i in eval(tower+"Tower."+tower+"Tower.upgradeStats"):
-            lbl = Label(text=i, size_hint=(1, None), halign='left', )
-            lbl.text_size = (self.width / 2.5, lbl.height)
-            path2data.add_widget(lbl)
-        path2.add_widget(path2data)
-        self.towerPanel_towerinfo.add_widget(path2)
-        self.panelLayout.add_widget(self.towerPanel_header)
-        self.panelLayout.add_widget(self.towerPanel_towerinfo)
-        return self.panelLayout
-
-    def createEnemyPanelContent(self, enemy):
-        waveNum = Player.player.wavenum
-        self.enemyPanel_header = Label(text=str(enemy), size_hint=(1, .2), font_size=__main__.Window.size[0]*.022,
-                                       halign='center')
-        self.enemyPanel_enemyinfo = GridLayout(cols=1, col_force_default=True, row_force_default=True,
-                                               row_default_height=Map.mapvar.squsize, col_default_width=self.width,
-                                               size_hint=(1, .8))
-        self.enemyPanel_numEnemies = Label(
-            text="Number: " + str(int(eval("Enemy." + enemy + ".defaultNum") * (1 + (waveNum / 70.0)))), font_size=__main__.Window.size[0]*.015,
-            text_size=(Map.mapvar.squsize * 7, Map.mapvar.squsize))
-        self.enemyPanel_enemyHealth = Label(
-            text="HP: " + str(int(eval("Enemy." + enemy + ".health") * (1 + (waveNum / 70.0)))), font_size=__main__.Window.size[0]*.015,
-            text_size=(Map.mapvar.squsize * 7, Map.mapvar.squsize))
-        self.enemyPanel_enemySpeed = Label(
-            text="Speed: " + str(int(eval("Enemy." + enemy + ".speed") * (1 + (waveNum / 70.0)))), font_size=__main__.Window.size[0]*.015,
-            text_size=(Map.mapvar.squsize * 7, Map.mapvar.squsize))
-        self.enemyPanel_enemyArmor = Label(
-            text="Armor: " + str(int(eval("Enemy." + enemy + ".armor") * (1 + (waveNum / 70.0)))), font_size=__main__.Window.size[0]*.015,
-            text_size=(Map.mapvar.squsize * 7, Map.mapvar.squsize))
-        self.enemyPanel_enemyReward = Label(
-            text="Reward: " + str(int(eval("Enemy." + enemy + ".reward") * (1 + (waveNum / 70.0)))), font_size=__main__.Window.size[0]*.015,
-            text_size=(Map.mapvar.squsize * 7, Map.mapvar.squsize))
-        self.enemyPanel_disclaimer = Label(text="Numbers reflect enemy if sent next wave", font_size=__main__.Window.size[0]*.008,
-                                           text_size=(Map.mapvar.squsize * 9, Map.mapvar.squsize))
-        self.enemyPanel_enemyinfo.add_widget(self.enemyPanel_numEnemies)
-        self.enemyPanel_enemyinfo.add_widget(self.enemyPanel_enemyHealth)
-        self.enemyPanel_enemyinfo.add_widget(self.enemyPanel_enemySpeed)
-        self.enemyPanel_enemyinfo.add_widget(self.enemyPanel_enemyArmor)
-        self.enemyPanel_enemyinfo.add_widget(self.enemyPanel_enemyReward)
-        self.enemyPanel_enemyinfo.add_widget(self.enemyPanel_disclaimer)
-        self.panelLayout.add_widget(self.enemyPanel_header)
-        self.panelLayout.add_widget(self.enemyPanel_enemyinfo)
-        return self.panelLayout
+    # def createEnemyPanelContent(self, enemy):
+    #     waveNum = Player.player.wavenum
+    #     self.enemyPanel_header = Label(text=str(enemy), size_hint=(1, .2), font_size=__main__.Window.size[0]*.022,
+    #                                    halign='center')
+    #     self.enemyPanel_enemyinfo = GridLayout(cols=1, col_force_default=True, row_force_default=True,
+    #                                            row_default_height=Map.mapvar.squsize, col_default_width=self.width,
+    #                                            size_hint=(1, .8))
+    #     self.enemyPanel_numEnemies = Label(
+    #         text="Number: " + str(int(eval("Enemy." + enemy + ".defaultNum") * (1 + (waveNum / 70.0)))), font_size=__main__.Window.size[0]*.015,
+    #         text_size=(Map.mapvar.squsize * 7, Map.mapvar.squsize))
+    #     self.enemyPanel_enemyHealth = Label(
+    #         text="HP: " + str(int(eval("Enemy." + enemy + ".health") * (1 + (waveNum / 70.0)))), font_size=__main__.Window.size[0]*.015,
+    #         text_size=(Map.mapvar.squsize * 7, Map.mapvar.squsize))
+    #     self.enemyPanel_enemySpeed = Label(
+    #         text="Speed: " + str(int(eval("Enemy." + enemy + ".speed") * (1 + (waveNum / 70.0)))), font_size=__main__.Window.size[0]*.015,
+    #         text_size=(Map.mapvar.squsize * 7, Map.mapvar.squsize))
+    #     self.enemyPanel_enemyArmor = Label(
+    #         text="Armor: " + str(int(eval("Enemy." + enemy + ".armor") * (1 + (waveNum / 70.0)))), font_size=__main__.Window.size[0]*.015,
+    #         text_size=(Map.mapvar.squsize * 7, Map.mapvar.squsize))
+    #     self.enemyPanel_enemyReward = Label(
+    #         text="Reward: " + str(int(eval("Enemy." + enemy + ".reward") * (1 + (waveNum / 70.0)))), font_size=__main__.Window.size[0]*.015,
+    #         text_size=(Map.mapvar.squsize * 7, Map.mapvar.squsize))
+    #     self.enemyPanel_disclaimer = Label(text="Numbers reflect enemy if sent next wave", font_size=__main__.Window.size[0]*.008,
+    #                                        text_size=(Map.mapvar.squsize * 9, Map.mapvar.squsize))
+    #     self.enemyPanel_enemyinfo.add_widget(self.enemyPanel_numEnemies)
+    #     self.enemyPanel_enemyinfo.add_widget(self.enemyPanel_enemyHealth)
+    #     self.enemyPanel_enemyinfo.add_widget(self.enemyPanel_enemySpeed)
+    #     self.enemyPanel_enemyinfo.add_widget(self.enemyPanel_enemyArmor)
+    #     self.enemyPanel_enemyinfo.add_widget(self.enemyPanel_enemyReward)
+    #     self.enemyPanel_enemyinfo.add_widget(self.enemyPanel_disclaimer)
+    #     self.panelLayout.add_widget(self.enemyPanel_header)
+    #     self.panelLayout.add_widget(self.enemyPanel_enemyinfo)
+    #     return self.panelLayout
 

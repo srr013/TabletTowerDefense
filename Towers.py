@@ -105,8 +105,9 @@ class Tower(Image):
         Map.mapvar.towercontainer.remove_widget(self)
         if self.leader and self.towerGroup.leader:
             self.towerGroup.hasLeader = False
-        if self in self.towerGroup.towerSet:
-            self.towerGroup.towerSet.remove(self)
+        if self.towerGroup:
+            if self in self.towerGroup.towerSet:
+                self.towerGroup.towerSet.remove(self)
         if sell and self.neighborList:
             TowerNeighbors.updateNeighbors(self)
 

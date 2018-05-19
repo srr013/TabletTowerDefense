@@ -5,16 +5,11 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.stacklayout import StackLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
-from kivy.uix.spinner import Spinner, SpinnerOption
-from kivy.uix.checkbox import CheckBox
 from kivy.graphics import *
 from kivy.graphics.vertex_instructions import RoundedRectangle
-from kivy.app import App
 from kivy.properties import ObjectProperty
 from kivy.animation import Animation
 from kivy.lang import Builder
-from kivy.core.text import LabelBase
-
 
 import Player
 import __main__
@@ -44,6 +39,8 @@ Builder.load_string("""
             Image
                 source: "iconimgs/info.png"
                 center: self.parent.center
+                size: self.parent.width/2, self.parent.height/2
+                center: self.parent.center
     GridLayout
         id: towerinfo
         size_hint: 1, .6
@@ -61,14 +58,14 @@ Builder.load_string("""
         orientation: 'tb-lr'
         size_hint: .3, 1
         Label
-            size_hint: 1, .5
+            size_hint: 1, .4
             text: "Upgrade All?"
             text_size: self.size
             font_size: self.width * .15
             halign: 'center'
             valign: 'top'
         CheckBox
-            size_hint: 1, .5
+            size_hint: 1, .6
             id: upgradeall
             on_active: upgradelayout.updateUpgradeAll()
             
@@ -95,14 +92,14 @@ Builder.load_string("""
         orientation: 'tb-lr'
         size_hint: .3, .5
         Label
-            size_hint: 1, .5
+            size_hint: 1, .4
             text: "Upgrade All?"
             text_size: self.size
             font_size: self.width * .145
             halign: 'center'
             valign: 'top'
         CheckBox
-            size_hint: 1, .5
+            size_hint: 1, .6
             id: upgradeall
             on_active: upgradelayout.updateUpgradeAll()
     TowerButton
@@ -163,6 +160,20 @@ Builder.load_string("""
         halign: 'right'
         valign: 'middle'
         pos: self.parent.center_x - self.width/3, self.parent.center_y-self.height/2
+
+<ConfirmSell>
+    rows: 1
+    padding: 15
+    Button:
+        size_hint: 1,1
+        on_release: TowerAbilities.Sell.apply()
+        Label:
+            text: 'Confirm Sale'
+            font_size: self.parent.width * .15
+            text_size: self.parent.size
+            center: root.center
+            valign: 'center'
+            halign: 'center'
 
 """)
 
@@ -361,6 +372,9 @@ class WindStandardLayout(StackLayout):
 class WindPathUpgradeLayout(StackLayout):
     pass
 
+class ConfirmSell(GridLayout):
+    pass
+
 class TowerButton(Button):
     image = ObjectProperty()
     label = ObjectProperty()
@@ -370,7 +384,10 @@ class TowerButton(Button):
             TowerAbilities.Rotate.apply()
             return
         elif self.instance.type == 'Sell':
-            TowerAbilities.Sell.apply()
+            Map.mapvar.background.removeAll()
+            self.tbbox = PopUpBox(Player.player.towerSelected.pos, 4, 3)
+            Player.player.layout.cols = 1
+            self.tbbox.add_widget(ConfirmSell())
             return
         if Player.player.tbbox.upgradeAll:
             TowerAbilities.UpgradeAll.upgradeAll(Player.player.towerSelected)

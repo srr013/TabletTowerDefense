@@ -1,6 +1,6 @@
 import os
 from kivy.uix.image import Image
-import GUI
+
 import Localdefs
 import Map
 import Player
@@ -29,10 +29,6 @@ baseAbilityList = [{'type': 'Sell', 'func': 'apply'}, {'type': 'Upgrade', 'func'
 class Sell(TowerAbility):
     name = "Sell"
     shortname = "Sell"
-
-    # @classmethod
-    # def cost(cls, tower):
-    #     Player.player.money += (tower.totalspent)
 
     @classmethod
     def apply(cls, **kwargs):

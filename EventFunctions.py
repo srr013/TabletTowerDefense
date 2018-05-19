@@ -1,8 +1,6 @@
-import MainFunctions
-from kivy.uix.widget import Widget
-from kivy.app import App
 
-import GUI
+from kivy.uix.widget import Widget
+
 import MainFunctions
 import Map
 import Player
