@@ -1,7 +1,7 @@
 ========================================
 Tablet Tower Defense ReadMe:
 ========================================
-Version .2
+Version .3
 
 ----------------
 License
@@ -14,15 +14,15 @@ Please contact the creator (scott.r.rossignol@gmail.com) with any questions.
 Gameplay:
 ----------------
 You're under attack! Build towers to keep the enemies from getting to your base. Upgrade your towers to counter the
-ever-increasing strenght of your enemies.
+ever-increasing strength of your enemies.
 
-You can build towers by touching anywhere on the playable area. Click Next Wave to send the enemies at your defenses and
-collect gold when they are destroyed.
+You can build towers by touching anywhere on the playable area but you cannot fully block the path from reaching the base.
+ Click Next Wave to send the enemies at your defenses and collect gold when they are destroyed.
 
 ----------------
 In Order To Run:
 ----------------
-You can download the game to an Android tablet from the Google Play store. See www.tablettowerdefense.com for more info.
+You can download the game to an Android tablet from the Google Play store. See http://tablettowerdefense.com for more info.
 
 To run on the computer:
 Install Python: Written and tested with version 2.7. Version 3.6 is possible with a few changes to the code.
@@ -36,34 +36,6 @@ Text files:
     readme.txt - This file
     ContentSources.txt - Includes sources for various content used in this game. All content used is available
     under an open source license
-
-Game files(.py):
-    main - contains the game's main loop and instantiates basic classes and variables
-    MainFunctions - contains most of the basic functions required by the main loop
-    Tower - contains tower classes and functions
-    TowerGroup - groups and trackers towers of like types
-    TowerDragging - allows creation of multiple towers through a touch and drag motion
-    TowerAbilities - actions taken on a tower like selling, rotation, and upgrades
-    TowerNeighbors - sets up tower images and the towergroups
-    Shot - handles shot mechanics after firing
-    Sound - handles audio in the game
-    Enemy - contains enemy classes and functions
-    Player - player-specific variables related to the game
-    Map - contains map-related game variables and sets up the game for play
-    Road - creates road images and handles their positioning
-    Wall - manages widgets used as barriers for enemies and tower placement so the playfield is defined
-    Playfield - movable element handling touch input. This is the surface the game is played on
-    localdefs - contains some local variables used across classes
-    EventFunctions - sends new enemy waves to SenderClass and handles placing towers.
-    EventDispatcher - Kivy framework for handling events and GUI updates
-    Keyboard_Kivy - used for keyboard actions when played on a computer. N sends a new wave, esc to quit.
-    Pathfinding - implements the a* pathfinding algorithm. Functions return a list of movement for enemies.
-    GUI - handles the creation and updates of graphical elements such as buttons and menus
-    GUI_Templates - classes for use in the GUI
-    GUI_Base - base widgets for use in the GUI
-    SenderClass - manages creation of enemies
-    Wavegen - generates a wave dict for the Sender.
-    Utilities - game-wide functions and helpers.
 
 Artwork:
     All artwork is my own unless specified in the ContentSources.txt file
