@@ -43,17 +43,17 @@ class Player():
     def setResources(self):
         if Map.mapvar.difficulty == 'easy':
             self.money = 2000
-            self.gems = 3
+            self.gems = 5
             self.myDispatcher.Money = str(self.money)
             self.myDispatcher.Gems = str(self.gems)
         elif Map.mapvar.difficulty == 'medium':
             self.money = 1000
-            self.gems = 3
+            self.gems = 4
             self.myDispatcher.Money = str(self.money)
             self.myDispatcher.Gems = str(self.gems)
         else:
             self.money = 300
-            self.gems = 2
+            self.gems = 3
             self.myDispatcher.Money = str(self.money)
             self.myDispatcher.Gems = str(self.gems)
         self.myDispatcher.Score = str(self.score)

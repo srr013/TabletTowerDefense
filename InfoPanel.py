@@ -172,6 +172,7 @@ Builder.load_string("""
     tab_height: self.height * .08
     TabbedPanelItem
         text: "General"
+        font_size: self.width * .15
         id: generalinfo
         StackLayout:
             orientation: "tb-lr"
@@ -232,11 +233,11 @@ class InfoPanel(TabbedPanel):
         wavemod = (1 + (Player.player.wavenum / 70.0))
 
         for i in Localdefs.towerAttributes:
-            lbl = GeneralInfoLabel(text=i, color=(1,1,1,1))
+            lbl = GeneralInfoLabel(text=i, color=(1,1,1,1), font_size = self.parent.width * .15)
             self.ids.panel1.add_widget(lbl)
             lbl.text_size = (self.parent.width, None)
         for i in Localdefs.towerAttackTypes:
-            lbl = GeneralInfoLabel(text=i, color=(1,1,1,1))
+            lbl = GeneralInfoLabel(text=i, color=(1,1,1,1), font_size = self.parent.width * .15)
             self.ids.panel1.add_widget(lbl)
 
         for enemy in self.enemytypelist:
@@ -244,7 +245,8 @@ class InfoPanel(TabbedPanel):
             th.id = enemy
             self.add_widget(th)
             th.color = [0, 0, 0, 1]
-            th.text = "Enemy: " +enemy
+            th.text = enemy
+            th.font_size = self.width * .17
             th.text_size = th.size
             th.ids.enemyimage.source = "enemyimgs/"+enemy+".png"
             th.ids.wavenum.text = "Information reflects enemy statistics at wave number: " + str(Player.player.wavenum)
@@ -260,7 +262,8 @@ class InfoPanel(TabbedPanel):
             th.id = tower
             self.add_widget(th)
             th.color = [0, 0, 0, 1]
-            th.text = "Tower: " + tower
+            th.text = tower
+            th.font_size = self.width * .17
             th.text_size = th.size
             th.ids.towerimage.source = os.path.join("towerimgs",tower,"1.png")
             th.ids.towerheader.text = tower + "Tower"
@@ -268,7 +271,7 @@ class InfoPanel(TabbedPanel):
             th.ids.path2description.text = eval(tower + "Tower." + tower + "Tower.upgradeDescription")
             stats = eval(tower + "Tower." + tower + "Tower.upgradeStats")
             for i in stats:
-                lbl = DataLayoutLabel(text=i, size_hint = (1, .5), color= (1,1,1,1))
+                lbl = DataLayoutLabel(text=i, size_hint = (1, .5), color= (1,1,1,1), font_size = self.parent.width * .15)
                 lbl.text_size = (lbl.width, lbl.height)
                 th.ids.path2data.add_widget(lbl)
 

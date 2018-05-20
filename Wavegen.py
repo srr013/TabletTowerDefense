@@ -71,7 +71,7 @@ def wavegen():
                 healthEnemies *= 3.8
                 speedEnemies *= 1.1
                 armorEnemies *= 1.7
-                rewardEnemies *= 15
+                rewardEnemies *= 10
 
             waveDict[waveNum]={'setnum': setNum, 'enemynum': numEnemies, 'enemyhealth': healthEnemies,
                     'enemyspeed': speedEnemies,

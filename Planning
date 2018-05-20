@@ -7,6 +7,12 @@ Wavestreamer doesnt work. old rounds staying in the streamer
 test pausing on leave application, interrupt
 
 issues:
+lone ice tower doesnt turn off iceroads?
+address endgame. When waves run out or game is won/lost?
+show a highlight identifying Player.player.towerSelected
+wind towers are sending multiple shots on attack.
+wind upgrades should increase dmg
+flip_horizontal() with nocache
 
 _____________________________________________________________________________________________________________________
                                     Updates

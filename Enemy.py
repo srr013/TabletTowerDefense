@@ -18,6 +18,7 @@ class Enemy(Image):
     """Enemies attack your base. This is a base class for specific enemy types below."""
     def __init__(self, **kwargs):
         super(Enemy, self).__init__(**kwargs)
+        self.nocache = True
         self.specialSend = kwargs['specialSend']
         self.enemyNumber = kwargs['enemyNum']
         if self.type == 'Crowd':
@@ -158,7 +159,7 @@ class Enemy(Image):
             self.curnode += 1
         self.direction = self.dirlist[self.curnode-1]
         if self.previous_direction == 'l' and self.direction != 'l':
-            self.source = self.imagesrc
+            self.texture.flip_horizontal()
         if self.direction == 'r':
             self.angle = 0
         elif self.direction == 'u':
@@ -166,8 +167,9 @@ class Enemy(Image):
         elif self.direction == 'd':
             self.angle = 270
         elif self.direction == 'l':
-            self.source = "enemyimgs/"+ str(self.type)+"_l.png"
-            self.angle = 0
+            #self.source = "enemyimgs/"+ str(self.type)+"_l.png"
+            self.texture.flip_vertical()
+            self.angle = 180
         self.previous_direction = self.direction
         distToTravel = Vector(self.pos).distance(self.movelist[self.curnode])
         duration = float(distToTravel) / (self.speed * (self.slowpercent/100.0))
@@ -335,8 +337,10 @@ class Enemy(Image):
             Map.mapvar.background.add_widget(self.gemImage)
             self.gemanim = Animation(pos=(__main__.ids.gemimage.x - .55*Map.mapvar.background.width,
                                           __main__.ids.gemimage.y - .6*Map.mapvar.background.height),
-                                     size=(20, 24), duration=6) + \
+                                     size=(20, 24), duration=4) + \
                            Animation(size=(0, 0), duration=.1)
+            Player.player.gems += 1
+            Player.player.myDispatcher.Gems = str(Player.player.gems)
             self.gemanim.bind(on_complete=self.endDeathAnim)
             self.gemanim.start(self.gemImage)
         if not Player.player.coinAnimating:
@@ -345,8 +349,6 @@ class Enemy(Image):
     def endDeathAnim(self, *args):
         if self.isBoss:
             if self.gemImage:
-                Player.player.gems += 1
-                Player.player.myDispatcher.Gems = str(Player.player.gems)
                 Map.mapvar.background.remove_widget(self.gemImage)
 
 
