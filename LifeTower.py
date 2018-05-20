@@ -14,7 +14,7 @@ class LifeTower(Tower):
     attacks = "Both"
     imagestr = os.path.join('towerimgs', 'Life', 'icon.png')
     upgradeDict = {'Damage': [1, 1.1, 1.4, 1.7, 2, 10, 12,14,16,18,20,'NA'], 'Range': [1, 1, 1, 1, 1, 1.5, 2.5, 2.8, 3.1, 3.3, 3.5, 'NA'],
-     'Reload': [1, 1, 1, 1, 1, 3, 2.9, 2.8, 2.6, 2.4, 2, 'NA'], 'Push':[0,0,0,0,0,1,1.1,1.2,1.3,1.4,1.5, 'NA'],'Cost': [0, 5, 50, 100, 200, (350, 1), 500, 700, 800, 900, 1000, 'NA']}
+     'Reload': [1, 1, 1, 1, 1, 3, 2.9, 2.8, 2.6, 2.4, 2, 'NA'], 'Push':[0,0,0,0,0,1,1.1,1.2,1.3,1.4,1.5, 'NA'],'Cost': [0, 5, 50, 100, 175, (250, 1), 400, 500, 600, 800, 1000, 'NA']}
     upgradeName = 'Sniper'
     upgradeDescription = 'Shoots powerful shots at a single enemy, dealing massive damage. The enemy is knocked backwards due to the velocity of the shot'
     'Effects all enemies, although nearby enemies cannot be targeted. Increases damage and range, but increases reload time.'
@@ -40,10 +40,10 @@ class LifeTower(Tower):
         self.loadTurret()
         self.reloadFrameList = ["reload_frame1.png","reload_frame2.png", "reload_frame3.png", "turret2.png" ]
         self.upgradeDict = LifeTower.upgradeDict
-        self.menu = [('Damage', 1, ' DPH'), ('Range', 0, 'px'), ('Reload', 1, 's')]
-        self.dmgMenu = [('Damage', 1, ' DPH'), ('Range', 0, 'px'), ('Reload', 1, 's'), ('Push', 0, 'px')]
-        self.leaderMenu = [('Damage', 0, '%'), ('Range', 0, '%'), ('Reload', 0, '%')]
-        self.setTowerData()
+        self.menu = [('Damage', 1, ' DPH', 'Damage'), ('Range', 0, 'px', 'Range'), ('Reload', 1, 's', 'Reload')]
+        self.dmgMenu = [('Damage', 1, ' DPH', 'Damage'), ('Range', 0, 'px', 'Range'), ('Reload', 1, 's', 'Reload'), ('Push', 0, 'px', 'Push')]
+        self.leaderMenu = [('Damage', 0, '%', 'Damage'), ('Range', 0, '%', 'Range'), ('Reload', 0, '%', 'Reload')]
+        #self.setTowerData()
 
     def hitEnemy(self, enemy):
         self.targetedEnemy = enemy

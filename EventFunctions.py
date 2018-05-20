@@ -1,17 +1,20 @@
-import MainFunctions
+
 from kivy.uix.widget import Widget
 
-import GUI
 import MainFunctions
 import Map
 import Player
 import SenderClass
+import __main__
 import Towers
 import FireTower
 import LifeTower
 import IceTower
 import GravityTower
 import WindTower
+import Messenger
+import TowerNeighbors
+import TowerGroup
 
 
 def placeTowerFromList(*args):
@@ -21,6 +24,7 @@ def placeTowerFromList(*args):
     for tower in list:
         createdTowers.append(placeTower(instance, tower))
 
+
     x = 0
     while MainFunctions.updatePath() == False:
         if x == 0:
@@ -29,19 +33,39 @@ def placeTowerFromList(*args):
         else:
             for tower in createdTowers:
                 tower.remove()
-                GUI.gui.createMessage("Path Blocked")
+                Messenger.messenger.createMessage("Path Blocked")
                 Player.player.money += tower.cost
                 Player.player.analytics.moneySpent -= tower.cost
-                GUI.gui.myDispatcher.Money = str(Player.player.money)
+                Player.player.myDispatcher.Money = str(Player.player.money)
     if createdTowers:
         resetEnemyPaths()
-
+        towerset = set()
+        towergroupset = set()
+        towerset.add(createdTowers[0])
+        TowerNeighbors.initNeighbors(createdTowers[0],towerset,towergroupset)
+        tower = next(iter(towerset))
+        if len(towergroupset) == 0:
+            tower.towerGroup = TowerGroup.TowerGroup(tower)
+            tg = tower.towerGroup
+        else:
+            tg = next(iter(towergroupset))
+            tower.towerGroup = tg
+        tg.needsUpdate = True
+        for tower in towerset:
+            TowerNeighbors.getImage(tower)
+            tower.towerGroup = tg
+            if tower.leader:
+                tg.leader = tower
+        for menu in towerset:
+            menu.setTowerData()
 
 def resetEnemyPaths():
     for enemy in Map.mapvar.enemycontainer.children:
         if not enemy.isair:
             if enemy.anim:
                 enemy.anim.cancel_all(enemy)
+            if enemy.backToRoad:
+                enemy.backToRoad.cancel_all(enemy)
             try:
                 enemy.movelist = Map.mapvar.enemymovelists[enemy.movelistNum]
                 enemy.dirlist = Map.mapvar.dirmovelists[enemy.movelistNum]
@@ -61,26 +85,28 @@ def checkBlockedPath(createdTowers):
         for wall in tower.towerwalls:
             for dir in dirlist:
                 if dir == wall.squpos:
-                    GUI.gui.createMessage("Path Blocked")
+                    Messenger.messenger.createMessage("Path Blocked")
                     tower.remove()
                     Player.player.money += tower.cost
-                    GUI.gui.myDispatcher.Money = str(Player.player.money)
+                    Player.player.myDispatcher.Money = str(Player.player.money)
                     return
 
 
 def placeTower(*args):
     '''Places a tower at location of the touch'''
+    parentPos = Map.mapvar.background.to_parent(*args[1])
     pos = args[1]
     towerselected = args[0].instance
     sufficient_funds = True if towerselected.cost <= Player.player.money else False
     if sufficient_funds == False:
-        GUI.gui.createMessage("Not Enough Money")
+        Messenger.messenger.createMessage("Not Enough Money")
     collide = None
-    towerWidget = Widget(pos=pos, size=(Map.mapvar.squsize * 2 - 1, Map.mapvar.squsize * 2 - 1))
+    towerWidget = Widget(pos=parentPos, size=(Map.mapvar.squsize * 2 - 1, Map.mapvar.squsize * 2 - 1))
     for wall in Map.mapvar.wallcontainer.children:
         if towerWidget.collide_widget(wall):
+            print towerWidget.pos, wall.pos, wall.size
             collide = wall
-            GUI.gui.createMessage("Can't Overlap")
+            Messenger.messenger.createMessage("Can't Overlap")
 
     if sufficient_funds and not collide:
         newTower = eval(towerselected.type+"Tower." + towerselected.type + towerselected.base)(pos)
@@ -90,29 +116,29 @@ def placeTower(*args):
         return newTower
 
 def updateAnim(*args):
-    for child in GUI.gui.waveStreamerEnemyLayout.children:
-        if child.id == 'wave' + str(Player.player.wavenum - 1):
-            GUI.gui.waveStreamerEnemyLayout.remove_widget(child)
+    for child in __main__.ids.wavelist.children:
+        i = int(child.id[4:])
+        if i <= Player.player.wavenum:
+            __main__.ids.wavelist.remove_widget(child)
             break
-    GUI.gui.waveScroller.scroll_x = 0
-    GUI.gui.waveAnimation.start(GUI.gui.waveScroller)
+    __main__.ids.wavescroller.scroll_x = 0
+    __main__.ids.wavestreamer.waveAnimation.start(__main__.ids.wavescroller)
 
 
 def nextWave(*args):
     '''Send the next enemy wave'''
     Player.player.score += int(Player.player.wavetimeInt * Player.player.wavenum * .25)
-    GUI.gui.myDispatcher.Score = str(Player.player.score)
+    Player.player.myDispatcher.Score = str(Player.player.score)
     Player.player.wavenum += 1
-    GUI.gui.myDispatcher.WaveNum = str(Player.player.wavenum)
-    Map.mapvar.enemypanel.CurrentWave = str(Player.player.wavenum)
+    #Map.mapvar.enemypanel.CurrentWave = str(Player.player.wavenum)
     Player.player.wavetime = Map.mapvar.waveseconds
     Player.player.wavetimeInt = int(Map.mapvar.waveseconds)
-    GUI.gui.myDispatcher.Timer = str(Player.player.wavetimeInt)
+    Player.player.myDispatcher.Timer = str(Player.player.wavetimeInt)
     Player.player.next_wave = False
     Player.player.sound.playSound(Player.player.sound.waveBeep)
     SenderClass.Sender(specialSend=False)
-    GUI.gui.waveAnimation.start(GUI.gui.waveScroller)
+    __main__.ids.wavestreamer.waveAnimation.start(__main__.ids.wavescroller)
     if Player.player.waveList[Player.player.wavenum]['isboss']:
-        GUI.gui.addAlert('Bosses are worth 5 health. Wave '+ str(Player.player.wavenum)+': '+Player.player.waveList[Player.player.wavenum]['enemytype'] , 'warning')
+        Messenger.messenger.addAlert('Bosses are worth 5 health. Wave '+ str(Player.player.wavenum)+': '+Player.player.waveList[Player.player.wavenum]['enemytype'] , 'warning')
     else:
-        GUI.gui.addAlert('Wave ' + str(Player.player.wavenum)+": "+Player.player.waveList[Player.player.wavenum]['enemytype'], 'normal')
+        Messenger.messenger.addAlert('Wave ' + str(Player.player.wavenum)+": "+Player.player.waveList[Player.player.wavenum]['enemytype'], 'normal')

@@ -15,7 +15,7 @@ class FireTower(Tower):
     attacks = "Ground"
     imagestr = os.path.join('towerimgs', 'Fire', 'icon.png')
     upgradeDict = {'Damage': [1, 1.2, 1.4, 1.6, 1.8, 7, 9, 11, 13, 15, 17, 'NA'], 'Range': [1, 1, 1, 1, 1, 2, 2.2, 2.4, 2.6, 2.8, 3, 'NA'],
-     'Reload': [1, 1, 1, 1, 1, 8, 7.6, 7.2, 6.8, 6.4, 6, 'NA'], 'BurnDamage':[0,0,0,0,0,1,1.2,1.4,1.6,1.8,2, 'NA'],'Cost': [0, 5, 50, 100, 200, (350, 1), 500, 700, 800, 900, 1000, 'NA']}
+     'Reload': [1, 1, 1, 1, 1, 8, 7.6, 7.2, 6.8, 6.4, 6, 'NA'], 'BurnDamage':[0,0,0,0,0,1,1.2,1.4,1.6,1.8,2, 'NA'],'Cost': [0, 5, 50, 100, 175, (250, 1), 400, 500, 600, 800, 1000, 'NA']}
     upgradeName = 'Volcano'
     upgradeDescription = "Shoots fireballs at the enemy dealing high damage to the target and low damage to surrounding enemies." \
                          "The volcano tower must guess where it's enemy will be, and has a tendency to miss."
@@ -42,10 +42,10 @@ class FireTower(Tower):
         self.turretRotates = True
         self.loadTurret()
         self.upgradeDict = FireTower.upgradeDict
-        self.menu = [('Damage', 1, ' DPH'), ('Range', 0, 'px'), ('Reload', 1,'s')]
-        self.dmgMenu = [('Damage', 1, ' DPH'), ('Range', 0, 'px'), ('Reload', 1, 's'), ('BurnDamage', 1, ' DPS')]
-        self.leaderMenu = [('Damage', 0, '%'),('Range', 0, '%'),('Reload', 0, '%'),('BurnDamage', 0, '%')]
-        self.setTowerData()
+        self.menu = [('Damage', 1, ' DPH', 'Damage'), ('Range', 0, 'px', 'Range'), ('Reload', 1,'s', 'Reload')]
+        self.dmgMenu = [('Damage', 1, ' DPH', 'Damage'), ('Range', 0, 'px', 'Range'), ('Reload', 1, 's', 'Reload'), ('BurnDamage', 1, ' DPS', 'Burn Damage')]
+        self.leaderMenu = [('Damage', 0, '%', 'Damage'),('Range', 0, '%', 'Range'),('Reload', 0, '%', 'Reload'),('BurnDamage', 0, '%', 'Burn Damage')]
+        #self.setTowerData()
 
     def hitEnemy(self, enemy):
         self.targetedEnemy = enemy

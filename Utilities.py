@@ -2,18 +2,18 @@ import math
 import os
 from kivy.uix.image import Image
 from kivy.uix.widget import Widget
+from kivy.app import App
 
 import Map
 import Wall
 
-
-def imgLoad(source, pos=(0, 0)):
-    '''Load an image via a kivy Image layout. By default does not size the widget containing the image.
-    img = filepath to image
-    Returns: Image instance which includes size (w/h) data via .size'''
-    file = os.path.join(source)
-    image = Image(source=file, pos=pos)
-    return image
+# def imgLoad(source, pos=(0, 0)):
+#     '''Load an image via a kivy Image layout. By default does not size the widget containing the image.
+#     img = filepath to image
+#     Returns: Image instance which includes size (w/h) data via .size'''
+#     file = os.path.join(source)
+#     image = Image(source=file, pos=pos)
+#     return image
 
 
 def createRect(*args, **kwargs):
@@ -52,19 +52,21 @@ def createRect(*args, **kwargs):
     return (x, y, w, h)
 
 
-class container(Widget):
+class Container(Widget):
     """Containers hold widgets of a specific type for ease of access later"""
-    def __init__(self, **kwargs):
-        super(container, self).__init__(**kwargs)
+    def __init__(self,name, **kwargs):
+        super(Container, self).__init__(**kwargs)
         self.pos = (0, 0)
         self.size = (0, 0)
+        self.id = name
 
 
 def roundPoint(point):
     '''Takes the location of a touch/mouse event and rounds it to match the game grid (bottom left corner)
     Point = mouse position point (x,y)'''
-    x = Map.mapvar.squsize * int(point[0] / Map.mapvar.squsize)
-    y = Map.mapvar.squsize * int(point[1] / Map.mapvar.squsize)
+    app = App.get_running_app()
+    x = app.root.squsize * int(point[0] / app.root.squsize)
+    y = app.root.squsize * int(point[1] / app.root.squsize)
     return (x, y)
 
 
@@ -78,6 +80,7 @@ def roundRect(rect):
 
 def genWalls(pos, squarewidth, squareheight):
     '''Generating the Walls for the tower used in collision and path generation'''
+    app = App.get_running_app()
     walls = []
     h = squareheight
     k = 0
@@ -85,7 +88,7 @@ def genWalls(pos, squarewidth, squareheight):
         j = 0
         w = squarewidth
         while w > 0:
-            wall = Wall.Wall(squpos=((pos[0] / Map.mapvar.squsize) + j, (pos[1] / Map.mapvar.squsize) + k))
+            wall = Wall.Wall(squpos=((pos[0] / app.root.squsize) + j, (pos[1] / app.root.squsize) + k))
             walls.append(wall)
             w -= 1
             j += 1
@@ -99,10 +102,11 @@ def genWalls(pos, squarewidth, squareheight):
 
 def getPos(point):
     '''Returns the kivy pos (bottom left) of the square with a touchdown'''
+    app = App.get_running_app()
     x = point[0]
     y = point[1]
 
-    pos = [x - x % Map.mapvar.squsize, y - y % Map.mapvar.squsize]
+    pos = [x - x % app.root.squsize, y - y % app.root.squsize]
     return pos
 
 
@@ -160,22 +164,23 @@ def get_pos(pos, h, w, num):
 
 def adjacentRoadPos(pos):
     """Creates a list of possible positions for a road around a tower. Used to change road color based on tower type"""
+    app = App.get_running_app()
     list = []
-    y = int(pos[1] + Map.mapvar.squsize * 2)
-    x = int(pos[0] - Map.mapvar.squsize)
+    y = int(pos[1] + app.root.squsize * 2)
+    x = int(pos[0] - app.root.squsize)
     list.append([x, y])
 
-    while x <= pos[0] + Map.mapvar.squsize:
-        x += Map.mapvar.squsize
+    while x <= pos[0] + app.root.squsize:
+        x += app.root.squsize
         list.append([x, y])
     while y >= pos[1]:
-        y -= Map.mapvar.squsize
+        y -= app.root.squsize
         list.append([x, y])
     while x >= pos[0]:
-        x -= Map.mapvar.squsize
+        x -= app.root.squsize
         list.append([x, y])
     while y <= pos[1]:
-        y += Map.mapvar.squsize
+        y += app.root.squsize
         list.append([x, y])
     return list
 

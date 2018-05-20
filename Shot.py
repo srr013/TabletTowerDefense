@@ -10,6 +10,7 @@ import Localdefs
 import Map
 import Utilities
 import Player
+import __main__
 
 ##manages each shot from each tower so we can show the shot in flight.
 class Shot(Image):
@@ -27,6 +28,7 @@ class Shot(Image):
         self.attacktype = tower.attacktype
         self.speed = 100
         self.complete = False
+        self.upgradePath = self.tower.upgradePath
         Map.mapvar.shotcontainer.add_widget(self)
         Localdefs.shotlist.append(self)
         # if tower.type != 'Wind':
@@ -42,7 +44,7 @@ class Shot(Image):
         self.pushy = 0
         if tower.type == 'Wind':
             self.hitlist = []
-            self.speed = 250
+            self.speed = 325
             self.facing = self.tower.towerGroup.facing
             with self.canvas.before:
                 PushMatrix()
@@ -59,11 +61,15 @@ class Shot(Image):
     def takeTurn(self):
         #if self.tower.type != 'Wind':
         self.rotate()
-        if self.tower.upgradePath == 'WindDamage':
+        if self.upgradePath == 'WindDamage':
             if Utilities.in_range(self.tower,self.enemy):
                 self.updateLine()
                 Player.player.analytics.gameDamage += self.damage
-                self.enemy.health -= max(self.damage - (self.enemy.armor * Player.player.frametime), 0)
+                if self.enemy.armor > 0:
+                    self.enemy.armor -= self.damage
+                else:
+                    self.enemy.armor = 0
+                self.enemy.health -= max(self.damage - self.enemy.armor, 0)
                 self.enemy.checkHealth()
                 if not self.enemy.isAlive:
                     self.canvas.remove(self.electricLine)
@@ -75,7 +81,12 @@ class Shot(Image):
     def hitEnemy(self, enemy):
         '''Reduces enemy health by damage - armor'''
         Player.player.analytics.gameDamage += self.damage
-        enemy.health -= max(self.damage - (self.damage*(self.enemy.armor/100)), 0)
+        if enemy.armor > 0:
+                enemy.armor -= self.damage
+        else:
+            enemy.armor = 0
+
+        enemy.health -= max(self.damage - self.enemy.armor, 0)
         enemy.checkHealth()
         if self.tower.type == 'Life' and self.tower.push > 0:
             enemy.pushed = [self.pushx, self.pushy]
@@ -93,17 +104,17 @@ class Shot(Image):
     def shotAnimate(self):
         if self.tower.type == 'Wind':
             if self.tower.upgradePath != 'WindDamage':
-                dest = [0, 0]
+                dest = [-__main__.app.root.squsize*2, -__main__.app.root.squsize*2]
                 self.angle = 0
                 if self.facing == 'l':
                     dest[1] = self.tower.pos[1]
                     self.angle = 180
                 elif self.facing == 'r':
-                    dest[0] = Map.mapvar.scrwid
+                    dest[0] = -__main__.app.root.scrwid
                     dest[1] = self.tower.pos[1]
                 elif self.facing == 'u':
                     dest[0] = self.tower.pos[0]
-                    dest[1] = Map.mapvar.scrhei
+                    dest[1] = -__main__.app.root.scrhei
                     self.angle = 90
                 elif self.facing == 'd':
                     dest[0] = self.tower.pos[0]
@@ -113,7 +124,7 @@ class Shot(Image):
 
                 distToTravel = int(abs(self.pos[0] - dest[0] + self.pos[1] - dest[1]))
                 duration = float(distToTravel) / self.speed
-                self.anim = Animation(pos=(dest[0], dest[1]), size=(90,120), duration=duration)
+                self.anim = Animation(pos=(dest[0], dest[1]), size=(90,100), duration=duration)
                 self.anim.bind(on_complete=self.removeShot)
                 self.anim.bind(on_progress=self.checkHit)
             else:
@@ -122,7 +133,6 @@ class Shot(Image):
                 self.center = self.tower.center
                 self.drawLine()
                 return
-
         elif self.tower.upgradePath == 'FireDamage':
             self.shotWithArc()
             self.burnDmg = self.tower.burn
@@ -131,14 +141,12 @@ class Shot(Image):
             distance = Vector(self.center).distance(self.enemy.center)
             self.duration = (distance/self.speed) / (len(self.pointlist))
             self.nextArcAnim()
-
         else:
             #self.rotate()
             self.anim = Animation(center=self.enemy.center, duration=self.tower.shotDuration)
             self.anim.bind(on_complete=self.checkHit)
-
-
-        self.anim.start(self)
+        if self.anim:
+            self.anim.start(self)
 
     def drawLine(self):
         with self.canvas:

@@ -1,4 +1,5 @@
 import os
+from kivy.uix.image import Image
 import FireTower
 import LifeTower
 import IceTower
@@ -24,9 +25,9 @@ class Icon():
         Localdefs.iconlist.append(self)
         try:
             self.imgstr = tower[5]
-            self.img = Utilities.imgLoad(self.imgstr)
+            self.img = Image(source = self.imgstr)
 
         except:
             self.imgstr = str(os.path.join('towerimgs', '0.png'))
-            self.img = Utilities.imgLoad(self.imgstr)
+            self.img = Image(source = self.imgstr)
         self.rect = Utilities.createRect(self.img.pos, self.img.size, self)

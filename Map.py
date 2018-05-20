@@ -4,8 +4,6 @@ from kivy.graphics import *
 from kivy.uix.widget import Widget
 from kivy.uix.image import Image
 
-import GUI
-import GUI_Templates
 import Localdefs
 import Pathfinding
 import Playfield
@@ -13,6 +11,7 @@ import Road
 import Utilities
 import Wall
 import __main__
+import Player
 
 wallrectlist = list()
 
@@ -47,8 +46,15 @@ def gen_border_walls():
 
 class Map():
     def __init__(self):
-        self.numpaths = 1
-        self.difficulty = 'easy'
+        self.background = None
+        if Player.player.store.exists('gameplay'):
+            self.waveOrder = Player.player.store.get('gameplay')['waveorder']
+            self.numpaths = Player.player.store.get('gameplay')['numpaths']
+            self.difficulty = Player.player.store.get('gameplay')['difficulty']
+        else:
+            self.numpaths = 1
+            self.difficulty = 'easy'
+            self.waveOrder = 'standard'
         self.pathrectlist = None
         self.pointmovelist = None
         self.endrect = None
@@ -65,7 +71,7 @@ class Map():
         self.flylistgenerated = False
         self.movelistnum = -1
         self.blockedSquare = None
-        # The following variables control game and field sizing
+        # The following variables control game and field sizing. They have been replaced by main, but are still in use some places
         self.scrwid = Window.width
         self.scrhei = Window.height
         self.squsize = self.scrwid / 34
@@ -79,7 +85,7 @@ class Map():
 
     def genmovelists(self):
         '''Generate the movement list for enemys and path blitting'''
-        ##zero out the lists to start fresh. Otherwise the append allows multiple lists.
+        #zero out the lists to start fresh. Otherwise the append allows multiple lists.
         self.pointmovelists = []
         self.pathrectlists = []
         self.dirmovelists = []
@@ -89,7 +95,7 @@ class Map():
         for movelist in self.movelists:
             ##translate tiles to pixels. SQU represents a tile width or height
             pointlist = list([(point[0] * self.squsize, point[1] * self.squsize) for point in movelist[0]])
-            enemymovelist = list([(point[0] * self.squsize, point[1] * self.squsize) for point in movelist[2]])
+            enemymovelist = list([self.background.to_local(point[0] * self.squsize, point[1] * self.squsize) for point in movelist[2]])
             ##create a rect for each set of points to connect the path from one point to another
             pathrectlist = list([Utilities.createRect(pointlist[ind], (
                 pointlist[ind + 1][0] - pointlist[ind][0], pointlist[ind + 1][1] - pointlist[ind][1])) for ind in
@@ -106,70 +112,41 @@ class Map():
             self.enemyflymovelists = []
             for movelist in self.flymovelists:
                 pointmovelist = list([(point[0] * self.squsize, point[1] * self.squsize) for point in movelist[0]])
-                enemymovelist = list([(point[0] * self.squsize, point[1] * self.squsize) for point in movelist[2]])
+                enemymovelist = list([self.background.to_local(point[0] * self.squsize, point[1] * self.squsize) for point in movelist[2]])
                 self.pointflymovelists.append(pointmovelist)
                 self.enemyflymovelists.append(enemymovelist)
                 self.dirflymovelists.append(movelist[3])
                 self.flylistgenerated = True
 
-
     def backgroundInit(self):
-        self.backgroundimg = Widget()
-        self.background = Playfield.playField()
-        self.backgroundimg.size = self.background.size
-        self.backgroundimg.pos = self.background.pos
-        self.enemypanel = GUI_Templates.EnemyPanel()
-        self.towerpanel = GUI_Templates.TowerPanel()
         self.baseimg = None
         self.triangle = None
         self.towerRange = None
         self.towerRangeExclusion = None
-        self.alertStreamer = GUI.gui.createAlertStreamer()
+        self.alertStreamer = None
         self.startpoint = None
-        self.waveOrder = 'standard'
-        with self.backgroundimg.canvas:
-            Color(.8,.8,.8,.3)
-            self.shaderRect = Rectangle(size=__main__.Window.size, pos=(0,0))
-            Color(1,1,1,1)
-            self.playfieldRect = Rectangle(size=(self.playwid - self.border, self.playhei-self.border), pos= (self.border, self.border))
-            Color(0, 0, 0, .6)
-            self.borderLine = Line(points=[self.squsize * self.squborder, self.squsize * self.squborder,
-                                           self.squsize * self.squborder,
-                                           self.playhei,
-                                           self.playwid,
-                                           self.playhei,
-                                           self.playwid, self.squsize * self.squborder,
-                                           self.squsize * self.squborder, self.squsize * self.squborder], width=1.3)
 
         self.background.bind(size=self.bindings)
 
-        self.background.add_widget(self.backgroundimg)
-        self.backgroundimg.add_widget(self.alertStreamer)
-
-        self.towercontainer = Utilities.container()
-        self.backgroundimg.add_widget(self.towercontainer)
-
-        self.roadcontainer = Utilities.container()
-        self.backgroundimg.add_widget(self.roadcontainer)
-
-        self.enemycontainer = Utilities.container()
-        self.backgroundimg.add_widget(self.enemycontainer)
-
-        self.shotcontainer = Utilities.container()
-        self.backgroundimg.add_widget(self.shotcontainer)
-
-        self.wallcontainer = Utilities.container()
-        self.backgroundimg.add_widget(self.wallcontainer)
-
-        self.towerdragimagecontainer = Utilities.container()
-        self.backgroundimg.add_widget(self.towerdragimagecontainer)
+        self.towercontainer = Utilities.Container("towercontainer")
+        self.background.add_widget(self.towercontainer)
+        self.roadcontainer = Utilities.Container("roadcontainer")
+        self.background.add_widget(self.roadcontainer)
+        self.enemycontainer = Utilities.Container("enemycontainer")
+        self.background.add_widget(self.enemycontainer)
+        self.shotcontainer = Utilities.Container("shotcontainer")
+        self.background.add_widget(self.shotcontainer)
+        self.wallcontainer = Utilities.Container("wallcontainer")
+        self.background.add_widget(self.wallcontainer)
+        self.towerdragimagecontainer = Utilities.Container("towerdragimagecontainer")
+        self.background.add_widget(self.towerdragimagecontainer)
+        self.towerplaceholdercontainer = Utilities.Container("towerplaceholercontainer")
+        self.background.add_widget(self.towerplaceholdercontainer)
+        self.popupcontainer = Utilities.Container("popupcontainer")
+        self.background.add_widget(self.popupcontainer)
         self.bindings()
-        return self.background
 
     def bindings(self, *args):
-        self.backgroundimg.size = self.background.size
-        with self.backgroundimg.canvas.before:
-            self.shaderRect = Rectangle(size=self.backgroundimg.size, pos=self.backgroundimg.pos)
         self.scrhei = __main__.Window.height
         self.scrwid = __main__.Window.width
         self.squsize = self.scrwid / 34
@@ -179,18 +156,6 @@ class Map():
         self.squborder = self.border / self.squsize
         self.squwid = int(self.scrwid / self.squsize) - 1
         self.squhei = int(self.scrhei / self.squsize) - 1
-        self.playfieldRect.size = (self.playwid - self.border, self.playhei-self.border)
-        self.playfieldRect.pos = (self.border, self.border)
-        self.borderLine.points = [self.squsize * self.squborder, self.squsize * self.squborder,
-                                           self.squsize * self.squborder,
-                                           self.playhei,
-                                           self.playwid,
-                                           self.playhei,
-                                           self.playwid, self.squsize * self.squborder,
-                                           self.squsize * self.squborder, self.squsize * self.squborder]
-        self.backgroundimg.remove_widget(self.baseimg)
-        GUI.gui.alertStreamerBinding()
-        GUI.gui.bindings()
         self.genmovelists()
         if self.baseimg:
             self.roadGen()
@@ -200,31 +165,36 @@ class Map():
         for child in self.roadcontainer.children:
             if child.pos[0] == square[0] and child.pos[1] == square[1]:
                 return True
-
         return False
 
     def roadGen(self):
         self.roadcontainer.clear_widgets()
         Localdefs.roadlist = list()
+
         for pathnum in range(0, len(self.movelists)):
             x = 0
             for square in self.pathrectlists[pathnum]:
+                localized = (self.background.to_local(square[0], square[1]))
+                localized = (localized[0],localized[1],square[2],square[3])
                 if pathnum > 0:
-                    if self.checkDupRoad(square):
+                    if self.checkDupRoad(localized):
                         break
-                Road.Road(square, x, pathnum)
+                Road.Road(localized, square, x, pathnum)
                 x += 1
 
         if not self.baseimg:
             self.baseimg = Image(source=os.path.join('backgroundimgs', 'Base.png'),
-                                 allow_stretch = True, size = (self.squsize * 3-1, self.squsize * 3-1))
-            self.baseimg.pos = (
-                self.basepoint[0] * self.squsize, self.basepoint[1] * self.squsize - (self.baseimg.size[1] / 3))
-            self.backgroundimg.add_widget(self.baseimg)
+                                 allow_stretch = True, size = (__main__.app.root.squsize * 3-3, __main__.app.root.squsize * 3-3), id = 'Base')
+            pos = (
+                self.basepoint[0] * __main__.app.root.squsize, self.basepoint[1] * __main__.app.root.squsize - (self.baseimg.size[1] / 3))
+            pos = self.background.to_local(*pos)
+            self.baseimg.pos = pos
+            self.baseimg.type = 'Base'
+            self.towercontainer.add_widget(self.baseimg)
+
         else:
-            self.baseimg.pos = (
-                self.basepoint[0] * self.squsize, self.basepoint[1] * self.squsize - (self.baseimg.size[1] / 3))
-        # Kivy hierarchy: background (scatter and float layouts)> backgroundimg (on float) > containers
+            self.baseimg.pos = self.background.to_local(
+                self.basepoint[0] * __main__.app.root.squsize, self.basepoint[1] * __main__.app.root.squsize - (self.baseimg.size[1] / 3))
 
     def loadMap(self):
         '''Load a particular map
@@ -238,17 +208,17 @@ class Map():
     def getStartPoints(self):
         if self.numpaths == 1:
             self.startpoint = [(1, 9)]
-            self.basepoint = (26, 9)
         elif self.numpaths == 2:
             self.startpoint = [(1, 9), (10, 16)]
-            self.basepoint = (24, 9)
         else:
             self.startpoint = [(1, 9), (10, 16), (10, 1)]
+        if self.difficulty == 'easy':
+            self.basepoint = (26, 9)
+        elif self.difficulty == 'medium':
+            self.basepoint = (24, 9)
+        else:
             self.basepoint = (23, 9)  # update newPath/flyPath below too
-
-
 mapvar = Map()
-
 
 class Path():
     def __init__(self):
@@ -267,7 +237,6 @@ class Path():
 
 
 path = Path()
-# newPath = Pathfinding.GridWithWeights(mapvar.squwid, mapvar.squhei - 1, 0, (28, 9))
 flyPath = Pathfinding.neighborGridwithWeights(mapvar.squwid, mapvar.squhei - 1, 0, (28, 9))
 myGrid = Pathfinding.neighborGridwithWeights(mapvar.squwid, mapvar.squhei - 1, 0, (28, 9))
 

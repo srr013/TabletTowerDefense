@@ -1,0 +1,280 @@
+#:kivy 1.0.9
+#:import Window kivy.core.window
+#:import kivy kivy
+#:import Player Player
+#:import PlayField Playfield.PlayField
+#:import BuilderButton Kvgui.BuilderButton
+#:import EventFunctions EventFunctions
+#:import TowerAbilities TowerAbilities
+#:import ScreenManager ScreenManager
+#:import MainFunctions MainFunctions
+#:import Enemy Enemy
+#:import InfoPanel InfoPanel
+
+<Label>
+    font_name: 'fonts/OpenSans-Semibold.ttf'
+    color: 0,0,0,1
+
+<Button>
+    background_normal: 'GUI/grey_button_normal.png'
+    background_down: 'GUI/green_outline.png'
+    background_disabled_normal: 'GUI/greydisabled.png'
+
+<CheckBox>
+    #background_checkbox_normal: "GUI/grey_box_normal.png"
+    #background_checkbox_down: "GUI/grey_box_down.png"
+
+<TopBarLabel@Label>
+    size_hint: None, 1
+    color: 0,0,0,1
+    halign:'left'
+
+<BuilderButton>
+    image:image
+    bottomlabel:bottomlabel
+    toplabel:toplabel
+    group: "Enableable"
+    on_release: EventFunctions.placeTowerFromList(self); Map.mapvar.background.removeAll()
+    disabled: True if Player.player.money < 15 else False
+    Image
+        id: image
+        center: self.parent.center
+        size_hint: None,None
+        source: ''
+    Label
+        id: bottomlabel
+        color: 0,0,0,1
+        text: "$15"
+        font_size: app.root.scrwid*.01
+        text_size: None, None
+        size: self.texture_size
+        right: self.parent.right - app.root.squsize/8
+        y: self.parent.y + app.root.squsize/8
+    Label
+        id: toplabel
+        color: 0,0,0,1
+        text: "Both"
+        font_size: app.root.scrwid*.01
+        text_size: None, None
+        size: self.texture_size
+        pos: self.parent.x + self.parent.width/2 - self.width/2, self.parent.top - app.root.squsize/2.2
+
+<BuilderLabel>
+    money: money
+    cost: cost
+    rows: 2
+    padding: 5
+    Image:
+        source: "iconimgs/coin20x24.png"
+        pos: self.parent.x, self.parent.top - app.root.squsize/1.5
+        size: app.root.squsize/3, app.root.squsize/3
+    Label:
+        id: money
+        color: 0,0,0,1
+        text: str(Player.player.money)
+        font_size: app.root.scrwid*.01
+        text_size: None, None
+        size: self.texture_size
+        pos: self.parent.x, self.parent.top - app.root.squsize/2.2
+    Label:
+        id: cost
+        color: 0,1,0,1
+        text: "$15"
+        font_size: app.root.scrwid*.016
+        text_size: None,None
+        halign: 'center'
+        size: self.texture_size
+
+<Enemy>
+    angle: 0
+    #tex_coords: (0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0)
+    canvas.before:
+        PushMatrix
+        Rotate:
+            angle: self.angle
+            axis: 0,0,1
+            origin: self.center
+    canvas:
+        Color:
+            rgba: 0,0,0,.6
+        Line:
+            points: self.x, self.y + self.height + app.root.squsize/18, self.x + self.width, self.y + self.height + app.root.squsize/18
+            width: 2
+            cap: 'round'
+        Color:
+            rgba: 1,1,1,1
+        Line:
+            points: self.x, self.y + self.height + app.root.squsize/18, self.x + self.width * self.percentHealthRemaining, self.y + self.height + app.root.squsize/18
+            width: 1.4
+            cap: 'round'
+        Line:
+            id:armor_base
+            points: (self.x, self.y + self.height + app.root.squsize/6, self.x + self.width, self.y + self.height + app.root.squsize/6) if self.percentArmorRemaining != 0 else (self.x, self.y)
+            width: 2
+            cap: 'round'
+        Color:
+            rgba: .4,0,.8,1
+        Line:
+            id:armor_color
+            points: (self.x, self.y + self.height + app.root.squsize/6, self.x + self.width * self.percentArmorRemaining, self.y + self.height + app.root.squsize/6) if self.percentArmorRemaining != 0 else (self.x, self.y)
+            width: 1.4
+            cap: 'round'
+    canvas.after:
+        PopMatrix
+
+
+
+<Game>:
+    GameScreenManager
+        id: sm
+        size: root.size
+        MenuScreen
+            id: menu
+        GameScreen
+            playBtn:play
+            menuBtn:menu
+            pauseBtn:pause
+            playfield:playfield
+            id: gamescreen
+            name: 'game'
+            size: root.size
+            pos:0,0
+            FloatLayout
+                pos: 0,0
+                size: gamescreen.size
+                canvas:
+                    Color:
+                        rgba: .9,.9,.9,1
+                    Rectangle:
+                        size: gamescreen.size
+                        pos: gamescreen.pos
+                PlayField
+                    id: playfield
+                    pos_hint: {'x': float(root.border)/root.width, 'y': float(root.border)/root.height}
+                    size_hint: None, None
+                    size: root.playwid - root.border, root.playhei - root.border
+                    do_translation: False
+                    do_rotation: False
+                    do_scale: False
+                    canvas.before:
+                        Color:
+                            rgba: 1,1,1,1
+                        Rectangle:
+                            size: self.size
+                        Color:
+                            rgba: 0, 0, 0, .6
+                        Line:
+                            points: [0, 0, 0,root.playhei - root.border,root.playwid-root.border,root.playhei-root.border,root.playwid - root.border, 0,0,0]
+                            width: 1.3
+
+                #Top Bar
+                StackLayout
+                    pos_hint: {'x': 0, 'top':1}
+                    size_hint: None,None
+                    size: root.width, root.squsize*1.5
+                    top: root.top
+                    left: 0
+                    orientation: 'lr-tb'
+
+                    Button
+                        size_hint:None,None
+                        id: menu
+                        size: root.width/10, self.parent.height
+                        font_size: root.width * .014
+                        text: 'Menu'
+                        on_release: root.change_screens('mainmenu')
+                    Button
+                        size_hint:None,None
+                        id: pause
+                        size: root.width/10, self.parent.height
+                        font_size: root.width * .014
+                        text: 'Pause'
+                        on_release: root.pause_game()
+                    Button
+                        size_hint:None,None
+                        id: play
+                        size: root.width/8, self.parent.height
+                        font_size: root.width * .013
+                        text: 'Start' if Player.player.wavenum == 0 else 'Next Wave'
+                        on_release: root.nextWave()
+                    StackLayout
+                        size_hint: None,1
+                        width: root.squsize*5
+                        Image
+                            source: 'iconimgs/medal.png'
+                            size_hint: None,1
+                            width: root.squsize*2
+                        Label
+                            text: 'Score: '+ str(Player.player.myDispatcher.Score)
+                            size_hint: None,1
+                            color: 0,0,0,1
+                            font_size: root.width * .018
+                            width: root.squsize*3
+                    StackLayout
+                        size_hint: None,1
+                        width: root.width/2
+                        orientation:'rl-tb'
+                        spacing: 10
+                        TopBarLabel
+                            width: root.squsize*2
+                            font_size: root.width * .018
+                            text: str(Player.player.myDispatcher.Gems)
+                        Image
+                            id: gemimage
+                            source: 'iconimgs/gem.png'
+                            size_hint: None,1
+                            width: root.squsize
+                        TopBarLabel
+                            text: str(Player.player.myDispatcher.Money)
+                            width: root.squsize*2
+                            font_size: root.width * .018
+                        Image
+                            id: coinimage
+                            source: 'iconimgs/coin20x24.png'
+                            size_hint: None,1
+                            width: root.squsize
+                        TopBarLabel
+                            text: str(Player.player.myDispatcher.Health)
+                            width: root.squsize*2
+                            font_size: root.width * .018
+                        Image
+                            source: 'iconimgs/heart24x24.png'
+                            size_hint: None,1
+                            width: root.squsize
+                        TopBarLabel
+                            text: str(Player.player.myDispatcher.Timer)
+                            width: root.squsize*2
+                            font_size: root.width * .018
+                        Image
+                            source: 'iconimgs/clock.png'
+                            size_hint: None,1
+                            width: root.squsize
+
+                WaveStreamer
+                    id: wavestreamer
+                    size_hint: None, None
+                    pos_hint: {'x': .05, 'y': .82}
+                    size: root.width - root.squsize*4, root.squsize
+                    orientation: 'lr-tb'
+                    Label
+                        color: 0,0,0,1
+                        text: "Next Waves:       "
+                        font_size: root.scrwid *.012
+                        size_hint: None, 1
+                        width: root.squsize*2.5
+                    ScrollView
+                        id: wavescroller
+                        do_scroll_y: False
+                        scroll_x: 0
+                        size_hint: None, 1
+                        width: self.parent.width - root.squsize*3.5
+                        bar_color:[1, 1, 1, 0]
+                        bar_inactive_color:[1, 1, 1, 0]
+                        GridLayout
+                            id: wavelist
+                            rows:1
+                            size_hint: None,1
+                            width: root.squsize*40
+
+
+

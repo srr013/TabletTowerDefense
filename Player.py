@@ -1,8 +1,11 @@
 from kivy.storage.dictstore import DictStore
+from kivy.animation import Animation
+
 import Map
 import Wavegen
 import Analytics
-import GUI
+import EventDispatcher
+import __main__
 
 playerhealth = 20
 
@@ -21,12 +24,13 @@ class Player():
         self.wavestart = 999
         self.next_wave = False
         self.pausetime = 0
-        self.state = "Menu"
+        self.state = "Start"
         self.restart = False
         self.score = 0
         self.newMoveList = False
         self.wavetime = None
         self.wavetimeInt = None
+        self.myDispatcher = EventDispatcher.EventDisp()
         self.analytics = Analytics.Analytics()
         self.store = DictStore('settings.txt')
         if self.store.exists('audio'):
@@ -39,19 +43,31 @@ class Player():
     def setResources(self):
         if Map.mapvar.difficulty == 'easy':
             self.money = 2000
-            self.gems = 10
-            GUI.gui.myDispatcher.Money = str(self.money)
-            GUI.gui.myDispatcher.Gems = str(self.gems)
+            self.gems = 5
+            self.myDispatcher.Money = str(self.money)
+            self.myDispatcher.Gems = str(self.gems)
         elif Map.mapvar.difficulty == 'medium':
             self.money = 1000
-            self.gems = 10
-            GUI.gui.myDispatcher.Money = str(self.money)
-            GUI.gui.myDispatcher.Gems = str(self.gems)
+            self.gems = 4
+            self.myDispatcher.Money = str(self.money)
+            self.myDispatcher.Gems = str(self.gems)
         else:
             self.money = 300
-            self.gems = 5
-            GUI.gui.myDispatcher.Money = str(self.money)
-            GUI.gui.myDispatcher.Gems = str(self.gems)
+            self.gems = 3
+            self.myDispatcher.Money = str(self.money)
+            self.myDispatcher.Gems = str(self.gems)
+        self.myDispatcher.Score = str(self.score)
+        self.myDispatcher.Timer = str(self.wavetimeInt)
+        self.myDispatcher.Health = str(self.health)
+
+    def setupCoinAnim(self):
+        self.coinAnimating = False
+        self.coinanim = Animation(pos=(__main__.ids.coinimage.x, __main__.ids.coinimage.y+20), duration=.1) + \
+                         Animation(pos=(__main__.ids.coinimage.x, __main__.ids.coinimage.y), duration=.1)
+        self.coinanim.on_complete(self.toggleCoinAnim)
+
+    def toggleCoinAnim(self):
+        self.coinAnimating = False
 
     def die(self):
         '''Set gameover to True to reset the game'''
@@ -64,5 +80,7 @@ class Player():
 
     def storeSettings(self):
         self.store.put('audio', soundOn=self.soundOn,musicOn=self.musicOn)
+        self.store.put('gameplay', difficulty = Map.mapvar.difficulty, numpaths = Map.mapvar.numpaths, waveorder = Map.mapvar.waveOrder)
+
 
 player = Player()

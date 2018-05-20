@@ -18,9 +18,9 @@ class Wall(Widget):
             self.size = (Map.mapvar.squsize-1, Map.mapvar.squsize-1)
             self.bind(size = self.bindings)
             Map.mapvar.wallcontainer.add_widget(self)
-            # wall visualization
-            # with Map.mapvar.backgroundimg.canvas.after:
-            #     Color(0,0,0,1)
+            #wall visualization
+            # with Map.mapvar.background.canvas.after:
+            #     Color(0,0,0,.2)
             #     Rectangle(pos=self.pos, size=self.size)
 
     def bindings(self):

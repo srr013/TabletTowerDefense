@@ -1,0 +1,94 @@
+To Test (Fixed):
+upgrade all label is scrunched on wind tower on tablet (normal upgrade)?
+store easy/med/hard, #paths,enemyorder in settings
+road background is white? When road is re-blitted after burn it is overlapping with edges
+upgrade buttons not disabling
+Wavestreamer doesnt work. old rounds staying in the streamer
+test pausing on leave application, interrupt
+
+issues:
+lone ice tower doesnt turn off iceroads?
+address endgame. When waves run out or game is won/lost?
+show a highlight identifying Player.player.towerSelected
+wind towers are sending multiple shots on attack.
+wind upgrades should increase dmg
+flip_horizontal() with nocache
+
+_____________________________________________________________________________________________________________________
+                                    Updates
+
+Enemies:
+add resistances to enemies. Modifiers = ['speedInc', 'armorInc', 'numInc', 'slowRes', 'burnRes', 'stunRes', 'rewardInc']
+-Figure out a way to display the resistance on the enemy. Use same setup for stunnedimage
+-display an icon for the resistance in the wavestreamer
+-Update the enemy's stats based on the modifier
+
+
+Tower improvements:
+Ice - freeze all enemies around it, not just one. Flash roads to white then fade back to start color.
+    Improve roads - better coloring. Remove iceroad if hit by fire.
+Air - when shooting activate a light white "cloud" around the tower?
+Life - make the shot larger/longer?
+
+
+
+
+Tutorial:
+Go over each tower type, attack type. Wind rotates, ice slows, etc.
+Placing a tower/dragging to build multiple. $ in the bottom right
+Moving a window to the side
+Tower group benefits
+Road moves when tower in the way
+    -path blocking/tower/group removal
+    -enemies don't attack your towers
+Enemy panel for details on next wave
+Health - enemies 1, bosses 5
+______________________________________________________________________________________________________________________
+
+Out of scope:
+leaderboard across players or google play/apple leaderboard and achievement integration
+Insane modes  - strings of just air, splinter, strong, or huge crowds. Just one type of tower. Unlimited money/super hard enemies
+    earn rewards/achievements that go in game analytics.
+lvl 11-16 tower upgrades
+Moveable base? Pathfinding changes alongside
+Reduce the base size to 2 squsize?
+Adjust tower placeholder/dragger by 1 square any direction
+Tower Menu redesign? The code is ugly but works
+with multiple paths the movelist strategy doesn't work w/ getNextNode and getNEarestRoad functions. A road could not be part of a movelist
+Address slowness
+Run score past the screen before quitting to main menu. Consider a restart button so you don't have to leave the screen.
+Move MainMenu and Game buttons to top bar in info screen (rather than on each screen)
+    -Add additional game info to general tab like upgrade all description, only one leader tower
+Save and Load games (do this with consideration to also loading different maps)
+
+Statistics screen: add "latest wave" . Total earned and total spent are almost the same thing. time doesn't calculate properly - 12 minute game shows as 3.
+    Is score working?
+    It's all one game behind?
+
+
+Website:
+Start building on Github. Use GoDaddy for the year.
+
+
+Path and startpoint flexibility and map designer:
+    Start Point changes
+        Likely will cause issues with pathfinding
+    Base Designer
+        Ability to define walls, start, endpoints
+            Fixed width/height but can draw shapes on the grid and define walls within
+            define the boundary via lines on a grid. outside of the connected lines are walls, inside not.
+    Make the map larger - reduce tower size (squsize)fgdfgd
+
+What do we have already?
+    pathfinding, though it's dumb (this may be the biggest issue)
+        Weighting is a problem within pathfinding, and without weighting the algorithm is crap.
+        Can i somehow define a gird and draw lines in it directly from start-endpoints, then assign weights based on distance from those lines?
+        sort of a heat map
+    Walls can be used as boundaries and as pathfinding representation for obstalces (e.g. can't build a tower over it)
+    startpoint, basepoint definitions are easy to modify
+    Everything else should work as-is
+
+
+Build roads as a linked list and push enemies from one to the next.
+    dynamically generate animations based on road direction. Go from road 1 to road 4 (change dir) to 6, etc.
+        NO MOVE LISTS assigned to enemies. Still need a road list and dirlist to come out of pathfinding.

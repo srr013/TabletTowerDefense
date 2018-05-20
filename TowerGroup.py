@@ -15,6 +15,7 @@ class TowerGroup():
     def __init__(self, tower):
         self.tower = tower
         self.towerSet = set()
+        self.towerLevels = set()
         self.towerType = tower.type
         Localdefs.towerGroupDict[self.towerType].append(self)
         self.adjacentRoads = set()
@@ -61,9 +62,15 @@ class TowerGroup():
         self.needsUpdate = False
 
     def updateList(self):
+        self.towerLevels.clear()
         for tower in Localdefs.towerlist:
-            if tower in self.towerSet and tower.towerGroup != self:
-                self.towerSet.remove(tower)
+            if tower in self.towerSet:
+                if tower.towerGroup != self:
+                    self.towerSet.remove(tower)
+                else:
+                    self.towerLevels.add((tower,tower.level))
+                    if tower.leader:
+                        self.leader = tower
             if tower not in self.towerSet and tower.towerGroup == self:
                 if self.active and self.towerType == 'Gravity':
                     self.active = False
@@ -71,6 +78,7 @@ class TowerGroup():
                     for t in self.towerSet:
                         t.turret.source = os.path.join('towerimgs', self.towerType, "turret.gif")
                 self.towerSet.add(tower)
+                self.towerLevels.add((tower,tower.level))
         if self.towerType == 'Ice':
             self.getAdjacentRoads()
 
@@ -128,7 +136,7 @@ class TowerGroup():
                     for enemy in list:
                         if enemy.isair:
                             in_range_air += 1
-                            if tower.upgradePath == 'WindDamage':
+                            if tower.upgradePath == 'WindDamage' and tower.totalUpgradeTime == 0:
                                 Shot.Shot(tower, enemy)
                                 tower.shotcount +=1
                                 if tower.shotcount >= tower.allowedshots:

@@ -43,6 +43,7 @@ class MySound():
 
     def playMusic(self, *args):
         if self.music:
+            print "playing"
             if self.musicIndex == 0:
                 self.musicIndex =  random.randint(0, 1)
             else:
